@@ -1,6 +1,8 @@
 import { EMOTES, type Card, type RoomPlayerView } from "@stacked/shared";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowRightLeft, Check, Crown, FlaskConical, Sparkles, WifiOff } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Avatar } from "@/components/brand/avatar";
 import { NameEffect } from "@/components/brand/name-effect";
 import { spring } from "@/lib/motion";
@@ -44,9 +46,41 @@ export function Seat({
   const avatarSize = dense ? 34 : 42;
   const handSize = dense ? 22 : 27;
   const offline = !player.connected && !player.isBot;
+  const plateRef = useRef<HTMLDivElement>(null);
+  const [chatPos, setChatPos] = useState<{ left: number; top: number } | null>(null);
+
+  useEffect(() => {
+    if (!chat) {
+      setChatPos(null);
+      return;
+    }
+    let frame = 0;
+    const update = () => {
+      const rect = plateRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      setChatPos({ left: rect.left + rect.width / 2, top: rect.bottom + 10 });
+    };
+    update();
+    frame = requestAnimationFrame(update);
+    const late = window.setTimeout(update, 320);
+    const settled = window.setTimeout(update, 720);
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(update);
+    if (observer && plateRef.current) observer.observe(plateRef.current);
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.clearTimeout(late);
+      window.clearTimeout(settled);
+      observer?.disconnect();
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+    };
+  }, [chat?.key]);
 
   return (
     <motion.div
+      ref={plateRef}
       layout
       initial={{ opacity: 0, y: -14, scale: 0.96 }}
       animate={{ opacity: offline ? 0.45 : 1, y: 0, scale: active || selected ? 1.02 : 1 }}
@@ -101,11 +135,18 @@ export function Seat({
         ) : null}
       </AnimatePresence>
 
-      {chat ? (
-        <span key={chat.key} className="seat-chat">
-          {chat.text}
-        </span>
-      ) : null}
+      {chat && chatPos && typeof document !== "undefined"
+        ? createPortal(
+            <span
+              key={chat.key}
+              className="seat-chat"
+              style={{ left: chatPos.left, top: chatPos.top }}
+            >
+              {chat.text}
+            </span>,
+            document.body,
+          )
+        : null}
 
       <div className="seat-top">
         <div className="seat-avatar-wrap" style={{ width: avatarSize, height: avatarSize }}>

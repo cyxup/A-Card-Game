@@ -1134,7 +1134,10 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                 {chatOpen ? (
                   <div className="chat-popover" role="dialog" aria-label={t("Quick chat")}>
                     <div className="chat-popover-head">
-                      <p className="eyebrow">{t("Quick chat")}</p>
+                      <div>
+                        <p className="text-base font-semibold tracking-[-0.02em]">{t("Quick chat")}</p>
+                        <p className="text-[11px] text-muted-foreground">{t("Only preset lines. No free text.")}</p>
+                      </div>
                       <Button size="icon-sm" variant="ghost" onClick={() => setChatOpen(false)} aria-label={t("Close")}>
                         <X />
                       </Button>
