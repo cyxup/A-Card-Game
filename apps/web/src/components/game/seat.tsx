@@ -20,6 +20,7 @@ export function Seat({
   selected = false,
   onSelect,
   revealedHand,
+  chat,
   className,
 }: {
   player: RoomPlayerView;
@@ -33,6 +34,8 @@ export function Seat({
   onSelect?: () => void;
   /** Owner x-ray only. */
   revealedHand?: Card[];
+  /** Latest quick-chat line, already translated. */
+  chat?: { key: number; text: string };
   className?: string;
 }) {
   const left = useCountdown(deadline, offset, active);
@@ -97,6 +100,12 @@ export function Seat({
           </motion.span>
         ) : null}
       </AnimatePresence>
+
+      {chat ? (
+        <span key={chat.key} className="seat-chat">
+          {chat.text}
+        </span>
+      ) : null}
 
       <div className="seat-top">
         <div className="seat-avatar-wrap" style={{ width: avatarSize, height: avatarSize }}>

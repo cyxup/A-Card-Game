@@ -16,7 +16,7 @@ interface SessionContextValue {
 
 const SessionContext = createContext<SessionContextValue | null>(null);
 
-const ANON: SessionInfo = { kind: "anon", user: null, guestName: null, unlocks: [], achievements: [] };
+const ANON: SessionInfo = { kind: "anon", user: null, guestName: null, unlocks: [], chatPacks: [], achievements: [] };
 
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<SessionInfo | null>(null);
@@ -48,6 +48,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       window.removeEventListener("stacked:refresh-session", onRefresh);
     };
   }, [refresh]);
+
+  // Keep a socket open for logged-in players so friend invites and presence
+  // work outside a room too. Room joins reuse the same connection.
+  useEffect(() => {
+    if (session?.kind !== "user") return;
+    void game.connect().catch(() => undefined);
+  }, [session?.kind, session?.user?.id]);
 
   const becomeGuest = useCallback(async (name: string) => {
     const data = await api.post<SessionInfo>("/api/auth/guest", { name });

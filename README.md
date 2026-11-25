@@ -24,6 +24,8 @@ room; accounts, cosmetics and match results live in PostgreSQL.
 - **Accounts and guests** — scrypt password hashing, opaque httpOnly session cookies, rate limits, guest sessions that can be upgraded, and one-time recovery codes for password resets.
 - **Progression** — XP, levels, coins, match rewards, achievements. Starter cosmetics no longer count toward collection achievements. Bot-only rounds are practice: no XP, coins, stats or achievements; mixed tables only count real opponents.
 - **Cosmetics** — card backs, table felts, avatars, name effects and win effects, visible to everyone at the table. Owner accounts get animated rainbow pieces and a badge; beta testers get a hidden teal-and-violet set of their own.
+- **Quick chat packs** — preset, translated table talk with no free-text moderation surface. Ten packs of six to ten lines each, bought with coins; owner and beta accounts get their own hidden packs.
+- **Friends and invites** — friend requests, block/remove, live online / lobby / in-game status with player counts, public-lobby join, and one-click invites to your lobby over the socket.
 - **A table that talks back** — opponents' hands are fanned card backs with live counts, cards fly to the discard, the draw deck breathes, seats glow on their turn, colours are called directly on the felt, Oscar's Swap targets a seat instead of a dialog, and every play/draw/skip lands with a readable action banner.
 - **Built to look alive** — CSS cards, route fades, Motion springs, animated seats and synthesised UI/game sounds; no bitmap payloads, no canvas, and an optional low-power/reduce-motion escape hatch.
 - **Authoritative server** — hands are masked per player, actions are validated by the engine, timers and bots run server-side.
@@ -232,6 +234,12 @@ Guests can play everything, but only accounts keep coins, XP, levels and cosmeti
 | `POST /api/auth/recover` | reset a password with a recovery code |
 | `GET /api/me/profile` | user + owned cosmetics + achievements |
 | `POST /api/me/cosmetics/buy` / `equip` | shop and loadout |
+| `POST /api/me/chat/buy` | unlock a quick-chat pack |
+| `GET /api/friends` / `search` | friend list + presence / search players |
+| `POST /api/friends/request` | send a friend request |
+| `POST /api/friends/:id/accept` / `decline` / `remove` | manage requests and friends |
+| `POST /api/friends/:id/block` / `unblock` | block or unblock a player |
+| `POST /api/friends/invite` | invite an online friend to your lobby |
 | `POST /api/me/recovery` | rotate the recovery code (password required) |
 | `PATCH /api/me` | display name |
 | `GET /api/admin/users` / `audit` | owner console lists |
@@ -279,15 +287,15 @@ npm test
 
 The suite covers deck construction, matching, wilds, table-colour updates, draw stacking and auto-take,
 jump-in windows, Oscar's Swap (including two-player auto-target), turn timeouts, bot legality, rules
-normalisation and starter-cosmetic counting. The engine is pure, so more scenarios are easy to add in
-`packages/shared/test/game.test.ts`.
+normalisation, starter-cosmetic counting, quick-chat catalogue integrity and owner card validation. The
+engine is pure, so more scenarios are easy to add in `packages/shared/test/game.test.ts`.
 
 ---
 
 ## Roadmap ideas
 
 - Spectator seats and queueing for the next round.
-- Friend lists / persistent parties.
+- Persistent parties / group invites.
 - Daily challenges and a seasonal ladder.
 - Replays from stored action logs.
 - More cosmetic slots (card faces, table props, emote packs).

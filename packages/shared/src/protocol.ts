@@ -1,6 +1,7 @@
 import type { Card, Color, OwnerCardSpec } from "./cards.js";
 import type { GameAction, GameResult, GameRules, LogEntry } from "./game.js";
 import type { PlayerStats, CosmeticItem, Loadout, Achievement } from "./cosmetics.js";
+import type { ChatPackView } from "./chat.js";
 
 /* ────────────────────────────── Accounts ────────────────────────────── */
 
@@ -30,6 +31,8 @@ export interface SessionInfo {
   guestName: string | null;
   /** Cosmetic ids the account owns. Guests get defaults only. */
   unlocks: string[];
+  /** Quick-chat packs the session can use. Guests get the free pack. */
+  chatPacks: string[];
   achievements: string[];
   /**
    * Only present immediately after registering, resetting a password or
@@ -107,6 +110,46 @@ export interface ProfilePayload {
   owned: string[];
   achievements: AchievementView[];
   equipped: Loadout;
+  chatPacks: ChatPackView[];
+}
+
+/* ────────────────────────────── Friends ────────────────────────────── */
+
+export type FriendRelationship = "none" | "friends" | "pending_in" | "pending_out" | "blocked";
+
+export interface FriendPresence {
+  status: "offline" | "online" | "lobby" | "playing";
+  room: {
+    code: string | null;
+    players: number;
+    maxPlayers: number;
+    visibility: "public" | "private";
+    phase: "lobby" | "playing" | "ended";
+  } | null;
+}
+
+export interface FriendUserView {
+  id: string;
+  username: string;
+  displayName: string;
+  level: number;
+  avatar: string;
+  nameEffect: string;
+  owner: boolean;
+  beta: boolean;
+  relationship: FriendRelationship;
+  presence?: FriendPresence;
+}
+
+export interface FriendsPayload {
+  friends: FriendUserView[];
+  incoming: FriendUserView[];
+  outgoing: FriendUserView[];
+  blocked: FriendUserView[];
+  you: {
+    roomCode: string | null;
+    canInvite: boolean;
+  };
 }
 
 /* ────────────────────────────── Rooms ────────────────────────────── */
@@ -213,6 +256,7 @@ export type ClientMessage =
   | { t: "kick"; playerId: string }
   | { t: "action"; action: GameAction; seq: number }
   | { t: "owner"; action: OwnerAction }
+  | { t: "chat"; lineId: string }
   | { t: "emote"; emote: string }
   | { t: "ping"; at: number };
 
@@ -222,6 +266,16 @@ export type ServerMessage =
   | { t: "error"; code: string; message: string }
   | { t: "action_error"; code: string; message: string }
   | { t: "emote"; playerId: string; emote: string }
+  | { t: "chat"; playerId: string; lineId: string; at: number }
+  | {
+      t: "friend_invite";
+      inviteId: string;
+      fromName: string;
+      roomCode: string;
+      players: number;
+      maxPlayers: number;
+      expiresAt: number;
+    }
   | { t: "toast"; message: string; tone?: "info" | "success" | "error" }
   | { t: "pong"; at: number };
 

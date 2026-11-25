@@ -1,6 +1,8 @@
 import { randomInt } from "node:crypto";
 import {
   COSMETICS,
+  CHAT_PACKS_BY_ID,
+  CHAT_LINES_BY_ID,
   EMOTES,
   GameError,
   botAction,
@@ -42,6 +44,7 @@ import {
   cardSpec,
   makeOwnerCard,
 } from "../services/owner-tools.js";
+import { hasChatPack } from "../services/chat.js";
 import {
   Room,
   botName,
@@ -193,6 +196,9 @@ export class RoomManager {
         break;
       case "owner":
         this.ownerAction(conn, msg.action);
+        break;
+      case "chat":
+        this.chat(conn, String(msg.lineId ?? ""));
         break;
       case "emote":
         this.emote(conn, String(msg.emote ?? ""));
@@ -656,6 +662,54 @@ export class RoomManager {
     this.scheduleBot(room);
   }
 
+  private chat(conn: ClientConn, lineId: string): void {
+    void this.runChat(conn, lineId).catch((error) => {
+      if (error instanceof RoomError) {
+        this.error(conn, error.code, error.message);
+        return;
+      }
+      this.log.error({ err: error, playerId: conn.playerId }, "chat failed");
+      this.error(conn, "server_error", "Something went wrong. Try again.");
+    });
+  }
+
+  private async runChat(conn: ClientConn, lineId: string): Promise<void> {
+    const { room } = this.mustSeat(conn);
+    if (!rateLimit(`chat:${conn.playerId}`, 4, 10_000).ok) {
+      throw new RoomError("rate_limited", "Easy on the quick chat.");
+    }
+    const line = CHAT_LINES_BY_ID.get(lineId);
+    if (!line) return;
+    const pack = CHAT_PACKS_BY_ID.get(line.packId);
+    if (!pack) return;
+
+    if (conn.principal.kind === "user") {
+      if (!(await hasChatPack(conn.principal.user, pack.id))) {
+        this.send(conn, {
+          t: "toast",
+          tone: "error",
+          message: "That quick-chat pack isn't yours.",
+        });
+        return;
+      }
+    } else if (pack.unlock.type !== "default") {
+      this.send(conn, {
+        t: "toast",
+        tone: "error",
+        message: "Guests can use the free pack. Create an account to buy more.",
+      });
+      return;
+    }
+
+    const message: ServerMessage = {
+      t: "chat",
+      playerId: conn.playerId,
+      lineId: line.id,
+      at: Date.now(),
+    };
+    for (const other of room.connections) this.send(other, message);
+  }
+
   private emote(conn: ClientConn, emote: string): void {
     const { room, seat } = this.mustSeat(conn);
     if (!EMOTES.some((entry) => entry.id === emote)) return;
@@ -1030,6 +1084,41 @@ export class RoomManager {
 
   getRoom(code: string): Room | undefined {
     return this.rooms.get(code.toUpperCase());
+  }
+
+  /** Push a server message to every live socket of an account. */
+  sendToUser(userId: string, message: ServerMessage): void {
+    for (const conn of this.allConns) {
+      if (conn.principal.kind === "user" && conn.principal.user.id === userId) {
+        this.send(conn, message);
+      }
+    }
+  }
+
+  /** Online + current room for a set of accounts (friends presence). */
+  presenceFor(userIds: string[]): Map<string, { online: boolean; room: Room | null }> {
+    const wanted = new Set(userIds);
+    const result = new Map<string, { online: boolean; room: Room | null }>();
+    const rank = (room: Room): number =>
+      room.phase === "playing" ? 3 : room.phase === "lobby" ? 2 : 1;
+
+    for (const conn of this.allConns) {
+      if (conn.principal.kind !== "user") continue;
+      const id = conn.principal.user.id;
+      if (!wanted.has(id)) continue;
+      const entry = result.get(id) ?? { online: true, room: null };
+      entry.online = true;
+      if (conn.roomCode) {
+        const room = this.rooms.get(conn.roomCode);
+        if (room && (!entry.room || rank(room) > rank(entry.room))) entry.room = room;
+      }
+      result.set(id, entry);
+    }
+    return result;
+  }
+
+  activeRoomForUser(userId: string): Room | null {
+    return this.presenceFor([userId]).get(userId)?.room ?? null;
   }
 
   sweep(): void {

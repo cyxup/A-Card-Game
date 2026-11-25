@@ -36,6 +36,20 @@
       "when": 1795628973177,
       "tag": "0004_careless_toxin",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795635734641,
+      "tag": "0005_good_tyrannus",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795638000091,
+      "tag": "0006_misty_moira_mactaggert",
+      "breakpoints": true
     }
   ]
 }

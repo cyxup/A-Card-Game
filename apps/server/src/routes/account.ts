@@ -17,8 +17,10 @@ import {
   sessionInfo,
   updateDisplayName,
 } from "../services/account.js";
+import { purchaseChatPack } from "../services/chat.js";
 
 const itemSchema = z.object({ itemId: z.string().min(1).max(40) });
+const chatPackSchema = z.object({ packId: z.string().min(1).max(40) });
 const nameSchema = z.object({ displayName: z.string().min(1).max(40) });
 const recoverySchema = z.object({ password: z.string().min(1).max(200) });
 
@@ -57,6 +59,17 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
     if (!parsed.success) badRequest("Pick an item.");
     const result = await equipItem(principal.user, parsed.data.itemId);
     return result.profile;
+  });
+
+  app.post("/api/me/chat/buy", async (request) => {
+    const principal = requireUser(request);
+    const parsed = chatPackSchema.safeParse(request.body);
+    if (!parsed.success) badRequest("Pick a quick-chat pack.");
+    if (!rateLimit(`chat-buy:${request.ip}`, 30, 60_000).ok) {
+      throw new ApiError(429, "rate_limited", "Slow down a little.");
+    }
+    const fresh = await purchaseChatPack(principal.user, parsed.data.packId);
+    return profilePayload(fresh);
   });
 
   app.patch("/api/me", async (request) => {

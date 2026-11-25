@@ -1,6 +1,9 @@
 import type { Card, CardKind, Color, LogEntry, RoomView } from "@stacked/shared";
 import {
+  CHAT_LINES_BY_ID,
+  CHAT_PACKS,
   COLORS,
+  DEFAULT_CHAT_PACK_ID,
   EMOTES,
   KIND_LABEL,
   canJumpInView,
@@ -17,6 +20,7 @@ import {
   Flame,
   FlaskConical,
   Layers,
+  MessageCircle,
   Pencil,
   RefreshCw,
   Repeat2,
@@ -40,9 +44,10 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { setPrefs, usePrefs } from "@/lib/prefs";
 import { localizedCardLabel, logText } from "@/lib/format";
-import { game as client, useGame } from "@/lib/game";
+import { game as client, useGame, type ChatEvent } from "@/lib/game";
 import { useT } from "@/lib/i18n";
 import { easeOutExpo, spring } from "@/lib/motion";
+import { useSession } from "@/lib/session";
 import { playSound } from "@/lib/sound";
 import { useCountdown } from "@/lib/use-countdown";
 import { cn } from "@/lib/utils";
@@ -238,7 +243,8 @@ function JumpPrompt({ room, hand, offset }: { room: RoomView; hand: Card[]; offs
 
 export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => void }) {
   const gameView = room.game;
-  const { emotes, offset, status } = useGame();
+  const { emotes, offset, status, chats } = useGame();
+  const { session } = useSession();
   const t = useT();
   const prefs = usePrefs();
   const [colorCard, setColorCard] = useState<Card | null>(null);
@@ -258,6 +264,9 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
   const [editKind, setEditKind] = useState<CardKind>("number");
   const [editColor, setEditColor] = useState<Color | null>("red");
   const [editValue, setEditValue] = useState(1);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatPackId, setChatPackId] = useState(DEFAULT_CHAT_PACK_ID);
+  const [lastSeenChatKey, setLastSeenChatKey] = useState(0);
 
   const stageRef = useRef<HTMLDivElement>(null);
   const deckRef = useRef<HTMLButtonElement>(null);
@@ -266,6 +275,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
   const lastLogRef = useRef<number | null>(null);
   const gameStartRef = useRef<number | null>(null);
   const ownerRoundRef = useRef<number | null>(null);
+  const chatLogRef = useRef<HTMLDivElement>(null);
   const flyerCounter = useRef(0);
   const bannerCounter = useRef(0);
   const flashCounter = useRef(0);
@@ -280,6 +290,24 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
       !(gameView.turnId === meId && gameView.drawnCardId),
   );
   const revealedHands = ownerMode && xray ? room.ownerHands : undefined;
+  const chatPackIds = useMemo(
+    () => new Set(session?.chatPacks ?? [DEFAULT_CHAT_PACK_ID]),
+    [session?.chatPacks],
+  );
+  const availableChatPacks = useMemo(
+    () => CHAT_PACKS.filter((entry) => chatPackIds.has(entry.id)),
+    [chatPackIds],
+  );
+  const activeChatPack =
+    availableChatPacks.find((entry) => entry.id === chatPackId) ??
+    availableChatPacks[0] ??
+    CHAT_PACKS[0]!;
+  const unreadChats = chats.filter((entry) => entry.key > lastSeenChatKey).length;
+  const latestChats = useMemo(() => {
+    const map = new Map<string, ChatEvent>();
+    for (const entry of chats) map.set(entry.playerId, entry);
+    return map;
+  }, [chats]);
   const selfEmote = emotes.findLast((event) => event.playerId === meId);
   const isMyTurn = gameView?.turnId === meId;
   const current = room.players.find((player) => player.id === gameView?.turnId);
@@ -431,8 +459,23 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
     clearTableChoice();
   }
 
-  function closeOwnerPanel() {
-    setOwnerOpen(false);
+  function chatFor(playerId: string): { key: number; text: string } | undefined {
+    const event = latestChats.get(playerId);
+    if (!event) return undefined;
+    const line = CHAT_LINES_BY_ID.get(event.lineId);
+    return line ? { key: event.key, text: t(line.text) } : undefined;
+  }
+
+  function toggleChat() {
+    if (!chatOpen) setOwnerOpen(false);
+    setChatOpen((value) => !value);
+  }
+
+  function sendChat(lineId: string) {
+    client.chat(lineId);
+  }
+
+  function closeOwnerPanel() {    setOwnerOpen(false);
     if (xray) {
       setXray(false);
       client.ownerAction({ type: "peek", enabled: false });
@@ -710,6 +753,20 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
     client.ownerAction({ type: "peek", enabled: false });
   }, [me?.owner, prefs.ownerCheats, xray, gameView?.startedAt]);
 
+  useEffect(() => {
+    if (!availableChatPacks.some((entry) => entry.id === chatPackId)) {
+      setChatPackId(availableChatPacks[0]?.id ?? DEFAULT_CHAT_PACK_ID);
+    }
+  }, [availableChatPacks, chatPackId]);
+
+  useEffect(() => {
+    if (!chatOpen) return;
+    const last = chats[chats.length - 1];
+    setLastSeenChatKey(last?.key ?? 0);
+    const log = chatLogRef.current;
+    if (log) log.scrollTop = log.scrollHeight;
+  }, [chatOpen, chats]);
+
   if (!gameView) {
     return (
       <div className="grid min-h-[50vh] place-items-center text-sm text-muted-foreground">
@@ -815,6 +872,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                 selected={swapTargetId === player.id}
                 onSelect={() => pickSwapTarget(player.id)}
                 revealedHand={revealedHands?.[player.id]}
+                chat={chatFor(player.id)}
                 className="table-rail-seat"
               />
             ))}
@@ -1060,11 +1118,23 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
             </div>
 
             <div className="flex items-center gap-1.5">
+              <Button
+                variant={chatOpen ? "brand" : "ghost"}
+                size="sm"
+                onClick={toggleChat}
+                title={t("Quick chat")}
+                className="relative gap-1.5"
+              >
+                <MessageCircle /> <span className="hidden sm:inline">{t("Chat")}</span>
+                {unreadChats > 0 && !chatOpen ? (
+                  <span className="chat-unread">{unreadChats > 9 ? "9+" : unreadChats}</span>
+                ) : null}
+              </Button>
               {ownerMode ? (
                 <Button
                   variant={ownerOpen ? "brand" : "ghost"}
                   size="sm"
-                  onClick={() => (ownerOpen ? closeOwnerPanel() : setOwnerOpen(true))}
+                  onClick={() => (ownerOpen ? closeOwnerPanel() : (setChatOpen(false), setOwnerOpen(true)))}
                   title={t("Owner tools")}
                   className="gap-1.5"
                 >
@@ -1175,6 +1245,63 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
             </div>
           </div>
         </div>
+
+        {chatOpen ? (
+          <div className="chat-panel" role="dialog" aria-label={t("Quick chat")}>
+            <div className="chat-head">
+              <div>
+                <p className="eyebrow">{t("Quick chat")}</p>
+                <p className="chat-sub">{t("Only preset lines. No free text.")}</p>
+              </div>
+              <Button size="icon-sm" variant="ghost" onClick={() => setChatOpen(false)} aria-label={t("Close")}>
+                <X />
+              </Button>
+            </div>
+
+            <div className="chat-log" ref={chatLogRef}>
+              {chats.length === 0 ? (
+                <p className="chat-empty">{t("No messages yet.")}</p>
+              ) : (
+                chats.slice(-30).map((event) => {
+                  const line = CHAT_LINES_BY_ID.get(event.lineId);
+                  if (!line) return null;
+                  const player = room.players.find((candidate) => candidate.id === event.playerId);
+                  return (
+                    <div key={event.key} className="chat-message">
+                      <span className="chat-author">{player?.name ?? "?"}</span>
+                      <span>{t(line.text)}</span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            <div className="chat-compose">
+              <label className="chat-pack-field">
+                <span className="eyebrow">{t("Pack")}</span>
+                <select value={activeChatPack.id} onChange={(event) => setChatPackId(event.target.value)}>
+                  {availableChatPacks.map((entry) => (
+                    <option key={entry.id} value={entry.id}>
+                      {t(entry.name)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="chat-lines">
+                {activeChatPack.lines.map((line) => (
+                  <button
+                    key={line.id}
+                    type="button"
+                    className="chat-line-button"
+                    onClick={() => sendChat(line.id)}
+                  >
+                    {t(line.text)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {ownerMode && ownerOpen ? (
           <div className="owner-panel" role="dialog" aria-label={t("Owner tools")}>

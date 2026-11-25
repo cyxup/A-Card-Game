@@ -2,6 +2,7 @@ import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { Suspense, lazy, useEffect } from "react";
 import { Route, Switch, useLocation } from "wouter";
 import { GuestPrompt } from "@/components/auth/guest-prompt";
+import { FriendInvites } from "@/components/social/friend-invites";
 import { Footer, Nav } from "@/components/layout/nav";
 import { Spinner } from "@/components/ui/spinner";
 import { Toaster } from "@/components/ui/toast";
@@ -18,6 +19,7 @@ const RoomPage = lazy(() => import("@/pages/Room"));
 const LoginPage = lazy(() => import("@/pages/Login"));
 const SignupPage = lazy(() => import("@/pages/Signup"));
 const ProfilePage = lazy(() => import("@/pages/Profile"));
+const FriendsPage = lazy(() => import("@/pages/Friends"));
 const AdminPage = lazy(() => import("@/pages/Admin"));
 const LeaderboardPage = lazy(() => import("@/pages/Leaderboard"));
 const RulesPage = lazy(() => import("@/pages/Rules"));
@@ -89,6 +91,7 @@ export default function App() {
                       <Route path="/login" component={LoginPage} />
                       <Route path="/signup" component={SignupPage} />
                       <Route path="/profile" component={ProfilePage} />
+                      <Route path="/friends" component={FriendsPage} />
                       <Route path="/admin" component={AdminPage} />
                       <Route path="/leaderboard" component={LeaderboardPage} />
                       <Route path="/rules" component={RulesPage} />
@@ -101,6 +104,7 @@ export default function App() {
             {!inRoom && <Footer />}
           </div>
           <GuestPrompt />
+          <FriendInvites />
           <Toaster position="bottom-right" richColors closeButton />
         </SessionProvider>
       </TooltipProvider>

@@ -1,4 +1,4 @@
-import type { CosmeticItem, CosmeticSlot, ProfilePayload } from "@stacked/shared";
+import type { ChatPackView, CosmeticItem, CosmeticSlot, ProfilePayload } from "@stacked/shared";
 import { SLOT_LABEL, SLOT_FALLBACK, COSMETICS_BY_ID } from "@stacked/shared";
 import {
   ArrowRight,
@@ -9,6 +9,7 @@ import {
   KeyRound,
   Lock,
   LogOut,
+  MessageCircle,
   Pencil,
   Sparkles,
   Trophy,
@@ -168,6 +169,22 @@ export default function ProfilePage() {
       setProfile(data);
       playSound("coin");
       toast.success(t("{name} unlocked.", { name: item.name }));
+      void refresh();
+    } catch (caught) {
+      toast.error(caught instanceof Error ? caught.message : t("Could not unlock that."));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function buyChatPack(pack: ChatPackView) {
+    if (busy || pack.unlock.type !== "shop") return;
+    setBusy(`chat:${pack.id}`);
+    try {
+      const data = await api.post<ProfilePayload>("/api/me/chat/buy", { packId: pack.id });
+      setProfile(data);
+      playSound("coin");
+      toast.success(t("{name} unlocked.", { name: pack.name }));
       void refresh();
     } catch (caught) {
       toast.error(caught instanceof Error ? caught.message : t("Could not unlock that."));
@@ -421,6 +438,95 @@ export default function ProfilePage() {
           })}
         </Tabs>
       </div>
+
+      {profile.chatPacks.length > 0 ? (
+        <section className="mt-8">
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="eyebrow mb-1 flex items-center gap-2">
+                <MessageCircle className="size-3.5" /> {t("quick chat")}
+              </p>
+              <h2 className="text-xl font-semibold tracking-[-0.03em] sm:text-2xl">{t("Say it in one tap.")}</h2>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {t("{owned} of {total} packs owned", {
+                owned: profile.chatPacks.filter((pack) => pack.owned).length,
+                total: profile.chatPacks.length,
+              })}
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {profile.chatPacks.map((pack) => {
+              const affordable = pack.unlock.type === "shop" && user.coins >= pack.unlock.price;
+              return (
+                <div
+                  key={pack.id}
+                  className={cn(
+                    "panel flex flex-col gap-3 rounded-2xl p-4",
+                    pack.owned && "border-brand/25",
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-semibold tracking-[-0.01em]">{t(pack.name)}</p>
+                      <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                        {t(pack.unlock.type === "default" ? "free" : "pack")}
+                      </p>
+                    </div>
+                    {pack.owned ? (
+                      <Badge variant="success" className="gap-1">
+                        <Check className="size-3" /> {t("Owned")}
+                      </Badge>
+                    ) : null}
+                  </div>
+                  <p className="text-xs leading-relaxed text-muted-foreground">{t(pack.description)}</p>
+                  <div className="flex flex-wrap gap-1">
+                    {pack.lines.slice(0, 4).map((line) => (
+                      <span
+                        key={line.id}
+                        className="rounded-full border border-white/8 bg-white/[0.02] px-2 py-0.5 text-[10px] text-muted-foreground"
+                      >
+                        {t(line.text)}
+                      </span>
+                    ))}
+                    {pack.lines.length > 4 ? (
+                      <span className="px-1 text-[10px] text-muted-foreground">+{pack.lines.length - 4}</span>
+                    ) : null}
+                  </div>
+                  <div className="mt-auto flex items-center justify-between gap-2 pt-1">
+                    <span className="text-[11px] text-muted-foreground">
+                      {pack.owned
+                        ? t("Unlocked")
+                        : pack.unlock.type === "shop"
+                          ? t("{n} coins", { n: pack.unlock.price })
+                          : t("Locked")}
+                    </span>
+                    {pack.owned ? (
+                      <Badge variant="outline">{t("Ready")}</Badge>
+                    ) : pack.unlock.type === "shop" ? (
+                      <Button
+                        size="xs"
+                        variant={affordable ? "brand" : "outline"}
+                        disabled={!affordable || Boolean(busy)}
+                        loading={busy === `chat:${pack.id}`}
+                        onClick={() => buyChatPack(pack)}
+                        className="gap-1"
+                      >
+                        <Coins /> {pack.unlock.price}
+                      </Button>
+                    ) : (
+                      <Button size="xs" variant="outline" disabled>
+                        {t("Locked")}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
 
       <div className="mt-10 grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
         <div className="panel rounded-2xl p-5">

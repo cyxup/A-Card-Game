@@ -85,6 +85,57 @@ export const userCosmetics = pgTable(
   (table) => [primaryKey({ columns: [table.userId, table.itemId] })],
 );
 
+export const userChatPacks = pgTable(
+  "user_chat_packs",
+  {
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    packId: varchar("pack_id", { length: 40 }).notNull(),
+    source: varchar("source", { length: 20 }).notNull().default("purchase"),
+    unlockedAt: timestamp("unlocked_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.packId] })],
+);
+
+export const friendships = pgTable(
+  "friendships",
+  {
+    /** Canonical pair: user_id < friend_id (string compare, enforced in app). */
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    friendId: uuid("friend_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    requestedById: uuid("requested_by_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    status: varchar("status", { length: 16 }).notNull().default("pending"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    respondedAt: timestamp("responded_at", { withTimezone: true }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.friendId] }),
+    index("friendships_user_idx").on(table.userId),
+    index("friendships_friend_idx").on(table.friendId),
+  ],
+);
+
+export const userBlocks = pgTable(
+  "user_blocks",
+  {
+    blockerId: uuid("blocker_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    blockedId: uuid("blocked_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.blockerId, table.blockedId] })],
+);
+
 export const matches = pgTable(
   "matches",
   {

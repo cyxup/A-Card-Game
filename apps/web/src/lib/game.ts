@@ -19,10 +19,29 @@ export interface EmoteEvent {
   emote: string;
 }
 
+export interface ChatEvent {
+  key: number;
+  playerId: string;
+  lineId: string;
+  at: number;
+}
+
+export interface FriendInviteEvent {
+  key: number;
+  inviteId: string;
+  fromName: string;
+  roomCode: string;
+  players: number;
+  maxPlayers: number;
+  expiresAt: number;
+}
+
 export interface GameStore {
   status: ConnectionStatus;
   room: RoomView | null;
   emotes: EmoteEvent[];
+  chats: ChatEvent[];
+  invites: FriendInviteEvent[];
   offset: number;
 }
 
@@ -34,7 +53,7 @@ interface Waiter {
 
 class GameClient {
   private socket: WebSocket | null = null;
-  private state: GameStore = { status: "idle", room: null, emotes: [], offset: 0 };
+  private state: GameStore = { status: "idle", room: null, emotes: [], chats: [], invites: [], offset: 0 };
   private listeners = new Set<() => void>();
   private queue: ClientMessage[] = [];
   private waiters: Waiter[] = [];
@@ -46,7 +65,10 @@ class GameClient {
   private resolveConnect: (() => void) | null = null;
   private hasConnected = false;
   private emoteKey = 0;
+  private chatKey = 0;
+  private inviteKey = 0;
   private emoteTimers = new Set<number>();
+  private inviteTimers = new Set<number>();
 
   subscribe = (listener: () => void): (() => void) => {
     this.listeners.add(listener);
@@ -159,7 +181,11 @@ class GameClient {
         const previous = this.state.room;
         const room = message.room;
         this.currentRoomCode = room.code;
-        this.setState({ room, offset: room.serverTime - Date.now() });
+        this.setState({
+          room,
+          offset: room.serverTime - Date.now(),
+          ...(previous && previous.code !== room.code ? { chats: [] } : {}),
+        });
         for (const waiter of this.waiters.splice(0)) {
           window.clearTimeout(waiter.timer);
           waiter.resolve(room);
@@ -171,7 +197,7 @@ class GameClient {
       }
       case "left":
         this.currentRoomCode = null;
-        this.setState({ room: null, emotes: [] });
+        this.setState({ room: null, emotes: [], chats: [] });
         break;
       case "error":
         toast.error(translateError(message.code, message.message));
@@ -194,6 +220,36 @@ class GameClient {
           this.setState({ emotes: this.state.emotes.filter((emote) => emote.key !== key) });
         }, 2800);
         this.emoteTimers.add(timer);
+        break;
+      }
+      case "chat": {
+        const key = ++this.chatKey;
+        this.setState({
+          chats: [
+            ...this.state.chats.slice(-59),
+            { key, playerId: message.playerId, lineId: message.lineId, at: message.at },
+          ],
+        });
+        break;
+      }
+      case "friend_invite": {
+        const key = ++this.inviteKey;
+        const invite: FriendInviteEvent = {
+          key,
+          inviteId: message.inviteId,
+          fromName: message.fromName,
+          roomCode: message.roomCode,
+          players: message.players,
+          maxPlayers: message.maxPlayers,
+          expiresAt: message.expiresAt,
+        };
+        this.setState({ invites: [...this.state.invites.slice(-3), invite] });
+        const ttl = Math.max(1000, message.expiresAt - Date.now());
+        const timer = window.setTimeout(() => {
+          this.inviteTimers.delete(timer);
+          this.dismissInvite(key);
+        }, ttl);
+        this.inviteTimers.add(timer);
         break;
       }
       case "pong":
@@ -303,6 +359,14 @@ class GameClient {
     this.send({ t: "emote", emote });
   }
 
+  chat(lineId: string): void {
+    this.send({ t: "chat", lineId });
+  }
+
+  dismissInvite(key: number): void {
+    this.setState({ invites: this.state.invites.filter((invite) => invite.key !== key) });
+  }
+
   ownerAction(action: OwnerAction): void {
     this.send({ t: "owner", action });
   }
@@ -336,7 +400,9 @@ class GameClient {
     this.socket = null;
     for (const timer of this.emoteTimers) window.clearTimeout(timer);
     this.emoteTimers.clear();
-    this.setState({ status: "idle", room: null, emotes: [], offset: 0 });
+    for (const timer of this.inviteTimers) window.clearTimeout(timer);
+    this.inviteTimers.clear();
+    this.setState({ status: "idle", room: null, emotes: [], chats: [], invites: [], offset: 0 });
   }
 
   now(): number {

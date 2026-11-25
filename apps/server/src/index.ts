@@ -16,6 +16,7 @@ import { mainShareMeta, missingRoomShareMeta, renderShareHtml, roomShareMeta } f
 import { accountRoutes } from "./routes/account.js";
 import { adminRoutes } from "./routes/admin.js";
 import { authRoutes } from "./routes/auth.js";
+import { friendsRoutes } from "./routes/friends.js";
 import { AccountError } from "./services/account.js";
 import { AdminError } from "./services/admin.js";
 
@@ -99,6 +100,7 @@ async function build(): Promise<ReturnType<typeof Fastify>> {
 
   await app.register(authRoutes);
   await app.register(accountRoutes);
+  await app.register(friendsRoutes);
   await app.register(adminRoutes);
   await registerRealtime(app);
 

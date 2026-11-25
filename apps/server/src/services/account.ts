@@ -2,6 +2,7 @@ import {
   ACHIEVEMENTS,
   COSMETICS,
   COSMETICS_BY_ID,
+  DEFAULT_CHAT_PACK_ID,
   SLOT_FALLBACK,
   achievementValue,
   completedAchievements,
@@ -21,6 +22,7 @@ import { db } from "../db/index.js";
 import { userCosmetics, users, type UserRow } from "../db/schema.js";
 import type { Principal } from "../auth/session.js";
 import { cleanDisplayName } from "../lib/text.js";
+import { chatPackIdsForUser, profileChatPacks } from "./chat.js";
 
 export function isOwner(user: Pick<UserRow, "isOwner">): boolean {
   return user.isOwner;
@@ -202,7 +204,7 @@ export function achievementViews(user: UserRow, ownedCount: number): Achievement
 
 export async function sessionInfo(principal: Principal | null): Promise<SessionInfo> {
   if (!principal) {
-    return { kind: "anon", user: null, guestName: null, unlocks: [], achievements: [] };
+    return { kind: "anon", user: null, guestName: null, unlocks: [], chatPacks: [], achievements: [] };
   }
 
   if (principal.kind === "guest") {
@@ -211,6 +213,7 @@ export async function sessionInfo(principal: Principal | null): Promise<SessionI
       user: null,
       guestName: principal.name,
       unlocks: COSMETICS.filter((item) => item.unlock.type === "default").map((item) => item.id),
+      chatPacks: [DEFAULT_CHAT_PACK_ID],
       achievements: [],
     };
   }
@@ -221,6 +224,7 @@ export async function sessionInfo(principal: Principal | null): Promise<SessionI
     user: toPublicUser(principal.user),
     guestName: null,
     unlocks: [...sync.owned],
+    chatPacks: await chatPackIdsForUser(principal.user),
     achievements: sync.achievements,
   };
 }
@@ -234,6 +238,7 @@ export async function profilePayload(user: UserRow): Promise<ProfilePayload> {
     owned: [...sync.owned],
     achievements: achievementViews(user, countedCosmetics(sync.owned)),
     equipped: equippedOf(user),
+    chatPacks: await profileChatPacks(user),
   };
 }
 

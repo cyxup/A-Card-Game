@@ -1,4 +1,4 @@
-import { Coins, LogOut, Menu, Play, Shield, Trophy, UserRound } from "lucide-react";
+import { Coins, LogOut, Menu, Play, Shield, Trophy, UserRound, Users } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation, useRoute } from "wouter";
 import { Avatar } from "@/components/brand/avatar";
@@ -82,6 +82,7 @@ export function Nav() {
             </Link>
           )}
           {user?.owner && <NavLink href="/admin" label="Admin" />}
+          {user && <NavLink href="/friends" label="Friends" />}
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
@@ -175,6 +176,11 @@ export function Nav() {
                     <Link href="/profile" onClick={() => setMenuOpen(false)}>
                       <Button variant="ghost" className="w-full justify-start gap-2">
                         <UserRound /> {t("Profile & cosmetics")}
+                      </Button>
+                    </Link>
+                    <Link href="/friends" onClick={() => setMenuOpen(false)}>
+                      <Button variant="ghost" className="w-full justify-start gap-2">
+                        <Users /> {t("Friends")}
                       </Button>
                     </Link>
                     {user.owner && (

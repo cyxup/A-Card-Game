@@ -9,6 +9,7 @@ import { desc, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { adminAudit, sessions, userCosmetics, users, type UserRow } from "../db/schema.js";
 import { syncUnlocks } from "./account.js";
+import { grantAllChatPacks } from "./chat.js";
 
 export class AdminError extends Error {
   readonly status: number;
@@ -181,6 +182,7 @@ export async function grantUser(
         .onConflictDoNothing();
     }
     await syncUnlocks(current);
+    await grantAllChatPacks(current.id);
   }
 
   const [fresh] = await db.select().from(users).where(eq(users.id, target.id)).limit(1);
