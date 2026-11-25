@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildDeck, type Card, type Color } from "../src/cards.js";
+import { buildDeck, isWild, type Card, type Color } from "../src/cards.js";
 import {
   DEFAULT_RULES,
   GameError,
@@ -131,6 +131,33 @@ describe("playing cards", () => {
     });
     const out = reduce(s, "a", { type: "play", cardId: "a1" }, ctx);
     expect(out.color).toBe("red");
+  });
+
+  it("ignores a colour sent alongside a normal card", () => {
+    const s = state({
+      players: players([
+        [card("a1", "green", "number", 2), card("a2", "blue", "number", 2)],
+        [card("b1", "green", "number", 5), card("b2", "yellow", "skip")],
+      ]),
+      discard: [card("t1", "yellow", "number", 2)],
+      color: "yellow",
+    });
+    // Bots used to attach their favourite colour to number cards.
+    const out = reduce(s, "a", { type: "play", cardId: "a1", color: "yellow" }, ctx);
+    expect(out.color).toBe("green");
+  });
+
+  it("repairs a stale table colour from the visible top card", () => {
+    const s = state({
+      players: players([
+        [card("a1", "red", "number", 5), card("a2", "blue", "number", 2)],
+        [card("b1", "green", "number", 5), card("b2", "yellow", "skip")],
+      ]),
+      discard: [card("t1", "green", "number", 5)],
+      color: "yellow",
+    });
+    const out = reduce(s, "a", { type: "draw" }, ctx);
+    expect(out.color).toBe("green");
   });
 
   it("treats reverse as a skip with two players", () => {
@@ -348,6 +375,35 @@ describe("timers", () => {
 });
 
 describe("bots", () => {
+  it("does not attach a colour to a normal card", () => {
+    const s = state({
+      players: players([
+        [card("a1", "red", "number", 5), card("a2", "blue", "number", 2)],
+        [card("b1", "green", "number", 5), card("b2", "yellow", "skip")],
+      ]),
+      discard: [card("t1", "green", "number", 3)],
+      color: "green",
+      turn: 1,
+    });
+    const action = botAction(s, "b", mulberry32(3));
+    expect(action?.type).toBe("play");
+    expect(action?.color).toBeUndefined();
+
+    const drawn = state({
+      players: players([
+        [card("a1", "red", "number", 5), card("a2", "blue", "number", 2)],
+        [card("b1", "green", "number", 2), card("b2", "yellow", "skip")],
+      ]),
+      discard: [card("t1", "green", "number", 3)],
+      color: "green",
+      turn: 1,
+      drawnCard: "b1",
+    });
+    const drawnAction = botAction(drawn, "b", mulberry32(3));
+    expect(drawnAction?.type).toBe("play");
+    expect(drawnAction?.color).toBeUndefined();
+  });
+
   it("always returns something legal on their turn", () => {
     const rng = mulberry32(11);
     let s = createGame(
@@ -368,6 +424,10 @@ describe("bots", () => {
       if (s.drawnCard) {
         const follow = botAction(s, turnPlayer?.id ?? "", rng);
         if (follow) s = reduce(s, turnPlayer?.id ?? "", follow, { now: 2_100 + i * 100, rng });
+      }
+      const top = s.discard[s.discard.length - 1];
+      if (top && !isWild(top) && top.color) {
+        expect(s.color).toBe(top.color);
       }
     }
     expect(s.phase).toBe("ended");

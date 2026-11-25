@@ -8,7 +8,7 @@ import type {
   RoomView,
   Rng,
 } from "@stacked/shared";
-import { defaultLoadout, mulberry32, randomSeed, topCard } from "@stacked/shared";
+import { defaultLoadout, isWild, mulberry32, randomSeed, topCard } from "@stacked/shared";
 import type WebSocket from "ws";
 import type { Principal } from "../auth/session.js";
 
@@ -237,25 +237,31 @@ export function buildRoomView(room: Room, viewerId: string): RoomView {
       rewards: viewer?.rewards ?? null,
     },
     game: game
-      ? {
-          phase: game.phase,
-          top: topCard(game),
-          color: game.color,
-          turnId: currentId,
-          dir: game.dir,
-          pending: game.pending,
-          pendingKind: game.pendingKind,
-          deadline: game.deadline,
-          seq: game.seq,
-          drawnCardId: currentId === viewerId ? game.drawnCard : null,
-          winner: game.winner,
-          results: game.results,
-          log: game.log.slice(-24),
-          lastCard: game.lastCard,
-          lastPlayAt: game.lastPlayAt,
-          drawCount: game.drawPile.length,
-          startedAt: game.startedAt,
-        }
+      ? (() => {
+          const top = topCard(game);
+          // A normal card's face owns the colour. Never report a stale colour
+          // from an old/buggy room state.
+          const viewColor = !isWild(top) && top.color ? top.color : game.color;
+          return {
+            phase: game.phase,
+            top,
+            color: viewColor,
+            turnId: currentId,
+            dir: game.dir,
+            pending: game.pending,
+            pendingKind: game.pendingKind,
+            deadline: game.deadline,
+            seq: game.seq,
+            drawnCardId: currentId === viewerId ? game.drawnCard : null,
+            winner: game.winner,
+            results: game.results,
+            log: game.log.slice(-24),
+            lastCard: game.lastCard,
+            lastPlayAt: game.lastPlayAt,
+            drawCount: game.drawPile.length,
+            startedAt: game.startedAt,
+          };
+        })()
       : null,
   };
 }

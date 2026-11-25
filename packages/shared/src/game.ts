@@ -50,7 +50,7 @@ export const JUMP_WINDOW_MS = 5000;
  * Bump when the authoritative engine changes in a way the client can observe.
  * `/api/health` exposes it so a stale server build is obvious.
  */
-export const ENGINE_VERSION = 2;
+export const ENGINE_VERSION = 3;
 
 export function normaliseRules(input: Partial<GameRules> | undefined): GameRules {
   const rules = { ...DEFAULT_RULES, ...input };
@@ -334,6 +334,7 @@ export function createGame(
 export function reduce(prev: GameState, playerId: string, action: GameAction, ctx: ReduceContext): GameState {
   if (prev.phase !== "playing") throw new GameError("game_over", "This round is already over.");
   const state = cloneState(prev);
+  repairTableColor(state);
   const index = state.players.findIndex((player) => player.id === playerId);
   if (index < 0) throw new GameError("not_seated", "You are not in this game.");
 
@@ -414,7 +415,9 @@ function applyPlay(
   state.lastCard = card;
   state.lastPlayAt = ctx.now;
   state.discard.push(card);
-  if (action.color) state.color = action.color;
+  // A normal coloured card always sets the table colour from its own face.
+  // Only wilds and Oscar's Swap may choose an arbitrary colour.
+  if (isWild(card) && action.color) state.color = action.color;
   else if (card.color) state.color = card.color;
 
   pushLog(state, {
@@ -422,7 +425,7 @@ function applyPlay(
     kind: jump ? "jump" : "play",
     actor: player.id,
     card,
-    color: action.color,
+    color: isWild(card) ? action.color : undefined,
     target: target?.id,
   });
 
@@ -563,6 +566,7 @@ function applyPass(state: GameState, index: number, ctx: ReduceContext): GameSta
 export function timeout(prev: GameState, ctx: ReduceContext): GameState {
   if (prev.phase !== "playing") return prev;
   const state = cloneState(prev);
+  repairTableColor(state);
   const index = state.turn;
   const player = state.players[index] as GamePlayer;
   pushLog(state, { at: ctx.now, kind: "timeout", actor: player.id });
@@ -590,6 +594,18 @@ export function timeout(prev: GameState, ctx: ReduceContext): GameState {
 }
 
 /* ────────────────────────────── Internals ────────────────────────────── */
+
+/**
+ * The visible top card is the source of truth for a normal card. This heals
+ * rooms created by older builds where a bot could send an arbitrary colour
+ * alongside a normal card.
+ */
+function repairTableColor(state: GameState): void {
+  const top = state.discard[state.discard.length - 1];
+  if (top && !isWild(top) && top.color && state.color !== top.color) {
+    state.color = top.color;
+  }
+}
 
 function ensureJumpWindow(state: GameState, now: number): void {
   if (!state.lastCard || now - state.lastPlayAt > JUMP_WINDOW_MS) {
@@ -684,7 +700,11 @@ export function botAction(state: GameState, playerId: string, rng: Rng): GameAct
     const stackable = player.hand.filter((card) => canStack(state, card));
     const pick = strongestDraw(stackable);
     if (pick && (nearestWin > 1 || stackable.length > 1)) {
-      return { type: "play", cardId: pick.id, color: favouriteColor(player.hand, rng) };
+      return {
+        type: "play",
+        cardId: pick.id,
+        color: isWild(pick) ? favouriteColor(player.hand, rng) : undefined,
+      };
     }
     return { type: "draw" };
   }
@@ -692,7 +712,12 @@ export function botAction(state: GameState, playerId: string, rng: Rng): GameAct
   if (state.drawnCard) {
     const card = player.hand.find((candidate) => candidate.id === state.drawnCard);
     if (card && isCardPlayable(state, card)) {
-      return { type: "play", cardId: card.id, color, targetId: pickSwapTarget(state, player, rng) };
+      return {
+        type: "play",
+        cardId: card.id,
+        color: isWild(card) ? (card.color ?? color) : undefined,
+        targetId: card.kind === "swap" ? pickSwapTarget(state, player, rng) : undefined,
+      };
     }
     return { type: "pass" };
   }
@@ -702,7 +727,12 @@ export function botAction(state: GameState, playerId: string, rng: Rng): GameAct
 
   const winning = playable.find((card) => player.hand.length === 1);
   if (winning) {
-    return { type: "play", cardId: winning.id, color, targetId: pickSwapTarget(state, player, rng) };
+    return {
+      type: "play",
+      cardId: winning.id,
+      color: isWild(winning) ? (winning.color ?? color) : undefined,
+      targetId: winning.kind === "swap" ? pickSwapTarget(state, player, rng) : undefined,
+    };
   }
 
   const scored = playable
@@ -714,7 +744,7 @@ export function botAction(state: GameState, playerId: string, rng: Rng): GameAct
   return {
     type: "play",
     cardId: chosen.id,
-    color: chosen.color ?? color,
+    color: isWild(chosen) ? (chosen.color ?? color) : undefined,
     targetId: chosen.kind === "swap" ? pickSwapTarget(state, player, rng) : undefined,
   };
 }
