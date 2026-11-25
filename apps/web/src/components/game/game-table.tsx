@@ -133,6 +133,37 @@ function BannerIcon({ entry }: { entry: LogEntry }) {
   }
 }
 
+function ColorLabel({ color }: { color: Color }) {
+  const t = useT();
+  const meta = COLOR_META[color];
+  return (
+    <motion.span
+      key={color}
+      className="color-live-label"
+      initial={{ opacity: 0, y: 5, scale: 0.7 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={spring.bouncy}
+    >
+      <motion.span
+        className="color-live-ring"
+        style={{ borderColor: meta.hex }}
+        initial={{ opacity: 0.8, scale: 0.45 }}
+        animate={{ opacity: 0, scale: 1.9 }}
+        transition={{ duration: 0.7, ease: "easeOut" }}
+        aria-hidden
+      />
+      <motion.span
+        className="turn-color-dot"
+        style={{ background: meta.hex, boxShadow: `0 0 14px ${meta.hex}` }}
+        initial={{ scale: 0.4 }}
+        animate={{ scale: [0.7, 1.6, 1] }}
+        transition={{ duration: 0.55, ease: "easeOut" }}
+      />
+      <span style={{ textShadow: `0 0 16px ${meta.hex}66` }}>{t(meta.label)}</span>
+    </motion.span>
+  );
+}
+
 function TurnStatus({
   room,
   isMyTurn,
@@ -152,7 +183,6 @@ function TurnStatus({
   const initial = useMemo(() => Math.max(120, left), [game?.deadline]);
   if (!game) return null;
   const seconds = Math.ceil(left / 1000);
-  const color = COLOR_META[game.color];
 
   const hint = game.pending > 0
     ? t("+{n} stacked — play another draw card or take the pile", { n: game.pending })
@@ -186,8 +216,7 @@ function TurnStatus({
       <div className="turn-status-hint">
         <span>{hint}</span>
         <span className="turn-status-meta">
-          <span className="turn-color-dot" style={{ background: color.hex, boxShadow: `0 0 10px ${color.hex}` }} />
-          {t(color.label)}
+          <ColorLabel color={game.color} />
           <span className="text-white/15">·</span>
           <RefreshCw className={cn("size-3", game.dir === -1 && "rotate-180")} />
           {game.dir === 1 ? t("clockwise") : t("counter-clockwise")}
@@ -1028,8 +1057,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                   </motion.div>
                 </div>
                 <span className="pile-hint">
-                  <span className="turn-color-dot" style={{ background: currentColor.hex, boxShadow: `0 0 10px ${currentColor.hex}` }} />
-                  {t(currentColor.label)}
+                  <ColorLabel color={gameView.color} />
                 </span>
               </div>
             </div>

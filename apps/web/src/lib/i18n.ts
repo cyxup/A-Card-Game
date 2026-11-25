@@ -22,7 +22,7 @@ const FR: Record<string, string> = {
   "Back to table {code}": "Retour à la table {code}",
   "Back to {code}": "Retour à {code}",
   Rules: "Règles",
-  "stacked — play your hand, stack the deck.": "stacked — jouez votre main, empilez le deck.",
+  "stacked — play your hand, stack the deck.": "stacked — jouez votre main, empilez le paquet.",
   "stacked": "stacked",
   "v0.1": "v0.1",
 
@@ -32,19 +32,20 @@ const FR: Record<string, string> = {
   "PLAY YOUR": "JOUEZ VOTRE",
   "HAND.": "MAIN.",
   "STACK THE": "EMPILEZ LE",
-  "DECK.": "DECK.",
+  "DECK.": "PAQUET.",
   "A fast, mean little card game. Match the colour or the number, stack the draws, jump in out of turn and empty your hand before the rest of the table.":
-    "Un jeu de cartes rapide et méchant. Suivez la couleur ou le nombre, empilez les pioches, sautez dans le tour et videz votre main avant le reste de la table.",
+    "Un jeu de cartes rapide et méchant. Suivez la couleur ou le nombre, empilez les pioches, intervenez hors tour et videz votre main avant le reste de la table.",
   "The easy part.": "La partie facile.",
   "Then the dirty part.": "Puis la partie sale.",
   "Play now": "Jouer maintenant",
   "Create a table": "Créer une table",
   Practice: "Entraînement",
-  "No account needed. Sign up to keep your coins.":
-    "Aucun compte nécessaire. Inscrivez-vous pour garder vos pièces.",
+  "No account needed to play. Sign up to earn XP and coins.":
+    "Aucun compte nécessaire pour jouer. Inscrivez-vous pour gagner de l'XP et des pièces.",
   "Playing as {name} · create an account to keep cosmetics.":
     "Vous jouez en tant que {name} · créez un compte pour garder vos cosmétiques.",
   "PLAYERS": "JOUEURS",
+  "REGISTERED PLAYERS": "JOUEURS ENREGISTRÉS",
   "ONLINE NOW": "EN LIGNE",
   "OPEN TABLES": "TABLES OUVERTES",
   "ROUNDS PLAYED": "PARTIES JOUÉES",
@@ -65,10 +66,10 @@ const FR: Record<string, string> = {
   "Every move, visible": "Chaque action, visible",
   "Cards fly, backs fan out, the active seat glows. The table tells you what happened.":
     "Les cartes volent, les dos s'éventaillent, le siège actif brille. La table vous raconte ce qui s'est passé.",
-  "Owner energy": "Énergie du patron",
+  "Owner energy": "Énergie du propriétaire",
   "Special effects and a table that refuses to pick one colour.":
     "Des effets spéciaux et une table qui refuse de choisir une seule couleur.",
-  "EARN THE GOOD DECK": "MÉRITEZ LE BEAU DECK",
+  "EARN THE GOOD DECK": "MÉRITEZ LE BEAU PAQUET",
   "Win rounds. Unlock better furniture.": "Gagnez des manches. Débloquez du beau mobilier.",
   "Levels unlock card backs and tables. Achievements unlock the loud ones. Coins buy the rest — and every effect is visible to the people you beat.":
     "Les niveaux débloquent des dos de cartes et des tables. Les succès débloquent les plus bruyants. Les pièces achètent le reste — et chaque effet est visible par ceux que vous battez.",
@@ -76,29 +77,29 @@ const FR: Record<string, string> = {
   "A hybrid card game for people who talk trash.":
     "Un jeu de cartes hybride pour ceux qui chambrent.",
   // card chips / hero
-  "Wild Eight": "Wild Eight",
+  "Wild Eight": "Joker +8",
   "Giddy Up": "Giddy Up",
   "Wrong Way": "Wrong Way",
   "Quick Draw": "Quick Draw",
-  "Wild Draw Four": "Wild Draw Four",
-  "Oscar's Swap": "Oscar's Swap",
+  "Wild Draw Four": "Joker +4",
+  "Oscar's Swap": "Échange d'Oscar",
   "SIGN IN": "CONNEXION",
   "CREATE ACCOUNT": "CRÉER UN COMPTE",
 
   // ── play ─────────────────────────────────────────────────────────────────
-  "the floor": "le parquet",
+  "the floor": "la salle",
   "Find a table.": "Trouvez une table.",
   "Quick play with strangers, a code for friends, or a private table with bots while you learn.":
     "Une partie rapide avec des inconnus, un code pour vos amis, ou une table privée avec des bots pour apprendre.",
-  "You're playing as a guest. Coins, XP and cosmetics won't be saved.":
-    "Vous jouez en invité. Les pièces, l'XP et les cosmétiques ne seront pas sauvegardés.",
+  "You're playing as a guest. Guests don't earn XP or coins.":
+    "Vous jouez en invité. Les invités ne gagnent ni XP ni pièces.",
   Quick: "Rapide",
   Join: "Rejoindre",
   Create: "Créer",
   Browse: "Parcourir",
   "One click. One open seat.": "Un clic. Une place libre.",
   "We put you at the fullest public table that still has room. If the floor is empty, you get a fresh table and can invite people or add bots.":
-    "On vous place à la table publique la plus remplie qui a encore de la place. Si le parquet est vide, vous obtenez une nouvelle table et pouvez inviter des amis ou ajouter des bots.",
+    "On vous place à la table publique la plus remplie qui a encore de la place. Si la salle est vide, vous obtenez une nouvelle table et pouvez inviter des amis ou ajouter des bots.",
   "Find me a table": "Trouvez-moi une table",
   "2–8 players": "2–8 joueurs",
   "30s turn timer": "30s par tour",
@@ -118,16 +119,16 @@ const FR: Record<string, string> = {
   "Same card only": "Même carte uniquement",
   "+2 and +4 anywhere": "+2 et +4 mélangés",
   "No stacking": "Sans empilement",
-  "Jump in": "Sauter dans le tour",
+  "Jump in": "Intervention",
   "Play an exact duplicate out of turn for five seconds after a card lands.":
     "Jouez une copie exacte hors tour pendant cinq secondes après qu'une carte tombe.",
-  "Oscar's Swap anytime": "Oscar's Swap à tout moment",
+  "Oscar's Swap anytime": "Échange d'Oscar à tout moment",
   "Swap hands out of turn. Cruel, and completely legal here.":
     "Échangez les mains hors tour. Cruel, et parfaitement légal ici.",
   "Seven-zero": "Sept-zéro",
   "7 swaps with the next player. 0 rotates all hands.":
     "Un 7 échange avec le joueur suivant. Un 0 fait tourner toutes les mains.",
-  "Draw until playable": "Piocher jusqu'à jouable",
+  "Draw until playable": "Piocher jusqu'à une carte jouable",
   "Keep drawing until you can play. Nasty.": "Continuez à piocher jusqu'à pouvoir jouer. Méchant.",
   "Who can join?": "Qui peut rejoindre ?",
   Private: "Privée",
@@ -222,7 +223,7 @@ const FR: Record<string, string> = {
 
   // ── table ────────────────────────────────────────────────────────────────
   table: "table",
-  live: "live",
+  live: "en direct",
   "Copy invite link": "Copier le lien d'invitation",
   "Invite link copied.": "Lien d'invitation copié.",
   "Leave table": "Quitter la table",
@@ -270,14 +271,14 @@ const FR: Record<string, string> = {
   "{name} passed": "{name} a passé",
   "{name} ran out of time": "{name} a manqué de temps",
   "{name} swapped hands with {target}": "{name} a échangé sa main avec {target}",
-  "{name} jumped in!": "{name} a sauté dans le tour !",
+  "{name} jumped in!": "{name} est intervenu !",
   "{name} skipped {target}": "{name} a sauté le tour de {target}",
   "{name} wins the round": "{name} gagne la manche",
-  "The deck was reshuffled": "Le deck a été remélangé",
+  "The deck was reshuffled": "Le paquet a été remélangé",
   "Every hand moved one seat": "Toutes les mains ont tourné d'une place",
   "Direction reversed": "Sens inversé",
   "{n} players. Cards dealt.": "{n} joueurs. Cartes distribuées.",
-  "Jump in with": "Sauter avec",
+  "Jump in with": "Intervenir avec",
   "Swap in": "Échanger",
   "YOUR TURN": "VOTRE TOUR",
   "Your hand: {n} cards": "Votre main : {n} cartes",
@@ -307,7 +308,8 @@ const FR: Record<string, string> = {
   "+{n} XP": "+{n} XP",
   "Saved to {name}. Coins and XP are already in your profile.":
     "Sauvegardé pour {name}. Les pièces et l'XP sont déjà dans votre profil.",
-  "Guest progress isn't saved.": "La progression des invités n'est pas sauvegardée.",
+  "Guests don't earn XP or coins. Create an account to progress.":
+    "Les invités ne gagnent ni XP ni pièces. Créez un compte pour progresser.",
   "The round ended, but rewards could not be saved. They will be waiting next time.":
     "La manche est terminée, mais les récompenses n'ont pas pu être sauvegardées. Elles vous attendront la prochaine fois.",
   "new unlocks": "nouveaux déblocages",
@@ -318,12 +320,12 @@ const FR: Record<string, string> = {
 
   // ── profile / shop ───────────────────────────────────────────────────────
   "@{username}": "@{username}",
-  "owner": "owner",
+  "owner": "propriétaire",
   "{n} wins": "{n} victoires",
   "{xp}/{next} xp": "{xp}/{next} xp",
   games: "parties",
-  "win rate": "victoires",
-  "jump-ins": "sauts",
+  "win rate": "taux de victoire",
+  "jump-ins": "interventions",
   stacks: "empilements",
   "the collection": "la collection",
   "Dress the table.": "Habillez la table.",
@@ -337,7 +339,7 @@ const FR: Record<string, string> = {
   "{n} coins": "{n} pièces",
   "Level {n}": "Niveau {n}",
   "Achievement reward": "Récompense de succès",
-  "Owner only": "Réservé à l'owner",
+  "Owner only": "Réservé au propriétaire",
   equipped: "équipé",
   Worn: "Porté",
   Equip: "Équiper",
@@ -381,16 +383,16 @@ const FR: Record<string, string> = {
   "Replay": "Rejouer",
   "No effect": "Aucun effet",
   "animation": "animation",
-  "Owner console": "Console owner",
+  "Owner console": "Console du propriétaire",
   "Admin": "Admin",
-  "Admin tools": "Outils owner",
-  "Owner only.": "Réservé à l'owner.",
-  "Owner tools": "Outils owner",
-  "In-game cheats": "Cheats en jeu",
+  "Admin tools": "Outils d'administration",
+  "Owner only.": "Réservé au propriétaire.",
+  "Owner tools": "Outils du propriétaire",
+  "In-game cheats": "Triches en jeu",
   "Shows the x-ray and hand editor at the table. Cheat-assisted rounds do not pay you XP or coins.":
-    "Affiche la vision des mains et l'éditeur de main à la table. Les manches assistées ne rapportent ni XP ni pièces.",
+    "Affiche la vision des mains et l'éditeur de main. Les manches avec triches ne rapportent ni XP ni pièces.",
   "Silent to the table. Cheat-assisted rounds do not pay you XP or coins.":
-    "Invisible pour la table. Les manches assistées ne rapportent ni XP ni pièces.",
+    "Invisible pour la table. Les manches avec triches ne rapportent ni XP ni pièces.",
   "X-ray hands": "Voir les mains",
   On: "Activé",
   Off: "Désactivé",
@@ -405,10 +407,10 @@ const FR: Record<string, string> = {
   "Ban": "Bannir",
   "Unban": "Débannir",
   "Kick": "Expulser",
-  "Make owner": "Nommer owner",
-  "Remove owner": "Retirer owner",
+  "Make owner": "Nommer propriétaire",
+  "Remove owner": "Retirer le statut de propriétaire",
   "Banned": "Banni",
-  "Owner": "Owner",
+  "Owner": "Propriétaire",
   "Search users": "Rechercher",
   "Recent actions": "Actions récentes",
   "Give {n} coins": "Donner {n} pièces",
@@ -419,10 +421,10 @@ const FR: Record<string, string> = {
   "Confirm ban": "Confirmer le ban",
   "User banned": "Utilisateur banni",
   "User unbanned": "Utilisateur débanni",
-  "Owner flag updated": "Statut owner mis à jour",
-  "Cheat applied": "Cheat appliqué",
+  "Owner flag updated": "Statut de propriétaire mis à jour",
+  "Cheat applied": "Triche appliquée",
   "Player kicked": "Joueur expulsé",
-  "Could not load the owner console.": "Impossible de charger la console owner.",
+  "Could not load the owner console.": "Impossible de charger la console du propriétaire.",
   "No users found.": "Aucun utilisateur trouvé.",
   "No actions yet.": "Aucune action pour le moment.",
   "Language": "Langue",
@@ -445,7 +447,7 @@ const FR: Record<string, string> = {
   "A 7 swaps hands with the next player; a 0 rotates every hand one seat.":
     "Un 7 échange les mains avec le joueur suivant ; un 0 fait tourner toutes les mains d'une place.",
   "A five-letter code, your rules, your people. No matchmaking.":
-    "Un code de cinq lettres, vos règles, vos amis. Pas de matchmaking.",
+    "Un code de cinq lettres, vos règles, vos amis. Pas de recherche automatique.",
   "Add a friend with the code, or fill the table with a bot.":
     "Ajoutez un ami avec le code, ou remplissez la table avec un bot.",
   "Add bot": "Ajouter un bot",
@@ -457,9 +459,9 @@ const FR: Record<string, string> = {
   ban: "bannissement",
   unban: "débannissement",
   grant: "don de pièces/XP",
-  owner_grant: "statut owner donné",
-  owner_revoke: "statut owner retiré",
-  owner_cheat: "utilisation de cheat owner",
+  owner_grant: "statut de propriétaire accordé",
+  owner_revoke: "statut de propriétaire retiré",
+  owner_cheat: "triche du propriétaire",
   beta_grant: "accès beta accordé",
   beta_revoke: "accès beta retiré",
   kick: "expulsion",
@@ -482,12 +484,12 @@ const FR: Record<string, string> = {
   "Practice table — no progression.": "Table d'entraînement — aucune progression.",
   "No rewards this round.": "Aucune récompense cette manche.",
   "XP, coins and stats only count when at least one other real player is seated.":
-    "L'XP, les pièces et les stats ne comptent qu'avec au moins un autre vrai joueur.",
-  "Beta tester": "Beta testeur",
-  "Beta testers": "Beta testeurs",
-  "Beta tester only": "Réservé aux beta testeurs",
-  "Make beta": "Nommer beta testeur",
-  "Remove beta": "Retirer beta testeur",
+    "L'XP, les pièces et les statistiques ne comptent qu'avec au moins un autre vrai joueur.",
+  "Beta tester": "Testeur bêta",
+  "Beta testers": "Testeurs bêta",
+  "Beta tester only": "Réservé aux testeurs bêta",
+  "Make beta": "Nommer testeur bêta",
+  "Remove beta": "Retirer testeur bêta",
   "Beta access": "Accès beta",
   "Card backs, felts, avatars, name effects and win animations visible to the table.":
     "Dos de cartes, tapis, avatars, effets de nom et animations de victoire visibles par la table.",
@@ -520,20 +522,20 @@ const FR: Record<string, string> = {
   "Current password": "Mot de passe actuel",
   "Deal me in": "Distribuez-moi",
   "Deal the first hand": "Distribuer la première main",
-  "Draw until playable.": "Piocher jusqu'à jouable.",
+  "Draw until playable.": "Piocher jusqu'à une carte jouable.",
   "Enough reading.": "Assez de lecture.",
   "Every table can toggle the sharp edges: stacking, jump-ins, Oscar's Swap from anywhere, and the seven-zero hand swap. Hosts set it, everyone sees it before the first card lands.":
-    "Chaque table peut activer ou non les angles agressifs : empilement, sauts dans le tour, Oscar's Swap de n'importe où et l'échange sept-zéro. L'hôte choisit, tout le monde voit avant la première carte.",
+    "Chaque table peut activer ou non les angles agressifs : empilement, interventions hors tour, échange d'Oscar depuis n'importe où et échange sept-zéro. L'hôte choisit, tout le monde voit avant la première carte.",
   "Everyone in the lobby comes with you. Rules lock when the round starts.":
-    "Tout le salon vient avec vous. Les règles se verrouillent au début de la manche.",
+    "Tout le monde dans le salon vient avec vous. Les règles se verrouillent au début de la manche.",
   "Exact duplicates are playable out of turn inside a five-second window.":
     "Les copies exactes sont jouables hors tour dans une fenêtre de cinq secondes.",
   "Exact duplicates can be played out of turn.": "Les copies exactes peuvent être jouées hors tour.",
   "Generate code": "Générer un code",
-  "Guests can play every mode, but nothing persists. Create an account whenever you want to keep it.":
-    "Les invités peuvent jouer à tous les modes, mais rien n'est sauvegardé. Créez un compte quand vous voulez garder votre progression.",
-  "Guests can sit at any table. Coins, levels and cosmetics only stick around on an account.":
-    "Les invités peuvent s'asseoir à toutes les tables. Les pièces, niveaux et cosmétiques ne restent que sur un compte.",
+  "Guests can play normal tables, but nothing persists. Create an account to earn XP and coins.":
+    "Les invités peuvent jouer aux tables normales, mais rien n'est sauvegardé. Créez un compte pour gagner de l'XP et des pièces.",
+  "Guests can sit at normal tables. XP, coins and cosmetics stay on an account.":
+    "Les invités peuvent s'asseoir aux tables normales. L'XP, les pièces et les cosmétiques restent sur un compte.",
   "Guests don't appear here. Create an account to keep your spot.":
     "Les invités n'apparaissent pas ici. Créez un compte pour garder votre place.",
   "HAND SWAPPED": "MAIN ÉCHANGÉE",
@@ -545,8 +547,8 @@ const FR: Record<string, string> = {
   "If you lose your password, this is the only way back into your account.":
     "Si vous perdez votre mot de passe, c'est la seule façon de retrouver votre compte.",
   "Invite": "Inviter",
-  "JUMP IN!": "SAUTEZ DANS LE TOUR !",
-  "Jump in.": "Sauter dans le tour.",
+  "JUMP IN!": "INTERVENEZ !",
+  "Jump in.": "Intervention.",
   "Keep drawing until you can play. Hosts, please warn your friends.":
     "Continuez à piocher jusqu'à pouvoir jouer. Hôtes, prévenez vos amis.",
   "Keep drawing until you find something you can play. Meaner games.":
@@ -557,17 +559,17 @@ const FR: Record<string, string> = {
   "New password": "Nouveau mot de passe",
   "New recovery code generated.": "Nouveau code de récupération généré.",
   "New recovery code": "Nouveau code de récupération",
-  "No house edge.": "Aucun avantage maison.",
-  "Nobody on the wall yet.": "Personne sur le mur pour le moment.",
+  "No house edge.": "Aucun avantage pour la maison.",
+  "Nobody on the wall yet.": "Personne au classement pour le moment.",
   "Nobody": "Personne",
   "Not in this": "Pas dans ce",
   "Not ready": "Pas prêt",
   "One last thing.": "Une dernière chose.",
   "Open seat": "Place libre",
   "Open your collection": "Ouvrir votre collection",
-  "Oscar's Swap can be played out of turn.": "Oscar's Swap peut être joué hors tour.",
+  "Oscar's Swap can be played out of turn.": "L'échange d'Oscar peut être joué hors tour.",
   "Oscar's Swap can be used out of turn in that same window.":
-    "Oscar's Swap peut être utilisé hors tour dans cette même fenêtre.",
+    "L'échange d'Oscar peut être utilisé hors tour dans cette même fenêtre.",
   "Password reset. Save your new recovery code.":
     "Mot de passe réinitialisé. Sauvegardez votre nouveau code de récupération.",
   "Play a 7 to swap with the next player. Play a 0 and every hand rotates.":
@@ -582,8 +584,8 @@ const FR: Record<string, string> = {
   "Remove {name}": "Retirer {name}",
   "Reset password": "Réinitialiser le mot de passe",
   "Room code: {code}": "Code de la table : {code}",
-  "Rounds with real opponents pay coins and XP. Winning pays more, but every human seat earns something. Bot-only tables are practice and pay nothing. Levels auto-unlock card backs, tables and name effects. Achievements unlock the loud stuff. Everything you equip is visible to the table — including the win animation when you take the round.":
-    "Les manches avec de vrais adversaires rapportent des pièces et de l'XP. Gagner rapporte plus, mais chaque siège humain gagne quelque chose. Les tables uniquement composées de bots sont de l'entraînement et ne rapportent rien. Les niveaux débloquent automatiquement des dos de cartes, des tables et des effets de nom. Les succès débloquent le reste. Tout ce que vous équipez est visible à la table — y compris l'animation de victoire quand vous remportez la manche.",
+  "Rounds with real opponents pay coins and XP. Winning pays more, but every registered human seat earns something. Bot-only tables are practice and pay nothing. Levels auto-unlock card backs, tables and name effects. Achievements unlock the loud stuff. Everything you equip is visible to the table — including the win animation when you take the round.":
+    "Les manches avec de vrais adversaires rapportent des pièces et de l'XP. Gagner rapporte plus, mais chaque siège de joueur inscrit gagne quelque chose. Les tables uniquement composées de bots sont de l'entraînement et ne rapportent rien. Les niveaux débloquent automatiquement des dos de cartes, des tables et des effets de nom. Les succès débloquent le reste. Tout ce que vous équipez est visible à la table — y compris l'animation de victoire quand vous remportez la manche.",
   "STACKED": "EMPILÉS",
   "Same card only, mixed (+2 onto +4 and back), or off entirely.":
     "Même carte uniquement, mixte (+2 sur +4 et inversement), ou totalement désactivé.",
@@ -597,7 +599,7 @@ const FR: Record<string, string> = {
   "Someone": "Quelqu'un",
   "Stack the pain": "Empilez la douleur",
   "Stacked is a fast colour-matching card game with dirty tricks: draw stacks, jump-ins, hand swaps and a seven-zero rule for the brave. Every table can turn the sharp edges on or off before the deal.":
-    "Stacked est un jeu de cartes rapide où l'on suit la couleur, avec des coups bas : piles de pioche, sauts dans le tour, échanges de mains et une règle sept-zéro pour les courageux. Chaque table peut activer ou non les angles agressifs avant la distribution.",
+    "Stacked est un jeu de cartes rapide où l'on suit la couleur, avec des coups bas : piles de pioche, interventions hors tour, échanges de mains et une règle sept-zéro pour les courageux. Chaque table peut activer ou non les angles agressifs avant la distribution.",
   "Stacking.": "Empilement.",
   "Still offline.": "Toujours hors ligne.",
   "Stored as a hash on the server. Not even the house can read it.":
@@ -637,19 +639,19 @@ const FR: Record<string, string> = {
   "You and two bots. Learn the stacking rules without the embarrassment.":
     "Vous et deux bots. Apprenez les règles d'empilement sans la honte.",
   "You are jumping the queue. Pick a victim and a colour before the window closes.":
-    "Vous doublez la file. Choisissez une victime et une couleur avant la fermeture de la fenêtre.",
+    "Vous intervenez hors tour. Choisissez une victime et une couleur avant la fermeture de la fenêtre.",
   "You can only play the card you drew, or pass.":
     "Vous ne pouvez jouer que la carte piochée, ou passer.",
   "You signed out.": "Vous êtes déconnecté.",
   "You're in, {name}.": "C'est bon, {name}.",
   "You": "Vous",
   "Your new recovery code.": "Votre nouveau code de récupération.",
-  "a Wild Draw Four": "un Wild Draw Four",
-  "a Wild Eight": "un Wild Eight",
+  "a Wild Draw Four": "un Joker +4",
+  "a Wild Eight": "un Joker +8",
   "a card": "une carte",
   "a turn": "un tour",
   "coins": "pièces",
-  "deck.": "deck.",
+  "deck.": "paquet.",
   "e.g. lucky ace": "ex. lucky ace",
   "fill with bot": "remplir avec un bot",
   "four colours + wilds": "quatre couleurs + jokers",
@@ -678,8 +680,8 @@ const FR: Record<string, string> = {
   "someone": "quelqu'un",
   "stacking": "empilement",
   "takes it.": "l'emporte.",
-  "the deck": "le deck",
-  "the wall": "le mur",
+  "the deck": "le paquet",
+  "the wall": "le classement",
   "turn timer": "minuteur",
   "waiting": "en attente",
   "you": "vous",
@@ -709,7 +711,7 @@ const FR: Record<string, string> = {
   // ── cosmetic names ───────────────────────────────────────────────────────
   Midnight: "Minuit",
   "The house deck. Quiet, sharp, always in style.":
-    "Le deck de la maison. Sobre, affûté, toujours à la mode.",
+    "Le paquet de la maison. Sobre, affûté, toujours à la mode.",
   Ember: "Braise",
   "Slow-burning orange with a hot core.": "Un orange qui couve, avec un cœur brûlant.",
   Jade: "Jade",
@@ -721,16 +723,16 @@ const FR: Record<string, string> = {
   "Polar light caught under glass. Reaches level 6.":
     "Une lumière polaire sous verre. Atteint le niveau 6.",
   Holographic: "Holographique",
-  "Ten wins. The foil does the talking.": "Dix victoires. Le foil fait le reste.",
+  "Ten wins. The foil does the talking.": "Dix victoires. La dorure fait le reste.",
   Blossom: "Floraison",
   "Ink-washed petals for players who like a soft table.":
     "Des pétales à l'encre pour ceux qui aiment une table douce.",
-  "Prism Foil": "Foil Prisme",
+  "Prism Foil": "Reflet prismatique",
   "Owner only. A full spectrum folded into the deck.":
-    "Réservé à l'owner. Un spectre entier plié dans le deck.",
+    "Réservé au propriétaire. Un spectre entier plié dans le paquet.",
   Vanguard: "Avant-garde",
   "Beta tester only. The very first deck ever shuffled. It still hums.":
-    "Réservé aux beta testeurs. Le tout premier deck jamais mélangé. Il vibre encore.",
+    "Réservé aux testeurs bêta. Le tout premier paquet jamais mélangé. Il vibre encore.",
   Noir: "Noir",
   "Black felt, warm spotlight, no distractions.":
     "Feutre noir, lumière chaude, aucune distraction.",
@@ -748,12 +750,12 @@ const FR: Record<string, string> = {
     "Vingt-cinq parties jouées. Vous avez mérité la moquette.",
   Frost: "Givre",
   "A table that bites back.": "Une table qui mord en retour.",
-  "The Owner's Box": "La loge de l'owner",
+  "The Owner's Box": "La loge du propriétaire",
   "Owner only. The felt itself refuses to pick one colour.":
-    "Réservé à l'owner. Le feutre refuse lui-même de choisir une couleur.",
+    "Réservé au propriétaire. Le feutre refuse lui-même de choisir une couleur.",
   "The Lab": "Le Labo",
   "Beta tester only. Where the deck was broken in. The grid never quite switches off.":
-    "Réservé aux beta testeurs. Là où le deck a été rodé. La grille ne s'éteint jamais vraiment.",
+    "Réservé aux testeurs bêta. Là où le paquet a été rodé. La grille ne s'éteint jamais vraiment.",
   Rook: "Tour",
   "A straight edge and a steady hand.": "Une ligne droite et une main sûre.",
   Comet: "Comète",
@@ -773,10 +775,10 @@ const FR: Record<string, string> = {
   "A five-win streak keeps it lit.": "Une série de cinq victoires le garde allumé.",
   "The Ace": "L'As",
   "Owner only. The house always has one more card.":
-    "Réservé à l'owner. La maison a toujours une carte de plus.",
+    "Réservé au propriétaire. La maison a toujours une carte de plus.",
   "The Flask": "Le Flacon",
   "Beta tester only. Every rule was tested in here first.":
-    "Réservé aux beta testeurs. Chaque règle a d'abord été testée ici.",
+    "Réservé aux testeurs bêta. Chaque règle a d'abord été testée ici.",
   Plain: "Simple",
   "Just your name. Confident enough.": "Juste votre nom. Amplement suffisant.",
   Shimmer: "Scintillement",
@@ -792,10 +794,10 @@ const FR: Record<string, string> = {
   "Cold letters that smoke when you win.": "Des lettres froides qui fument quand vous gagnez.",
   Spectrum: "Spectre",
   "Owner only. Every colour, all at once, forever.":
-    "Réservé à l'owner. Toutes les couleurs, d'un coup, pour toujours.",
+    "Réservé au propriétaire. Toutes les couleurs, d'un coup, pour toujours.",
   Founder: "Fondateur",
   "Beta tester only. A signature from before the game had a name.":
-    "Réservé aux beta testeurs. Une signature d'avant que le jeu ait un nom.",
+    "Réservé aux testeurs bêta. Une signature d'avant que le jeu ait un nom.",
   "Clean Finish": "Fin propre",
   "No fireworks. Just the win.": "Pas de feux d'artifice. Juste la victoire.",
   Confetti: "Confettis",
@@ -810,10 +812,10 @@ const FR: Record<string, string> = {
   "Twenty-five wins. Bring sunglasses.": "Vingt-cinq victoires. Prenez des lunettes de soleil.",
   "Prism Burst": "Explosion prismatique",
   "Owner only. A rainbow detonates over the table.":
-    "Réservé à l'owner. Un arc-en-ciel explose au-dessus de la table.",
+    "Réservé au propriétaire. Un arc-en-ciel explose au-dessus de la table.",
   "Beta Burst": "Explosion beta",
   "Beta tester only. The build is stable. The table is not.":
-    "Réservé aux beta testeurs. Le build est stable. La table ne l'est pas.",
+    "Réservé aux testeurs bêta. Le build est stable. La table ne l'est pas.",
 
   // ── quick chat packs ────────────────────────────────────────────────────
   Essentials: "Essentiels",
@@ -823,7 +825,7 @@ const FR: Record<string, string> = {
   "Kind words for a mean little game.": "Des mots gentils pour un jeu pas très gentil.",
   "Trash Talk": "Chambrage",
   "Playful jabs. Keep it friendly.": "Des piques pour rire. On reste sympa.",
-  "Table Talk": "Parlons table",
+  "Table Talk": "Discussion de table",
   "Strategy, shortcuts and warnings.": "Stratégie, raccourcis et avertissements.",
   "Chaos Gremlin": "Gremlin du chaos",
   "For when the plan is vibes.": "Quand le plan, c'est l'ambiance.",
@@ -835,10 +837,10 @@ const FR: Record<string, string> = {
   "Celebrate like you meant it.": "Célébrez comme si vous l'aviez fait exprès.",
   "The House": "La Maison",
   "Owner only. The table knows who runs it.":
-    "Réservé à l'owner. La table sait qui commande.",
+    "Réservé au propriétaire. La table sait qui commande.",
   "Beta Lab": "Labo beta",
   "Beta tester only. You were here before the launch.":
-    "Réservé aux beta testeurs. Vous étiez là avant le lancement.",
+    "Réservé aux testeurs bêta. Vous étiez là avant le lancement.",
   "Nice one.": "Bien joué.",
   "Good game.": "Bonne partie.",
   "Oops.": "Oups.",
@@ -873,7 +875,7 @@ const FR: Record<string, string> = {
   "This is fine.": "Tout va bien.",
   "Chaos wins.": "Le chaos gagne.",
   "I meant to do that.": "C'était prévu.",
-  "The deck is rigged.": "Le deck est truqué.",
+  "The deck is rigged.": "Le paquet est truqué.",
   "Trust the process.": "Fais confiance au processus.",
   "Absolutely not.": "Certainement pas.",
   "Interesting…": "Intéressant…",
@@ -923,13 +925,13 @@ const FR: Record<string, string> = {
 
   // ── friends ──────────────────────────────────────────────────────────────
   Friends: "Amis",
-  "Your people": "Votre monde",
+  "Your people": "Votre cercle",
   "See who is online, what they are playing, and pull them into your lobby.":
-    "Voyez qui est en ligne, à quoi ils jouent, et attirez-les dans votre lobby.",
-  "Friends need an account.": "Les amis, c'est pour les comptes.",
+    "Voyez qui est en ligne, à quoi ils jouent, et faites-les entrer dans votre salon.",
+  "Friends need an account.": "Il faut un compte pour avoir des amis.",
   "Create a free account to keep a friend list, see who is online and invite them to your table.":
     "Créez un compte gratuit pour garder une liste d'amis, voir qui est en ligne et les inviter à votre table.",
-  "Lobby {code}": "Lobby {code}",
+  "Lobby {code}": "Salon {code}",
   "Search by username": "Rechercher par pseudo",
   "Search results": "Résultats",
   "No players found.": "Aucun joueur trouvé.",
@@ -942,10 +944,10 @@ const FR: Record<string, string> = {
   "{n} friends": "{n} amis",
   "{n} friend": "{n} ami",
   "In game · {n}/{max}": "En partie · {n}/{max}",
-  "In lobby · {n}/{max}": "Dans le lobby · {n}/{max}",
+  "In lobby · {n}/{max}": "Dans le salon · {n}/{max}",
   Online: "En ligne",
   Offline: "Hors ligne",
-  beta: "beta",
+  beta: "bêta",
   "Add friend": "Ajouter",
   Requested: "Demandée",
   Pending: "En attente",
@@ -955,7 +957,7 @@ const FR: Record<string, string> = {
   Block: "Bloquer",
   "Remove friend": "Retirer l'ami",
   "Open a lobby as host to invite friends to your table.":
-    "Ouvrez un lobby en tant qu'hôte pour inviter vos amis à votre table.",
+    "Ouvrez un salon en tant qu'hôte pour inviter vos amis à votre table.",
   "Friend request sent.": "Demande d'ami envoyée.",
   "Friend added.": "Ami ajouté.",
   "Friend removed.": "Ami retiré.",
@@ -982,12 +984,12 @@ const FR: Record<string, string> = {
   "Win twenty-five rounds.": "Gagnez vingt-cinq manches.",
   Regular: "Habitué",
   "Play ten games.": "Jouez dix parties.",
-  Fixtures: "Meuble du salon",
+  Fixtures: "Fidèle au poste",
   "Play twenty-five games.": "Jouez vingt-cinq parties.",
   "Part of the furniture": "Fait partie des meubles",
   "Play fifty games.": "Jouez cinquante parties.",
-  Sniper: "Sniper",
-  "Jump in on ten plays.": "Sautez dans le tour dix fois.",
+  Sniper: "Tireur d'élite",
+  "Jump in on ten plays.": "Intervenez hors tour dix fois.",
   "The stack": "La pile",
   "Stack ten draw cards.": "Empilez dix cartes pioche.",
   "Dealer's hand": "Main du croupier",
@@ -1049,7 +1051,7 @@ const ERROR_FR: Record<string, string> = {
   server_error: "Quelque chose s'est mal passé. Réessayez.",
   rate_limited: "Trop de tentatives. Attendez une minute.",
   sign_in_required: "Connectez-vous pour faire ça.",
-  owner_only: "Réservé à l'owner.",
+  owner_only: "Réservé au propriétaire.",
   invalid_login: "Ce nom d'utilisateur ou ce mot de passe n'est pas bon.",
   invalid_recovery: "Ce nom d'utilisateur ou ce code de récupération n'est pas bon.",
   invalid_password: "Ce mot de passe n'est pas bon.",
@@ -1071,12 +1073,12 @@ const ERROR_FR: Record<string, string> = {
   request_pending: "Demande déjà envoyée.",
   request_not_found: "Cette demande n'existe plus.",
   not_friends: "Vous ne pouvez inviter que vos amis.",
-  not_hosting: "Ouvrez d'abord un lobby en tant qu'hôte.",
+  not_hosting: "Ouvrez d'abord un salon en tant qu'hôte.",
   friend_offline: "Cet ami est hors ligne.",
   banned: "Ce compte est banni.",
   cannot_ban_self: "Vous ne pouvez pas vous bannir vous-même.",
-  cannot_ban_owner: "Retirez d'abord le statut owner.",
-  cannot_change_own_owner: "Vous ne pouvez pas changer votre propre statut owner ici.",
+  cannot_ban_owner: "Retirez d'abord le statut de propriétaire.",
+  cannot_change_own_owner: "Vous ne pouvez pas changer votre propre statut de propriétaire ici.",
   nothing_to_grant: "Choisissez au moins un cheat.",
   not_found: "Ce compte n'existe pas.",
   not_your_turn: "Attendez votre tour.",
@@ -1084,7 +1086,7 @@ const ERROR_FR: Record<string, string> = {
   drawn_card: "Jouez ou passez la carte piochée d'abord.",
   not_in_hand: "Cette carte n'est pas dans votre main.",
   slow_down: "Doucement, une action à la fois.",
-  bad_request: "Action owner inconnue.",
+  bad_request: "Action propriétaire inconnue.",
   must_play_drawn: "Vous ne pouvez jouer que la carte piochée.",
   not_playable: "Cette carte ne correspond pas.",
   color_required: "Choisissez une couleur d'abord.",
@@ -1094,9 +1096,9 @@ const ERROR_FR: Record<string, string> = {
   already_drew: "Vous avez déjà pioché ce tour.",
   nothing_to_pass: "Piochez une carte avant de passer.",
   pending_draw: "Résolvez d'abord la pile de pioche.",
-  jump_window: "Vous avez été trop lent à sauter dans le tour.",
-  jump_mismatch: "Vous ne pouvez sauter qu'avec la carte exactement identique.",
-  jump_disabled: "Le saut dans le tour est désactivé dans cette table.",
+  jump_window: "Vous avez été trop lent à intervenir hors tour.",
+  jump_mismatch: "Vous ne pouvez intervenir qu'avec une carte exactement identique.",
+  jump_disabled: "L'intervention hors tour est désactivée à cette table.",
   your_turn: "C'est déjà votre tour.",
   game_over: "Cette manche est déjà terminée.",
   not_seated: "Vous n'êtes pas dans cette partie.",
@@ -1145,8 +1147,8 @@ export function translateError(code: string | undefined, fallback: string): stri
 const MESSAGE_FR: Record<string, string> = {
   "No open tables right now — we opened a fresh one for you.":
     "Aucune table ouverte — on vous en a ouvert une nouvelle.",
-  "You were removed by the owner.": "Vous avez été retiré par l'owner.",
-  "This account has been banned by the owner.": "Ce compte a été banni par l'owner.",
+  "You were removed by the owner.": "Vous avez été retiré par le propriétaire.",
+  "This account has been banned by the owner.": "Ce compte a été banni par le propriétaire.",
   "This account is banned.": "Ce compte est banni.",
   "You left the table.": "Vous avez quitté la table.",
   "Lost connection to the table.": "Connexion perdue avec la table.",

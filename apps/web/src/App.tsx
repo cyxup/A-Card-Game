@@ -1,4 +1,4 @@
-import { AnimatePresence, MotionConfig, motion } from "motion/react";
+import { MotionConfig } from "motion/react";
 import { Suspense, lazy, useEffect } from "react";
 import { Route, Switch, useLocation } from "wouter";
 import { GuestPrompt } from "@/components/auth/guest-prompt";
@@ -7,7 +7,6 @@ import { Footer, Nav } from "@/components/layout/nav";
 import { Spinner } from "@/components/ui/spinner";
 import { Toaster } from "@/components/ui/toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { easeOutExpo } from "@/lib/motion";
 import { usePrefs } from "@/lib/prefs";
 import { SessionProvider } from "@/lib/session";
 import { playSound, primeAudio } from "@/lib/sound";
@@ -75,30 +74,21 @@ export default function App() {
             {!inRoom && <Nav />}
             <main id="main" className="relative z-10 flex-1">
               <Suspense fallback={<PageLoader />}>
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={location}
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8, transition: { duration: 0.35, ease: easeOutExpo } }}
-                    transition={{ duration: 0.65, ease: easeOutExpo }}
-                    className="min-h-full"
-                  >
-                    <Switch>
-                      <Route path="/" component={HomePage} />
-                      <Route path="/play" component={PlayPage} />
-                      <Route path="/room/:code" component={RoomPage} />
-                      <Route path="/login" component={LoginPage} />
-                      <Route path="/signup" component={SignupPage} />
-                      <Route path="/profile" component={ProfilePage} />
-                      <Route path="/friends" component={FriendsPage} />
-                      <Route path="/admin" component={AdminPage} />
-                      <Route path="/leaderboard" component={LeaderboardPage} />
-                      <Route path="/rules" component={RulesPage} />
-                      <Route component={NotFoundPage} />
-                    </Switch>
-                  </motion.div>
-                </AnimatePresence>
+                <div key={location} className="min-h-full">
+                  <Switch>
+                    <Route path="/" component={HomePage} />
+                    <Route path="/play" component={PlayPage} />
+                    <Route path="/room/:code" component={RoomPage} />
+                    <Route path="/login" component={LoginPage} />
+                    <Route path="/signup" component={SignupPage} />
+                    <Route path="/profile" component={ProfilePage} />
+                    <Route path="/friends" component={FriendsPage} />
+                    <Route path="/admin" component={AdminPage} />
+                    <Route path="/leaderboard" component={LeaderboardPage} />
+                    <Route path="/rules" component={RulesPage} />
+                    <Route component={NotFoundPage} />
+                  </Switch>
+                </div>
               </Suspense>
             </main>
             {!inRoom && <Footer />}

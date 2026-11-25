@@ -171,7 +171,7 @@ export default function PlayPage() {
 
       {session?.kind === "guest" && (
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-warning/25 bg-warning/[0.06] px-4 py-3 text-xs text-warning">
-          <span>{t("You're playing as a guest. Coins, XP and cosmetics won't be saved.")}</span>
+          <span>{t("You're playing as a guest. Guests don't earn XP or coins.")}</span>
           <Link href="/signup" className="font-medium underline underline-offset-4">
             {t("Create an account")}
           </Link>

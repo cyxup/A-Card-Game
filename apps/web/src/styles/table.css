@@ -743,6 +743,36 @@
   flex: 0 0 auto;
 }
 
+.color-live-label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.95);
+}
+
+.color-live-label .turn-color-dot {
+  width: 9px;
+  height: 9px;
+}
+
+.color-live-ring {
+  position: absolute;
+  left: -4px;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  translate: 0 -50%;
+  border: 2px solid;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
 .turn-status {
   position: relative;
   z-index: 12;

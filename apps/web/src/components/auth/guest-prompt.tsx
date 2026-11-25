@@ -78,7 +78,7 @@ export function GuestPrompt() {
         <DialogHeader>
           <DialogTitle className="text-xl tracking-[-0.03em]">{t("What should we call you?")}</DialogTitle>
           <DialogDescription>
-            {t("Guests can sit at any table. Coins, levels and cosmetics only stick around on an account.")}
+            {t("Guests can sit at normal tables. XP, coins and cosmetics stay on an account.")}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="flex flex-col gap-4">

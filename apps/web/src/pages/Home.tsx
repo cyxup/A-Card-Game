@@ -151,7 +151,7 @@ export default function HomePage() {
               </>
             ) : (
               <>
-                {t("No account needed. Sign up to keep your coins.")}
+                {t("No account needed to play. Sign up to earn XP and coins.")}
               </>
             )}
           </p>
@@ -187,7 +187,7 @@ export default function HomePage() {
       </section>
 
       <section className="grid grid-cols-2 gap-6 border-y border-white/8 py-6 sm:grid-cols-4">
-        <Stat label={t("PLAYERS")} value={stats ? compactNumber(stats.players) : "—"} />
+        <Stat label={t("REGISTERED PLAYERS")} value={stats ? compactNumber(stats.players) : "—"} />
         <Stat label={t("ONLINE NOW")} value={stats ? String(stats.online) : "—"} />
         <Stat label={t("OPEN TABLES")} value={stats ? String(stats.rooms) : "—"} />
         <Stat label={t("ROUNDS PLAYED")} value={stats ? compactNumber(stats.matches) : "—"} />

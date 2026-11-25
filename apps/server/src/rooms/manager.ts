@@ -925,6 +925,12 @@ export class RoomManager {
               cardsPlayed: seat.stats.cardsPlayed,
               jumps: seat.stats.jumps,
             });
+        // Guests have no profile to bank progress into. Do not show them fake
+        // coins or XP they would lose the moment the session ends.
+        if (!seat.userId && !seat.isBot) {
+          rewards.coins = 0;
+          rewards.xp = 0;
+        }
         // Wager tables pay the pot instead of the normal coin reward.
         const coinDelta =
           wager > 0

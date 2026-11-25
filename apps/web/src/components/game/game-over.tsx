@@ -119,7 +119,16 @@ export function GameOverDialog({
           </p>
         ) : null}
 
-        {rewards?.unranked ? (
+        {session?.kind === "guest" ? (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-warning/25 bg-warning/[0.06] px-3 py-2.5 text-xs text-warning">
+            <span>{t("Guests don't earn XP or coins. Create an account to progress.")}</span>
+            <Link href="/signup">
+              <Button variant="brand" size="xs">
+                {t("Create an account")} <ArrowRight />
+              </Button>
+            </Link>
+          </div>
+        ) : rewards?.unranked ? (
           <div className="flex items-start gap-3 rounded-xl border border-info/25 bg-info/[0.06] px-4 py-3">
             <Bot className="mt-0.5 size-4 shrink-0 text-info" />
             <div className="text-xs">
@@ -156,15 +165,6 @@ export function GameOverDialog({
               <p className="text-[11px] text-muted-foreground">
                 {t("Saved to {name}. Coins and XP are already in your profile.", { name: me?.name ?? "" })}
               </p>
-            ) : session?.kind === "guest" ? (
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-warning/25 bg-warning/[0.06] px-3 py-2.5 text-xs text-warning">
-                <span>{t("Guest progress isn't saved.")}</span>
-                <Link href="/signup">
-                  <Button variant="brand" size="xs">
-                    {t("Create an account")} <ArrowRight />
-                  </Button>
-                </Link>
-              </div>
             ) : (
               <p className="text-[11px] text-warning">
                 {t("The round ended, but rewards could not be saved. They will be waiting next time.")}
