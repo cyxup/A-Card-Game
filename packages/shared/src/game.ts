@@ -19,7 +19,7 @@ export interface GameRules {
   /** off: draw cards resolve instantly. same: only the same card stacks. mixed: +2 and +4 stack on each other. */
   stacking: Stacking;
   jumpIn: boolean;
-  /** Oscar's Swap can be played out of turn, Blazing 8s style. */
+  /** Oscar's Swap can be played out of turn. */
   swapAnytime: boolean;
   /** House rule: 7 swaps hands with the next player, 0 rotates every hand. */
   sevenZero: boolean;

@@ -14,7 +14,7 @@ export const COLOR_META: Record<Color, { label: string; className: string; hex: 
 };
 
 /**
- * UNO-style colour call rendered on the table itself: four swatches around the
+ * Colour call rendered on the table itself: four swatches around the card that
  * card that is being played. No dialog, nothing that covers the table.
  */
 export function TableColorPicker({

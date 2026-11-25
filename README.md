@@ -1,6 +1,7 @@
 # Stacked
 
-A fast, chaotic card game: **UNO's colour matching** with **Blazing 8s' dirty tricks**.
+A fast, chaotic card game: match colours or numbers, stack draw cards, jump in out of turn,
+and steal hands with Oscar's Swap.
 Match colours, stack draw cards, jump in out of turn, steal hands with Oscar's Swap, and be
 the first to go empty. 2–8 players, humans and bots, guests welcome.
 
@@ -13,10 +14,11 @@ room; accounts, cosmetics and match results live in PostgreSQL.
 ## What's in the box
 
 - **Playable multiplayer** — public matchmaking, private tables with 5-letter codes, practice vs bots.
-- **The full hybrid ruleset** — UNO deck + Blazing 8s cards (Giddy Up, Wrong Way, Quick Draw, Wild Eight, Oscar's Swap).
+- **The full hybrid ruleset** — colour matching plus the house action cards (Giddy Up, Wrong Way, Quick Draw, Wild Eight, Oscar's Swap).
 - **Host-configurable table rules** — stacking modes, jump-ins, swap-anytime, seven-zero, draw-until-playable, turn timer, seats, starting hand.
 - **Owner console** — database-gated `is_owner` accounts get a private `/admin` page: ban/unban, kick, grant beta access, give coins/XP, unlock every cosmetic, and an audit log. Owner-only and beta-tester cosmetics stay invisible to everyone else.
 - **Animation previews** — every win effect can be replayed in a mini-table preview from the collection. The owner-only one detonates the whole table.
+- **Share cards** — the main link and every `/room/:code` invite get a 1200×630 preview; invites show the host, table code and seat count.
 - **English / French** — a persistent language toggle in the nav and profile, with a full French catalogue and French game feed.
 - **Accounts and guests** — scrypt password hashing, opaque httpOnly session cookies, rate limits, guest sessions that can be upgraded, and one-time recovery codes for password resets.
 - **Progression** — XP, levels, coins, match rewards, achievements. Starter cosmetics no longer count toward collection achievements.

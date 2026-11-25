@@ -6,7 +6,7 @@ import { spring } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 /**
- * The opponent's hand, UNO-style: a tiny fan of card backs and a count.
+ * The opponent's hand: a tiny fan of card backs and a count.
  * Cards animate in/out when the server says their hand changed.
  */
 export function OpponentHand({

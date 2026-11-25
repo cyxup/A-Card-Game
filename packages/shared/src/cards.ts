@@ -49,7 +49,7 @@ export function isWild(card: Card): boolean {
   return card.kind === "wild" || card.kind === "wild4" || card.kind === "swap";
 }
 
-/** Standard UNO-shaped 112 card deck with the Blazing 8s cards folded in. */
+/** Standard 112-card deck with the house action cards folded in. */
 export function buildDeck(): Card[] {
   const cards: Card[] = [];
   let n = 0;

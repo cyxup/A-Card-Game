@@ -1,5 +1,5 @@
 import path from "node:path";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import compress from "@fastify/compress";
 import cookie from "@fastify/cookie";
 import fastifyStatic from "@fastify/static";
@@ -11,6 +11,7 @@ import { allowedOrigins, env, isProd } from "./env.js";
 import { ApiError } from "./lib/http.js";
 import { registerRealtime } from "./realtime.js";
 import { rooms } from "./rooms/manager.js";
+import { mainShareMeta, missingRoomShareMeta, renderShareHtml, roomShareMeta } from "./share.js";
 import { accountRoutes } from "./routes/account.js";
 import { adminRoutes } from "./routes/admin.js";
 import { authRoutes } from "./routes/auth.js";
@@ -88,7 +89,9 @@ async function build(): Promise<ReturnType<typeof Fastify>> {
   await registerRealtime(app);
 
   const webDist = path.resolve(env.WEB_DIST);
-  const hasWeb = existsSync(path.join(webDist, "index.html"));
+  const indexPath = path.join(webDist, "index.html");
+  const hasWeb = existsSync(indexPath);
+  const indexHtml = hasWeb ? readFileSync(indexPath, "utf8") : null;
 
   if (hasWeb) {
     await app.register(fastifyStatic, {
@@ -103,6 +106,48 @@ async function build(): Promise<ReturnType<typeof Fastify>> {
           res.setHeader("cache-control", "public, max-age=3600");
         }
       },
+    });
+  }
+
+  /**
+   * Social scrapers never execute the SPA. Serve rewritten HTML for the main
+   * page and for invite links so the preview knows who invited you.
+   */
+  if (indexHtml) {
+    const originOf = (request: { protocol: string; host: string }): string => {
+      const configured = env.APP_ORIGIN.split(",")[0]?.trim().replace(/\/$/, "");
+      if (configured && !/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(configured)) {
+        return configured;
+      }
+      return `${request.protocol}://${request.host}`;
+    };
+
+    app.get("/", async (request, reply) => {
+      reply.header("cache-control", "no-store");
+      reply.type("text/html; charset=utf-8");
+      return renderShareHtml(indexHtml, mainShareMeta(originOf(request)));
+    });
+
+    app.get("/room/:code", async (request, reply) => {
+      const raw = String((request.params as { code?: string }).code ?? "").toUpperCase();
+      const code = raw.replace(/[^A-Z0-9]/g, "").slice(0, 8) || "?????";
+      const room = rooms.getRoom(code);
+      const meta = room
+        ? roomShareMeta(
+            {
+              code: room.code,
+              hostName: room.host()?.name ?? null,
+              players: room.seats.length,
+              maxPlayers: room.rules.maxPlayers,
+              turnSeconds: room.rules.turnSeconds,
+              phase: room.phase,
+            },
+            originOf(request),
+          )
+        : missingRoomShareMeta(originOf(request), code);
+      reply.header("cache-control", "no-store");
+      reply.type("text/html; charset=utf-8");
+      return renderShareHtml(indexHtml, meta);
     });
   }
 
