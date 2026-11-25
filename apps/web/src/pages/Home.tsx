@@ -105,7 +105,7 @@ export default function HomePage() {
           </h1>
 
           <p className="max-w-[46ch] text-[15px] leading-relaxed text-muted-foreground sm:text-base">
-            {t("UNO's colour-matching chaos with Blazing 8s' dirty tricks. Stack draw cards, jump in out of turn, steal a hand with Oscar's Swap and be the first to go empty.")}
+            {t("A fast, mean little card game. Match the colour or the number, stack the draws, jump in out of turn and empty your hand before the rest of the table.")}
           </p>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -264,9 +264,9 @@ export default function HomePage() {
         <div>
           <p className="eyebrow mb-3">{t("house rules")}</p>
           <h2 className="text-2xl font-semibold tracking-[-0.04em] sm:text-4xl">
-            {t("The polite part of UNO.")}
+            {t("The easy part.")}
             <br />
-            <span className="text-muted-foreground">{t("Then the Blazing 8s part.")}</span>
+            <span className="text-muted-foreground">{t("Then the dirty part.")}</span>
           </h2>
           <p className="mt-4 max-w-[48ch] text-sm leading-relaxed text-muted-foreground">
             {t("Every table can toggle the sharp edges: stacking, jump-ins, Oscar's Swap from anywhere, and the seven-zero hand swap. Hosts set it, everyone sees it before the first card lands.")}

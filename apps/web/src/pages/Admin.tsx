@@ -15,6 +15,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
+import { Link } from "wouter";
 import { Avatar } from "@/components/brand/avatar";
 import { NameEffect } from "@/components/brand/name-effect";
 import { Badge } from "@/components/ui/badge";
@@ -122,10 +123,10 @@ export default function AdminPage() {
       <div className="grid min-h-[70vh] place-items-center px-4">
         <div className="panel max-w-md rounded-2xl p-8 text-center">
           <Shield className="mx-auto mb-4 size-7 text-brand" />
-          <h1 className="text-2xl font-semibold tracking-[-0.04em]">{t("Owner only.")}</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {t("This console is reserved for accounts with the owner flag enabled in the database.")}
-          </p>
+          <h1 className="text-2xl font-semibold tracking-[-0.04em]">{t("Access denied.")}</h1>
+          <Link href="/play" className="mt-5 inline-flex">
+            <Button variant="brand">{t("Back to the tables")}</Button>
+          </Link>
         </div>
       </div>
     );

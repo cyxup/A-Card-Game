@@ -598,7 +598,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
         className="game-stage"
         initial={{ opacity: 0, scale: 0.985 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, ease: easeOutExpo }}
+        transition={{ duration: 0.7, ease: easeOutExpo }}
       >
         <div className={cn("table-surface table-surface-live", `felt-${tableId}`)}>
           <div className="table-atmosphere" aria-hidden>

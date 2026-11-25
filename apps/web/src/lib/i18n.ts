@@ -33,8 +33,10 @@ const FR: Record<string, string> = {
   "HAND.": "MAIN.",
   "STACK THE": "EMPILEZ LE",
   "DECK.": "DECK.",
-  "UNO's colour-matching chaos with Blazing 8s' dirty tricks. Stack draw cards, jump in out of turn, steal a hand with Oscar's Swap and be the first to go empty.":
-    "Le chaos du UNO et les sales coups de Blazing 8s. Empilez les cartes pioche, sautez dans le tour, volez une main avec Oscar's Swap et soyez le premier à vider la vôtre.",
+  "A fast, mean little card game. Match the colour or the number, stack the draws, jump in out of turn and empty your hand before the rest of the table.":
+    "Un jeu de cartes rapide et méchant. Suivez la couleur ou le nombre, empilez les pioches, sautez dans le tour et videz votre main avant le reste de la table.",
+  "The easy part.": "La partie facile.",
+  "Then the dirty part.": "Puis la partie sale.",
   "Play now": "Jouer maintenant",
   "Create a table": "Créer une table",
   Practice: "Entraînement",
@@ -71,7 +73,6 @@ const FR: Record<string, string> = {
   "Levels unlock card backs and tables. Achievements unlock the loud ones. Coins buy the rest — and every effect is visible to the people you beat.":
     "Les niveaux débloquent des dos de cartes et des tables. Les succès débloquent les plus bruyants. Les pièces achètent le reste — et chaque effet est visible par ceux que vous battez.",
   "Start collecting": "Commencer la collection",
-  "UNO + Blazing 8s": "UNO + Blazing 8s",
   "A hybrid card game for people who talk trash.":
     "Un jeu de cartes hybride pour ceux qui chambrent.",
   // card chips / hero
@@ -121,8 +122,8 @@ const FR: Record<string, string> = {
   "Play an exact duplicate out of turn for five seconds after a card lands.":
     "Jouez une copie exacte hors tour pendant cinq secondes après qu'une carte tombe.",
   "Oscar's Swap anytime": "Oscar's Swap à tout moment",
-  "Swap hands out of turn. Cruel, faithful to Blazing 8s.":
-    "Échangez les mains hors tour. Cruel, fidèle à Blazing 8s.",
+  "Swap hands out of turn. Cruel, and completely legal here.":
+    "Échangez les mains hors tour. Cruel, et parfaitement légal ici.",
   "Seven-zero": "Sept-zéro",
   "7 swaps with the next player. 0 rotates all hands.":
     "Un 7 échange avec le joueur suivant. Un 0 fait tourner toutes les mains.",
@@ -156,7 +157,7 @@ const FR: Record<string, string> = {
   "{n}/{max} players": "{n}/{max} joueurs",
   "Nobody's waiting right now.": "Personne n'attend pour le moment.",
   "Be the one who opens a table.": "Soyez celui qui ouvre une table.",
-  "Create one": "En créer une",
+  "Create one": "Créez-en un",
 
   // ── auth ─────────────────────────────────────────────────────────────────
   "make it permanent": "rendez-le permanent",
@@ -366,6 +367,8 @@ const FR: Record<string, string> = {
     "Vous jouez en tant que {name}. Créez un compte pour garder niveaux, pièces et cosmétiques.",
   "Sign in or create an account to build a collection.":
     "Connectez-vous ou créez un compte pour bâtir une collection.",
+  "Access denied.": "Accès refusé.",
+  "You don't have access to this page.": "Vous n'avez pas accès à cette page.",
   "Back to the tables": "Retour aux tables",
   "Could not load your profile.": "Impossible de charger votre profil.",
   "{name} equipped.": "{name} équipé.",
@@ -550,8 +553,8 @@ const FR: Record<string, string> = {
     "Connecté en tant que {name} · pièces et niveaux sauvegardés automatiquement.",
   "Someone": "Quelqu'un",
   "Stack the pain": "Empilez la douleur",
-  "Stacked is UNO's colour matching with Blazing 8s' dirty tricks: draw stacks, jump-ins, hand swaps and a seven-zero rule for the brave. Every table can turn the sharp edges on or off before the deal.":
-    "Stacked, c'est le jeu de couleurs du UNO avec les sales coups de Blazing 8s : piles de pioche, sauts dans le tour, échanges de mains et une règle sept-zéro pour les courageux. Chaque table peut activer ou non les angles agressifs avant la distribution.",
+  "Stacked is a fast colour-matching card game with dirty tricks: draw stacks, jump-ins, hand swaps and a seven-zero rule for the brave. Every table can turn the sharp edges on or off before the deal.":
+    "Stacked est un jeu de cartes rapide où l'on suit la couleur, avec des coups bas : piles de pioche, sauts dans le tour, échanges de mains et une règle sept-zéro pour les courageux. Chaque table peut activer ou non les angles agressifs avant la distribution.",
   "Stacking.": "Empilement.",
   "Still offline.": "Toujours hors ligne.",
   "Stored as a hash on the server. Not even the house can read it.":
@@ -572,13 +575,9 @@ const FR: Record<string, string> = {
     "Le nouveau mot de passe doit faire au moins 8 caractères.",
   "The next player has to match it, unless they can stack something worse.":
     "Le joueur suivant doit suivre cette couleur, sauf s'il peut empiler pire.",
-  "The polite part of UNO.": "La partie polie du UNO.",
   "The table": "La table",
   "Their sessions will be closed immediately. You can unban them from this console.":
     "Leurs sessions seront fermées immédiatement. Vous pouvez les débannir depuis cette console.",
-  "Then the Blazing 8s part.": "Puis la partie Blazing 8s.",
-  "This console is reserved for accounts with the owner flag enabled in the database.":
-    "Cette console est réservée aux comptes dont le flag owner est activé en base.",
   "This is the only way to reset your password. Save it before you sit down.":
     "C'est la seule façon de réinitialiser votre mot de passe. Sauvegardez-le avant de vous asseoir.",
   "Use at least two characters.": "Utilisez au moins deux caractères.",

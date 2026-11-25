@@ -347,7 +347,7 @@ export default function PlayPage() {
                 />
                 <RuleRow
                   title={t("Oscar's Swap anytime")}
-                  description={t("Swap hands out of turn. Cruel, faithful to Blazing 8s.")}
+                  description={t("Swap hands out of turn. Cruel, and completely legal here.")}
                   checked={Boolean(rules.swapAnytime)}
                   onChange={(value) => setRules((prev) => ({ ...prev, swapAnytime: value }))}
                 />

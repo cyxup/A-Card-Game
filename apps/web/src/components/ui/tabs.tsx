@@ -104,9 +104,9 @@ function TabsContent({ className, children, ...props }: React.ComponentProps<typ
     <TabsPrimitive.Content asChild {...props}>
       <motion.div
         data-slot="tabs-content"
-        initial={{ opacity: 0, y: 8, filter: "blur(4px)" }}
+        initial={{ opacity: 0, y: 12, filter: "blur(6px)" }}
         animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
         className={cn("flex-1 outline-none", className)}
       >
         {children}

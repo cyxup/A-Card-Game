@@ -358,13 +358,13 @@ body::before {
 }
 
 .site-nav {
-  animation: nav-in 0.55s var(--ease-out-expo) both;
+  animation: nav-in 0.85s var(--ease-out-expo) both;
 }
 
 @keyframes nav-in {
   from {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateY(-12px);
   }
   to {
     opacity: 1;

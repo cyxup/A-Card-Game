@@ -76,7 +76,7 @@ export default function RulesPage() {
           {t("House rules.")} <span className="text-muted-foreground">{t("No house edge.")}</span>
         </h1>
         <p className="mt-4 max-w-[62ch] text-sm leading-relaxed text-muted-foreground sm:text-base">
-          {t("Stacked is UNO's colour matching with Blazing 8s' dirty tricks: draw stacks, jump-ins, hand swaps and a seven-zero rule for the brave. Every table can turn the sharp edges on or off before the deal.")}
+          {t("Stacked is a fast colour-matching card game with dirty tricks: draw stacks, jump-ins, hand swaps and a seven-zero rule for the brave. Every table can turn the sharp edges on or off before the deal.")}
         </p>
       </div>
 
