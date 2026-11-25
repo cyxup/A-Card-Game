@@ -1001,6 +1001,21 @@ const FR: Record<string, string> = {
   "{n} card in hand": "{n} carte en main",
   "{n} card left": "{n} carte restante",
   "{n} cards left": "{n} cartes restantes",
+
+  // ── wager tables ────────────────────────────────────────────────────────
+  Wager: "Mise",
+  "No wager": "Sans mise",
+  "{n} coins each": "{n} pièces chacun",
+  "{n} coin wager": "Mise de {n} pièces",
+  "Registered players only. No bots or guests. Winner takes the pot.":
+    "Joueurs inscrits uniquement. Pas de bots ni d'invités. Le gagnant rafle la mise.",
+  "Wager tables need registered players only — no bots or guests. The winner takes the pot.":
+    "Les tables avec mise nécessitent des joueurs inscrits — pas de bots ni d'invités. Le gagnant rafle la mise.",
+  "Wager table — winner takes the pot ({n} coins each).":
+    "Table avec mise — le gagnant rafle la mise ({n} pièces chacun).",
+  "Remove bots to start": "Retirez les bots pour commencer",
+  "Wager tables need at least two registered players and no bots.":
+    "Les tables avec mise nécessitent au moins deux joueurs inscrits et aucun bot.",
 };
 
 function interpolate(text: string, vars?: Vars): string {
@@ -1098,6 +1113,11 @@ const ERROR_FR: Record<string, string> = {
   locked: "Les règles sont verrouillées.",
   already_playing: "Une manche est déjà en cours.",
   not_ended: "La manche n'est pas terminée.",
+  wager_account: "Les tables avec mise nécessitent un compte connecté.",
+  wager_players: "Les tables avec mise sont réservées aux joueurs inscrits.",
+  wager_players_needed: "Une table avec mise nécessite au moins deux joueurs.",
+  wager_no_bots: "Pas de bots sur une table avec mise.",
+  wager_no_cheats: "Les cheats sont désactivés sur les tables avec mise.",
   cannot_kick_self: "Vous ne pouvez pas vous retirer vous-même.",
   too_many_seats: "Retirez des joueurs avant de réduire les places.",
   busy: "Le serveur est plein. Réessayez bientôt.",
@@ -1111,6 +1131,12 @@ export function translateError(code: string | undefined, fallback: string): stri
   if (code === "banned") {
     const reason = fallback.replace(/^This account is banned:\s*/i, "").trim();
     return reason && reason !== fallback ? `Ce compte est banni : ${reason}` : "Ce compte est banni.";
+  }
+  if (code === "wager_funds") {
+    const needed = fallback.match(/Everyone needs (\d+) coins to start\./);
+    return needed
+      ? `Chaque joueur a besoin de ${needed[1]} pièces pour commencer.`
+      : "Tout le monde n'a pas assez de pièces pour commencer.";
   }
   if (code && ERROR_FR[code]) return ERROR_FR[code];
   return fallback;
@@ -1134,21 +1160,6 @@ const MESSAGE_FR: Record<string, string> = {
   "Guests can use the free pack. Create an account to buy more.":
     "Les invités ont le pack gratuit. Créez un compte pour en acheter d'autres.",
   "Easy on the quick chat.": "Doucement sur le chat rapide.",
-
-  // ── wager tables ────────────────────────────────────────────────────────
-  Wager: "Mise",
-  "No wager": "Sans mise",
-  "{n} coins each": "{n} pièces chacun",
-  "{n} coin wager": "Mise de {n} pièces",
-  "Registered players only. No bots or guests. Winner takes the pot.":
-    "Joueurs inscrits uniquement. Pas de bots ni d'invités. Le gagnant rafle la mise.",
-  "Wager tables need registered players only — no bots or guests. The winner takes the pot.":
-    "Les tables avec mise nécessitent des joueurs inscrits — pas de bots ni d'invités. Le gagnant rafle la mise.",
-  "Wager table — winner takes the pot ({n} coins each).":
-    "Table avec mise — le gagnant rafle la mise ({n} pièces chacun).",
-  "Remove bots to start": "Retirez les bots pour commencer",
-  "Wager tables need at least two registered players and no bots.":
-    "Les tables avec mise nécessitent au moins deux joueurs inscrits et aucun bot.",
 };
 
 export function translateMessage(message: string): string {

@@ -448,7 +448,7 @@ export class RoomManager {
     const wager = room.rules.wager;
     if (wager <= 0) return;
     if (room.seats.length < 2) {
-      throw new RoomError("not_enough_players", "A wager table needs at least two players.");
+      throw new RoomError("wager_players_needed", "A wager table needs at least two players.");
     }
     if (room.seats.some((seat) => seat.isBot || !seat.userId)) {
       throw new RoomError("wager_players", "Wager tables need registered players only.");
