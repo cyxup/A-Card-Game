@@ -18,7 +18,8 @@ room; accounts, cosmetics and match results live in PostgreSQL.
 - **Accounts and guests** — scrypt password hashing, opaque httpOnly session cookies, rate limits, guest sessions that can be upgraded.
 - **Progression** — XP, levels, coins, match rewards, achievements.
 - **Cosmetics** — card backs, table felts, avatars, name effects and win effects, visible to everyone at the table.
-- **Low-end first** — no image assets, no canvas, no per-frame JS, CSS-only cards and effects, route-level code splitting, a low-power mode and `prefers-reduced-motion` support.
+- **A table that talks back** — opponents' hands are fanned card backs with live counts, cards fly to the discard, the draw deck breathes, seats glow on their turn, and every play/draw/skip lands with a readable action banner.
+- **Built to look alive** — CSS cards and a focused set of Motion animations; no bitmap payloads, no canvas, and an optional low-power/reduce-motion escape hatch.
 - **Synthesised audio** — tiny WebAudio blips instead of downloaded sound files.
 - **Authoritative server** — hands are masked per player, actions are validated by the engine, timers and bots run server-side.
 
@@ -189,17 +190,20 @@ Hands and the drawn card are masked per player; the draw-pile count is public.
 
 ---
 
-## Performance choices
+## Motion & performance
 
-- Cards are DOM elements styled entirely with CSS; one tree, no canvas, no sprite sheets.
+The table is deliberately expressive: Motion springs for layout, a shared-layout flight from
+hand to discard, flying card backs for opponent draws, animated seat rings, a turn spotlight and
+a readable action banner. It is still a light DOM app:
+
+- Cards are DOM elements styled with CSS; one tree, no canvas, no sprite sheets.
 - No background images or video. Fonts are self-hosted Geist with unicode-range subsets, so only
   Latin loads for Latin copy.
 - Route-level code splitting: the table (the heaviest screen) is a separate chunk.
-- The lobby, profile and leaderboard are separate chunks; the landing page ships first.
-- Server broadcasts only on state changes. Timers are a single deadline field.
-- Active-seat countdowns are isolated components so a ticking clock does not re-render the table.
-- `lowPower` mode (auto-detected from cores/device memory) removes grain, blur and most particle
-  effects. `prefers-reduced-motion` is respected through Plum UI's `MotionConfig` and CSS.
+- Server broadcasts only on state changes. Turn timers are computed from a deadline field.
+- Animations use `motion/react` with shared spring presets; no per-frame loops in application code.
+- An in-app **Reduce motion** toggle (Profile ? Performance) turns off springs and flights.
+  **Low-power mode** is optional, not auto-forced.
 - Audio is synthesised on demand, never downloaded.
 
 ---

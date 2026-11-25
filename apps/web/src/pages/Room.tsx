@@ -97,13 +97,13 @@ export default function RoomPage() {
   return (
     <div className="relative">
       {status === "reconnecting" && (
-        <div className="fixed inset-x-0 top-14 z-50 flex items-center justify-center gap-2 border-b border-warning/25 bg-warning/[0.08] px-4 py-1.5 text-[11px] text-warning backdrop-blur">
+        <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-2 border-b border-warning/25 bg-warning/[0.08] px-4 py-1.5 text-[11px] text-warning backdrop-blur">
           <WifiOff className="size-3.5" />
           Connection lost — reconnecting. Your seat is still warm.
         </div>
       )}
       {status === "closed" && (
-        <div className="fixed inset-x-0 top-14 z-50 flex items-center justify-center gap-3 border-b border-destructive/25 bg-destructive/[0.08] px-4 py-2 text-[11px] text-destructive">
+        <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-3 border-b border-destructive/25 bg-destructive/[0.08] px-4 py-2 text-[11px] text-destructive">
           Disconnected.
           <Button
             variant="outline"

@@ -2,20 +2,17 @@ import { useSyncExternalStore } from "react";
 
 export interface Prefs {
   sound: boolean;
+  /** Optional stripped-back mode. Off by default: the game is meant to look alive. */
   lowPower: boolean;
+  /** Explicit in-app motion preference. The OS preference is intentionally not forced
+   *  so the animations are visible by default; this toggle is the escape hatch. */
+  reducedMotion: boolean;
 }
 
 const STORAGE_KEY = "stacked:prefs";
 
-function detectLowPower(): boolean {
-  if (typeof navigator === "undefined") return false;
-  const cores = navigator.hardwareConcurrency ?? 8;
-  const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8;
-  return cores <= 4 || memory <= 4;
-}
-
 function read(): Prefs {
-  const fallback: Prefs = { sound: true, lowPower: detectLowPower() };
+  const fallback: Prefs = { sound: true, lowPower: false, reducedMotion: false };
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return fallback;
@@ -23,6 +20,7 @@ function read(): Prefs {
     return {
       sound: typeof parsed.sound === "boolean" ? parsed.sound : fallback.sound,
       lowPower: typeof parsed.lowPower === "boolean" ? parsed.lowPower : fallback.lowPower,
+      reducedMotion: typeof parsed.reducedMotion === "boolean" ? parsed.reducedMotion : fallback.reducedMotion,
     };
   } catch {
     return fallback;
@@ -35,6 +33,7 @@ const listeners = new Set<() => void>();
 function apply(): void {
   if (typeof document === "undefined") return;
   document.documentElement.classList.toggle("perf-low", prefs.lowPower);
+  document.documentElement.classList.toggle("reduce-motion", prefs.reducedMotion);
 }
 
 apply();

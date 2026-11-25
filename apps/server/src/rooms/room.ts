@@ -250,6 +250,7 @@ export function buildRoomView(room: Room, viewerId: string): RoomView {
           lastCard: game.lastCard,
           lastPlayAt: game.lastPlayAt,
           drawCount: game.drawPile.length,
+          startedAt: game.startedAt,
         }
       : null,
   };

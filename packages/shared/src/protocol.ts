@@ -114,6 +114,7 @@ export interface GameView {
   lastCard: Card | null;
   lastPlayAt: number;
   drawCount: number;
+  startedAt: number;
 }
 
 export interface RoomView {

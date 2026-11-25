@@ -1,72 +1,125 @@
-import type { RoomPlayerView } from "@stacked/shared";
-import { Crown, Layers, WifiOff } from "lucide-react";
-import { useMemo } from "react";
+import { EMOTES, type RoomPlayerView } from "@stacked/shared";
+import { AnimatePresence, motion } from "motion/react";
+import { Crown, WifiOff } from "lucide-react";
 import { Avatar } from "@/components/brand/avatar";
 import { NameEffect } from "@/components/brand/name-effect";
+import { spring } from "@/lib/motion";
 import { useCountdown } from "@/lib/use-countdown";
 import { cn } from "@/lib/utils";
+import { OpponentHand } from "./opponent-hand";
 
 export function Seat({
   player,
   active,
   deadline,
   offset,
-  compact = false,
+  dense = false,
+  emote,
   className,
 }: {
   player: RoomPlayerView;
   active: boolean;
   deadline?: number;
   offset: number;
-  compact?: boolean;
+  dense?: boolean;
+  emote?: string;
   className?: string;
 }) {
   const left = useCountdown(deadline, offset, active);
   const seconds = Math.ceil(left / 1000);
-  const initial = useMemo(() => Math.max(120, left), [deadline]);
+  const avatarSize = dense ? 34 : 42;
+  const handSize = dense ? 22 : 27;
+  const offline = !player.connected && !player.isBot;
 
   return (
-    <div
-      className={cn("seat", className)}
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: -14, scale: 0.96 }}
+      animate={{ opacity: offline ? 0.45 : 1, y: 0, scale: active ? 1.02 : 1 }}
+      transition={spring.smooth}
+      className={cn("seat-plate", active && "seat-plate-active", dense && "seat-plate-dense", className)}
+      data-seat-id={player.id}
       data-turn={active}
-      data-offline={!player.connected && !player.isBot}
+      aria-current={active ? "true" : undefined}
     >
-      <div className="seat-avatar-wrap">
-        <Avatar id={player.avatar} size={compact ? 38 : 48} />
-        <div className="seat-avatar-ring" />
-        {player.host && (
-          <span className="absolute -right-1.5 -top-1.5 grid size-5 place-items-center rounded-full border border-white/15 bg-background text-warning">
-            <Crown className="size-3" />
-          </span>
-        )}
-        {!player.connected && !player.isBot && (
-          <span className="absolute -bottom-1 -right-1 grid size-5 place-items-center rounded-full border border-white/15 bg-background text-muted-foreground">
-            <WifiOff className="size-2.5" />
-          </span>
-        )}
-      </div>
-      <NameEffect effect={player.nameEffect} className="seat-name">
-        {player.name}
-      </NameEffect>
-      <span className="seat-cards">
-        <Layers className="size-3" />
-        {player.cardCount}
-        <span className="mx-0.5 text-white/15">·</span>
-        {active ? (
-          <span className="text-brand">{seconds > 0 ? `${seconds}s` : "…"}</span>
-        ) : (
-          <span>L{player.level}</span>
-        )}
-      </span>
-      {active && deadline ? (
-        <div className="mt-0.5 h-0.5 w-16 overflow-hidden rounded-full bg-white/10">
-          <div
-            key={deadline}
-            className="turn-timer h-full rounded-full bg-brand"
-            style={{ animationDuration: `${initial}ms` }}
-          />
+      {active && <div className="seat-plate-spotlight" />}
+      <AnimatePresence>
+        {emote ? (
+          <motion.span
+            key={emote}
+            className="seat-emote"
+            initial={{ opacity: 0, y: 8, scale: 0.6 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.8 }}
+            transition={spring.bouncy}
+          >
+            {EMOTES.find((entry) => entry.id === emote)?.glyph ?? "??"}
+          </motion.span>
+        ) : null}
+      </AnimatePresence>
+
+      <div className="seat-top">
+        <div className="seat-avatar-wrap" style={{ width: avatarSize, height: avatarSize }}>
+          <Avatar id={player.avatar} size={avatarSize} />
+          {active && deadline ? (
+            <svg className="seat-turn-ring" viewBox="0 0 100 100" aria-hidden>
+              <circle className="seat-turn-track" cx="50" cy="50" r="46" pathLength={1} />
+              <motion.circle
+                key={deadline}
+                className="seat-turn-progress"
+                cx="50"
+                cy="50"
+                r="46"
+                pathLength={1}
+                strokeDasharray="1 1"
+                initial={{ strokeDashoffset: 0 }}
+                animate={{ strokeDashoffset: 1 }}
+                transition={{ duration: Math.max(0.15, left / 1000), ease: "linear" }}
+              />
+            </svg>
+          ) : null}
+          {player.host && (
+            <span className="seat-crown" title="Host">
+              <Crown className="size-3" />
+            </span>
+          )}
+          {offline && (
+            <span className="seat-offline" title="Reconnecting">
+              <WifiOff className="size-3" />
+            </span>
+          )}
         </div>
-      ) : null}
-    </div>
+
+        <div className="seat-info">
+          <NameEffect effect={player.nameEffect} className="seat-name">
+            {player.name}
+          </NameEffect>
+          <div className="seat-meta">
+            <span>Lv {player.level}</span>
+            {player.isBot ? <span className="seat-bot">bot</span> : null}
+            {active ? <span className="seat-time">{seconds > 0 ? `${seconds}s` : "…"}</span> : null}
+          </div>
+        </div>
+
+        {active ? (
+          <motion.span
+            className="seat-turn-chip"
+            initial={{ opacity: 0, y: -4, scale: 0.85 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={spring.bouncy}
+          >
+            turn
+          </motion.span>
+        ) : null}
+      </div>
+
+      <OpponentHand
+        count={player.cardCount}
+        back={player.cardBack}
+        size={handSize}
+        compact
+        className="seat-hand"
+      />
+    </motion.div>
   );
 }

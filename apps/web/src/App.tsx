@@ -6,6 +6,7 @@ import { Footer, Nav } from "@/components/layout/nav";
 import { Spinner } from "@/components/ui/spinner";
 import { Toaster } from "@/components/ui/toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { usePrefs } from "@/lib/prefs";
 import { SessionProvider } from "@/lib/session";
 import HomePage from "@/pages/Home";
 import NotFoundPage from "@/pages/NotFound";
@@ -37,10 +38,11 @@ function Ambient() {
 
 export default function App() {
   const [location] = useLocation();
+  const prefs = usePrefs();
   const inRoom = location.startsWith("/room/");
 
   return (
-    <MotionConfig reducedMotion="user">
+    <MotionConfig reducedMotion={prefs.reducedMotion ? "always" : "never"}>
       <TooltipProvider delayDuration={300}>
         <SessionProvider>
           <div className="flex min-h-dvh flex-col">
@@ -51,7 +53,7 @@ export default function App() {
               Skip to content
             </a>
             <Ambient />
-            <Nav />
+            {!inRoom && <Nav />}
             <main id="main" className="relative z-10 flex-1">
               <Suspense fallback={<PageLoader />}>
                 <Switch>

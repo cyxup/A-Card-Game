@@ -442,6 +442,13 @@ export default function ProfilePage() {
               </span>
               <Switch checked={prefs.lowPower} onCheckedChange={(value) => setPrefs({ lowPower: value })} />
             </label>
+            <label className="flex items-center justify-between gap-3 py-2">
+              <span className="flex flex-col gap-0.5 text-xs">
+                <span>Reduce motion</span>
+                <span className="text-[10px] text-muted-foreground">Stops the flying cards and springs.</span>
+              </span>
+              <Switch checked={prefs.reducedMotion} onCheckedChange={(value) => setPrefs({ reducedMotion: value })} />
+            </label>
           </div>
 
           <div className="panel rounded-2xl p-5">

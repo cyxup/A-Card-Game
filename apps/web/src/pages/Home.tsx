@@ -302,8 +302,8 @@ export default function HomePage() {
             },
             {
               icon: Palette,
-              title: "Built for potato PCs",
-              body: "One DOM tree, no canvas, no heavy assets. Low-power mode strips the extras.",
+              title: "Every move, visible",
+              body: "Cards fly, backs fan out, the active seat glows. The table tells you what happened.",
             },
           ].map((feature) => (
             <div key={feature.title} className="panel rounded-2xl p-5">
