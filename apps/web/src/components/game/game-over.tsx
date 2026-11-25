@@ -1,6 +1,6 @@
 import type { RoomView } from "@stacked/shared";
 import { ACHIEVEMENTS, COSMETICS_BY_ID, SLOT_LABEL } from "@stacked/shared";
-import { ArrowRight, Coins, Crown, Sparkles, Trophy } from "lucide-react";
+import { ArrowRight, Bot, Coins, Crown, Sparkles, Trophy } from "lucide-react";
 import { useEffect } from "react";
 import { Link } from "wouter";
 import { Avatar } from "@/components/brand/avatar";
@@ -113,7 +113,17 @@ export function GameOverDialog({
 
         <Separator />
 
-        {rewards ? (
+        {rewards?.unranked ? (
+          <div className="flex items-start gap-3 rounded-xl border border-info/25 bg-info/[0.06] px-4 py-3">
+            <Bot className="mt-0.5 size-4 shrink-0 text-info" />
+            <div className="text-xs">
+              <p className="font-semibold text-info">{t("Practice table — no progression.")}</p>
+              <p className="mt-1 leading-relaxed text-info/80">
+                {t("XP, coins and stats only count when at least one other real player is seated.")}
+              </p>
+            </div>
+          </div>
+        ) : rewards ? (
           <div className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/8 bg-white/[0.02] px-4 py-3">
               <div className="flex items-center gap-2">
@@ -167,7 +177,7 @@ export function GameOverDialog({
             )}
           </div>
         ) : (
-          <p className="text-xs text-muted-foreground">No rewards for bots.</p>
+          <p className="text-xs text-muted-foreground">{t("No rewards this round.")}</p>
         )}
 
         <div className="flex flex-col gap-2 sm:flex-row">

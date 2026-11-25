@@ -62,7 +62,7 @@ const STEPS = [
   },
   {
     title: "Empty your hand",
-    body: "First to zero cards wins the round. Coins and XP are paid out, and the table can rematch immediately.",
+    body: "First to zero cards wins the round. Coins and XP are paid out when real opponents are seated, and the table can rematch immediately.",
   },
 ];
 
@@ -164,7 +164,7 @@ export default function RulesPage() {
           <Sparkles className="mb-4 size-5 text-warning" />
           <h2 className="text-lg font-semibold tracking-[-0.02em]">{t("Coins, levels, furniture")}</h2>
           <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-            {t("Rounds pay coins and XP. Winning pays more, but every seat earns something. Levels auto-unlock card backs, tables and name effects. Achievements unlock the loud stuff. Everything you equip is visible to the table — including the win animation when you take the round.")}
+            {t("Rounds with real opponents pay coins and XP. Winning pays more, but every human seat earns something. Bot-only tables are practice and pay nothing. Levels auto-unlock card backs, tables and name effects. Achievements unlock the loud stuff. Everything you equip is visible to the table — including the win animation when you take the round.")}
           </p>
           <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
             {t("Guests can play every mode, but nothing persists. Create an account whenever you want to keep it.")}

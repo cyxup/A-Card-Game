@@ -459,6 +459,12 @@ const FR: Record<string, string> = {
     "Entrez dans le tour ! Choisissez un joueur avant la fermeture de la fenêtre.",
   "Chosen": "Choisi",
   "Swap": "Échange",
+  "First to zero cards wins the round. Coins and XP are paid out when real opponents are seated, and the table can rematch immediately.":
+    "Le premier à zéro carte gagne la manche. Les pièces et l'XP sont versés quand de vrais adversaires sont assis, et la table peut relancer immédiatement.",
+  "Practice table — no progression.": "Table d'entraînement — aucune progression.",
+  "No rewards this round.": "Aucune récompense cette manche.",
+  "XP, coins and stats only count when at least one other real player is seated.":
+    "L'XP, les pièces et les stats ne comptent qu'avec au moins un autre vrai joueur.",
   "Beta tester": "Beta testeur",
   "Beta testers": "Beta testeurs",
   "Beta tester only": "Réservé aux beta testeurs",
@@ -558,8 +564,8 @@ const FR: Record<string, string> = {
   "Remove {name}": "Retirer {name}",
   "Reset password": "Réinitialiser le mot de passe",
   "Room code: {code}": "Code de la table : {code}",
-  "Rounds pay coins and XP. Winning pays more, but every seat earns something. Levels auto-unlock card backs, tables and name effects. Achievements unlock the loud stuff. Everything you equip is visible to the table — including the win animation when you take the round.":
-    "Les manches rapportent des pièces et de l'XP. Gagner rapporte plus, mais chaque place gagne quelque chose. Les niveaux débloquent dos de cartes, tables et effets de nom. Les succès débloquent les plus bruyants. Tout ce que vous équipez est visible par la table — y compris l'animation de victoire quand vous gagnez la manche.",
+  "Rounds with real opponents pay coins and XP. Winning pays more, but every human seat earns something. Bot-only tables are practice and pay nothing. Levels auto-unlock card backs, tables and name effects. Achievements unlock the loud stuff. Everything you equip is visible to the table — including the win animation when you take the round.":
+    "Les manches avec de vrais adversaires rapportent des pièces et de l'XP. Gagner rapporte plus, mais chaque siège humain gagne quelque chose. Les tables uniquement composées de bots sont de l'entraînement et ne rapportent rien. Les niveaux débloquent automatiquement des dos de cartes, des tables et des effets de nom. Les succès débloquent le reste. Tout ce que vous équipez est visible à la table — y compris l'animation de victoire quand vous remportez la manche.",
   "STACKED": "EMPILÉS",
   "Same card only, mixed (+2 onto +4 and back), or off entirely.":
     "Même carte uniquement, mixte (+2 sur +4 et inversement), ou totalement désactivé.",

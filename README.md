@@ -21,7 +21,7 @@ room; accounts, cosmetics and match results live in PostgreSQL.
 - **Share cards** — the main link and every `/room/:code` invite get a 1200×630 preview; invites show the host, table code and seat count.
 - **English / French** — a persistent language toggle in the nav and profile, with a full French catalogue and French game feed.
 - **Accounts and guests** — scrypt password hashing, opaque httpOnly session cookies, rate limits, guest sessions that can be upgraded, and one-time recovery codes for password resets.
-- **Progression** — XP, levels, coins, match rewards, achievements. Starter cosmetics no longer count toward collection achievements.
+- **Progression** — XP, levels, coins, match rewards, achievements. Starter cosmetics no longer count toward collection achievements. Bot-only rounds are practice: no XP, coins, stats or achievements; mixed tables only count real opponents.
 - **Cosmetics** — card backs, table felts, avatars, name effects and win effects, visible to everyone at the table. Owner accounts get animated rainbow pieces and a badge; beta testers get a hidden teal-and-violet set of their own.
 - **A table that talks back** — opponents' hands are fanned card backs with live counts, cards fly to the discard, the draw deck breathes, seats glow on their turn, colours are called directly on the felt, Oscar's Swap targets a seat instead of a dialog, and every play/draw/skip lands with a readable action banner.
 - **Built to look alive** — CSS cards, route fades, Motion springs, animated seats and synthesised UI/game sounds; no bitmap payloads, no canvas, and an optional low-power/reduce-motion escape hatch.

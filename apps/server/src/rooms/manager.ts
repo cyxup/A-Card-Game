@@ -8,9 +8,10 @@ import {
   createGame,
   defaultLoadout,
   levelForXp,
-  matchRewards,
+  matchRewardsForHumans,
   normaliseRules,
   reduce,
+  roundIsRanked,
   timeout,
   type ClientMessage,
   type GameAction,
@@ -635,6 +636,11 @@ export class RoomManager {
 
     const humanSeats = room.seats.filter((seat) => seat.userId !== null);
     const humanIds = humanSeats.map((seat) => seat.userId as string);
+    // Guests are humans too: they count as real opponents, they just do not persist.
+    const humanPlayers = room.seats.filter((seat) => !seat.isBot);
+    const humanCount = humanPlayers.length;
+    const ranked = roundIsRanked(humanCount);
+    const humanSeatIds = new Set(humanPlayers.map((seat) => seat.id));
 
     let oldUsers = new Map<string, (typeof users.$inferSelect)>();
     const beforeAchievements = new Map<string, string[]>();
@@ -658,17 +664,18 @@ export class RoomManager {
 
       const computed = room.seats.map((seat) => {
         const placement = placements.get(seat.id) ?? room.seats.length;
-        const opponentsLeft = results
-          .filter((result) => result.id !== seat.id)
+        // Bots are furniture: they never add to the reward pool.
+        const humanOpponentsLeft = results
+          .filter((result) => result.id !== seat.id && humanSeatIds.has(result.id))
           .reduce((total, result) => total + result.cardsLeft, 0);
-        const rewards = matchRewards({
+        const rewards = matchRewardsForHumans({
           placement,
-          playerCount: room.seats.length,
-          opponentCardsLeft: placement === 1 ? opponentsLeft : 0,
+          humanPlayers: humanCount,
+          opponentCardsLeft: placement === 1 ? humanOpponentsLeft : 0,
           cardsPlayed: seat.stats.cardsPlayed,
           jumps: seat.stats.jumps,
         });
-        return { seat, placement, rewards };
+        return { seat, placement, rewards, ranked };
       });
 
       const matchId = await db.transaction(async (tx) => {
@@ -689,32 +696,51 @@ export class RoomManager {
           const seat = entry.seat;
           if (seat.userId) {
             const old = oldUsers.get(seat.userId);
-            const [fresh] = await tx
-              .update(users)
-              .set({
-                xp: sql`${users.xp} + ${entry.rewards.xp}`,
-                coins: sql`${users.coins} + ${entry.rewards.coins}`,
-                games: sql`${users.games} + 1`,
-                wins: sql`${users.wins} + ${entry.placement === 1 ? 1 : 0}`,
-                jumps: sql`${users.jumps} + ${seat.stats.jumps}`,
-                stacks: sql`${users.stacks} + ${seat.stats.stacks}`,
-                cardsPlayed: sql`${users.cardsPlayed} + ${seat.stats.cardsPlayed}`,
-                lastSeenAt: new Date(),
-              })
-              .where(eq(users.id, seat.userId))
-              .returning();
-            if (fresh && old) {
-              const grant: RewardGrant = {
-                coins: entry.rewards.coins,
-                xp: entry.rewards.xp,
-                level: levelForXp(fresh.xp),
-                levelUp: levelForXp(fresh.xp) > levelForXp(old.xp),
+            if (!entry.ranked) {
+              // Practice round: no XP, coins, stats, wins or achievements.
+              await tx
+                .update(users)
+                .set({ lastSeenAt: new Date() })
+                .where(eq(users.id, seat.userId));
+              seat.rewards = {
+                coins: 0,
+                xp: 0,
+                level: levelForXp(old?.xp ?? 0),
+                levelUp: false,
                 placement: entry.placement,
                 achievements: [],
                 unlocked: [],
                 banked: true,
+                unranked: true,
               };
-              seat.rewards = grant;
+            } else {
+              const [fresh] = await tx
+                .update(users)
+                .set({
+                  xp: sql`${users.xp} + ${entry.rewards.xp}`,
+                  coins: sql`${users.coins} + ${entry.rewards.coins}`,
+                  games: sql`${users.games} + 1`,
+                  wins: sql`${users.wins} + ${entry.placement === 1 ? 1 : 0}`,
+                  jumps: sql`${users.jumps} + ${seat.stats.jumps}`,
+                  stacks: sql`${users.stacks} + ${seat.stats.stacks}`,
+                  cardsPlayed: sql`${users.cardsPlayed} + ${seat.stats.cardsPlayed}`,
+                  lastSeenAt: new Date(),
+                })
+                .where(eq(users.id, seat.userId))
+                .returning();
+              if (fresh) {
+                const grant: RewardGrant = {
+                  coins: entry.rewards.coins,
+                  xp: entry.rewards.xp,
+                  level: levelForXp(fresh.xp),
+                  levelUp: levelForXp(fresh.xp) > levelForXp(old?.xp ?? 0),
+                  placement: entry.placement,
+                  achievements: [],
+                  unlocked: [],
+                  banked: true,
+                };
+                seat.rewards = grant;
+              }
             }
           } else if (seat.isBot) {
             seat.rewards = null;
@@ -728,6 +754,7 @@ export class RoomManager {
               achievements: [],
               unlocked: [],
               banked: false,
+              unranked: !entry.ranked,
             };
           }
 
@@ -747,7 +774,7 @@ export class RoomManager {
 
       if (matchId) {
         for (const seat of room.seats) {
-          if (!seat.userId || !seat.rewards) continue;
+          if (!seat.userId || !seat.rewards || seat.rewards.unranked) continue;
           try {
             const [fresh] = await db.select().from(users).where(eq(users.id, seat.userId)).limit(1);
             if (!fresh) continue;

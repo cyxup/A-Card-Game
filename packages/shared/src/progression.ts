@@ -41,6 +41,14 @@ export interface MatchRewards {
 }
 
 /**
+ * A round only pays out when at least two humans are seated. Bot-only tables
+ * are practice: no XP, coins, stats or achievements.
+ */
+export function roundIsRanked(humanPlayers: number): boolean {
+  return humanPlayers >= 2;
+}
+
+/**
  * Deliberately generous for winners, still worth something for a loss.
  * Guests never persist these.
  */
@@ -58,4 +66,29 @@ export function matchRewards(input: MatchRewardInput): MatchRewards {
     coins: 18 + base + Math.min(20, Math.round(participation * 2)),
     xp: 22 + Math.round(base / 2) + input.cardsPlayed + input.jumps * 3,
   };
+}
+
+export interface HumanMatchRewardInput {
+  placement: number;
+  /** Non-bot seats at the table, including this player. */
+  humanPlayers: number;
+  /** Cards left in the other humans' hands only. Bots never count. */
+  opponentCardsLeft: number;
+  cardsPlayed: number;
+  jumps: number;
+}
+
+/**
+ * Rewards are only paid when a real opponent is seated. A bot-only table is
+ * practice: 0 coins and 0 XP, no matter how badly the bots lost.
+ */
+export function matchRewardsForHumans(input: HumanMatchRewardInput): MatchRewards {
+  if (!roundIsRanked(input.humanPlayers)) return { coins: 0, xp: 0 };
+  return matchRewards({
+    placement: input.placement,
+    playerCount: input.humanPlayers,
+    opponentCardsLeft: input.opponentCardsLeft,
+    cardsPlayed: input.cardsPlayed,
+    jumps: input.jumps,
+  });
 }

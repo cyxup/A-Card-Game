@@ -613,11 +613,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
       setResultsVisible(false);
       return;
     }
-    const delay = winnerEffect === "prism-burst" ? 1700 : winnerEffect === "beta-burst" ? 1300 : 0;
-    if (delay === 0) {
-      setResultsVisible(true);
-      return;
-    }
+    const delay = winnerEffect === "prism-burst" ? 1700 : winnerEffect === "beta-burst" ? 1300 : 250;
     const timer = window.setTimeout(() => setResultsVisible(true), delay);
     return () => window.clearTimeout(timer);
   }, [gameView?.phase, gameView?.startedAt, winnerEffect]);

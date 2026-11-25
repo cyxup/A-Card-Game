@@ -139,6 +139,8 @@ export interface RewardGrant {
   achievements: string[];
   unlocked: string[];
   banked: boolean;
+  /** Practice round: bots only, so nothing counts. */
+  unranked?: boolean;
 }
 
 export interface GameView {
