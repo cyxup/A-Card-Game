@@ -1,8 +1,9 @@
 import { ArrowRight, LogIn } from "lucide-react";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useLocation } from "wouter";
 import { CardBack, CardFace } from "@/components/cards/playing-card";
 import { PasswordInput } from "@/components/auth/password-input";
+import { RecoverAccountDialog, RecoveryCodeDialog } from "@/components/auth/recovery";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,21 +17,27 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [recoverOpen, setRecoverOpen] = useState(false);
+  const [recoveryCode, setRecoveryCode] = useState<string | null>(null);
+  const loggingIn = useRef(false);
 
   useEffect(() => {
-    if (session?.kind === "user") navigate("/play");
-  }, [session?.kind, navigate]);
+    if (session?.kind === "user" && !loggingIn.current && !recoveryCode && !recoverOpen) navigate("/play");
+  }, [session?.kind, recoveryCode, recoverOpen, navigate]);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (busy) return;
     setBusy(true);
     setError(null);
+    loggingIn.current = true;
     try {
       const data = await login(username, password);
       toast.success(`Welcome back, ${data.user?.displayName ?? "player"}.`);
-      navigate("/play");
+      if (data.recoveryCode) setRecoveryCode(data.recoveryCode);
+      else navigate("/play");
     } catch (caught) {
+      loggingIn.current = false;
       const message = caught instanceof Error ? caught.message : "Could not sign in.";
       setError(message);
       toast.error(message);
@@ -98,6 +105,13 @@ export default function LoginPage() {
               placeholder="••••••••"
               required
             />
+            <button
+              type="button"
+              onClick={() => setRecoverOpen(true)}
+              className="self-end text-[11px] text-muted-foreground underline decoration-border underline-offset-4 transition-colors hover:text-foreground"
+            >
+              Lost your password?
+            </button>
           </div>
           {error && <p className="text-xs text-destructive">{error}</p>}
           <Button type="submit" variant="brand" size="lg" className="w-full" loading={busy}>
@@ -121,6 +135,20 @@ export default function LoginPage() {
           </p>
         </div>
       </div>
+
+      <RecoverAccountDialog open={recoverOpen} onOpenChange={setRecoverOpen} />
+      <RecoveryCodeDialog
+        open={Boolean(recoveryCode)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRecoveryCode(null);
+            navigate("/play");
+          }
+        }}
+        code={recoveryCode}
+        title="We made you a recovery code."
+        description="This account did not have one yet. Save it now — it is the only way to reset your password."
+      />
     </div>
   );
 }

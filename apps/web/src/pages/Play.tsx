@@ -447,11 +447,18 @@ export default function PlayPage() {
 
             {rooms && rooms.length === 0 && (
               <div className="rounded-xl border border-dashed border-white/10 px-6 py-12 text-center">
-                <p className="text-sm font-medium">Nobody&apos;s waiting right now.</p>
-                <p className="mt-1 text-xs text-muted-foreground">Be the one who opens a table.</p>
-                <Button variant="brand" className="mt-4" onClick={() => setTab("create")}>
-                  Create one
-                </Button>
+                <p className="text-sm font-medium">No open tables right now.</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  We can open a fresh public table and put you at it — invite people or add bots once you&apos;re in.
+                </p>
+                <div className="mt-4 flex flex-wrap justify-center gap-2">
+                  <Button variant="brand" loading={busy === "quick"} onClick={() => ensure(quick)}>
+                    <Zap /> Open a table for me
+                  </Button>
+                  <Button variant="outline" onClick={() => setTab("create")}>
+                    Set my own rules
+                  </Button>
+                </div>
               </div>
             )}
 

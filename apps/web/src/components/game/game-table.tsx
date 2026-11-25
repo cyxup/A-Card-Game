@@ -315,6 +315,8 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
     const myIndex = room.players.findIndex((player) => player.id === meId);
     return [...room.players.slice(myIndex + 1), ...room.players.slice(0, myIndex)];
   }, [room.players, meId]);
+  const onlyOpponent = opponents.length === 1 ? opponents[0] : null;
+  const canPass = Boolean(isMyTurn && gameView?.drawnCardId && gameView?.phase === "playing");
   const denseRail = opponents.length > 4;
   const layerId = gameView ? `round-${gameView.startedAt}` : "round";
 
@@ -338,11 +340,14 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
       }
       if (card.kind === "wild" || card.kind === "wild4") {
         setColorCard(card);
+        playSound("wild");
         return;
       }
       if (card.kind === "swap") {
         setSwapMode("play");
-        setSwapCard(card);
+        if (onlyOpponent) setColorCard(card);
+        else setSwapCard(card);
+        playSound("swap");
         return;
       }
       client.action({ type: "play", cardId: card.id });
@@ -350,7 +355,9 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
     }
     if (card.kind === "swap" && canSwapIn) {
       setSwapMode("jump");
-      setSwapCard(card);
+      if (onlyOpponent) setColorCard(card);
+      else setSwapCard(card);
+      playSound("swap");
       return;
     }
     if (jumpableIds.has(card.id)) {
@@ -362,6 +369,16 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
 
   function pickColor(color: Color) {
     if (!colorCard) return;
+    if (colorCard.kind === "swap" && onlyOpponent) {
+      client.action({
+        type: swapMode,
+        cardId: colorCard.id,
+        color,
+        targetId: onlyOpponent.id,
+      });
+      setColorCard(null);
+      return;
+    }
     const isJump = jumpableIds.has(colorCard.id) && !isMyTurn;
     client.action({ type: isJump ? "jump" : "play", cardId: colorCard.id, color });
     setColorCard(null);
@@ -379,7 +396,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
   }
 
   function pass() {
-    if (!isMyTurn || !gameView?.drawnCardId) return;
+    if (!canPass) return;
     client.action({ type: "pass" });
   }
 
@@ -523,10 +540,19 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
   useEffect(() => {
     const last = gameView?.log[gameView.log.length - 1];
     if (!last) return;
-    if (last.kind === "play" || last.kind === "jump" || last.kind === "skip" || last.kind === "reverse") playSound("play");
-    else if (last.kind === "draw" || last.kind === "draw_penalty") playSound("draw");
+    if (last.kind === "play" || last.kind === "jump") {
+      if (last.kind === "jump") playSound("jump");
+      else if (last.card?.kind === "swap") playSound("swap");
+      else if (last.card?.kind === "wild" || last.card?.kind === "wild4") playSound("wild");
+      else if (last.card?.kind === "draw2") playSound("stack");
+      else playSound("play");
+    } else if (last.kind === "draw" || last.kind === "no_play") playSound("draw");
+    else if (last.kind === "draw_penalty") playSound("stack");
     else if (last.kind === "deal") playSound("deal");
-    else if (last.kind === "swap" || last.kind === "rotate") playSound("play");
+    else if (last.kind === "swap" || last.kind === "rotate") playSound("swap");
+    else if (last.kind === "skip" || last.kind === "reverse") playSound("play");
+    else if (last.kind === "reshuffle") playSound("shuffle");
+    else if (last.kind === "timeout") playSound("tick");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameView?.log[gameView.log.length - 1]?.id]);
 
@@ -746,6 +772,17 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                     ) : null}
                   </motion.button>
                   <span className="deck-hint">{canDraw ? "tap to draw" : `${gameView.drawCount} left`}</span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={canPass ? "brand" : "ghost"}
+                    disabled={!canPass}
+                    onClick={pass}
+                    className="deck-pass"
+                    title={canPass ? "Pass your turn" : "Draw first, then you can pass"}
+                  >
+                    Pass
+                  </Button>
                 </div>
               </div>
 
@@ -857,19 +894,6 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
               <Button variant="ghost" size="sm" onClick={() => setSorted((value) => !value)} title="Sort hand">
                 <ArrowUpDown /> <span className="hidden sm:inline">Sort</span>
               </Button>
-              <Button
-                size="sm"
-                variant={mustDraw ? "brand" : "outline"}
-                disabled={!canDraw}
-                onClick={draw}
-                title="Draw a card"
-                className={cn(mustDraw && "draw-button-ready")}
-              >
-                <Layers /> {gameView.pending > 0 ? `Take +${gameView.pending}` : "Draw"}
-              </Button>
-              <Button size="sm" variant="outline" disabled={!isMyTurn || !gameView.drawnCardId} onClick={pass}>
-                Pass
-              </Button>
             </div>
           </div>
 
@@ -949,7 +973,9 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                       className="gap-1.5"
                       onClick={() => {
                         setSwapMode("jump");
-                        setSwapCard(swapInCard);
+                        if (onlyOpponent) setColorCard(swapInCard);
+                        else setSwapCard(swapInCard);
+                        playSound("swap");
                       }}
                     >
                       <Zap className="size-3.5" /> Swap in

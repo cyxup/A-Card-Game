@@ -38,6 +38,7 @@ export interface Seat {
   ready: boolean;
   loadout: Loadout;
   level: number;
+  owner: boolean;
   joinedAt: number;
   disconnectedAt: number | null;
   rewards: RewardGrant | null;
@@ -137,6 +138,7 @@ export function createSeatFromPrincipal(
   loadout: Loadout,
   level: number,
   name: string,
+  owner = false,
 ): Seat {
   return {
     id: playerId,
@@ -147,6 +149,7 @@ export function createSeatFromPrincipal(
     ready: false,
     loadout,
     level,
+    owner,
     joinedAt: Date.now(),
     disconnectedAt: null,
     rewards: null,
@@ -210,6 +213,7 @@ export function buildRoomView(room: Room, viewerId: string): RoomView {
       winEffect: seat.loadout.winEffect,
       cardCount: gamePlayer?.hand.length ?? 0,
       placement: placements.get(seat.id) ?? null,
+      owner: seat.owner,
     };
   });
 

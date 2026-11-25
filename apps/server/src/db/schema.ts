@@ -23,6 +23,8 @@ export const users = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     username: varchar("username", { length: 24 }).notNull(),
     displayName: varchar("display_name", { length: 24 }).notNull(),
+    /** Toggled by hand in the database. Grants owner-only cosmetics + badge. */
+    isOwner: boolean("is_owner").notNull().default(false),
     passwordHash: text("password_hash").notNull(),
     xp: integer("xp").notNull().default(0),
     coins: integer("coins").notNull().default(250),
@@ -31,6 +33,9 @@ export const users = pgTable(
     jumps: integer("jumps").notNull().default(0),
     stacks: integer("stacks").notNull().default(0),
     cardsPlayed: integer("cards_played").notNull().default(0),
+    /** sha256 of the one-time recovery code. The raw code is shown once. */
+    recoveryHash: varchar("recovery_hash", { length: 64 }),
+    recoveryIssuedAt: timestamp("recovery_issued_at", { withTimezone: true }),
     equipped: jsonb("equipped")
       .$type<Loadout>()
       .notNull()

@@ -5,6 +5,7 @@ import {
   SLOT_FALLBACK,
   achievementValue,
   completedAchievements,
+  countedCosmetics,
   defaultLoadout,
   levelForXp,
   type AchievementView,
@@ -15,11 +16,26 @@ import {
   type PublicUser,
   type SessionInfo,
 } from "@stacked/shared";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { userCosmetics, users, type UserRow } from "../db/schema.js";
 import type { Principal } from "../auth/session.js";
 import { cleanDisplayName } from "../lib/text.js";
+
+export function isOwner(user: Pick<UserRow, "isOwner">): boolean {
+  return user.isOwner;
+}
+
+/**
+ * A non-owner must never receive owner-only ids, even if they had the flag in
+ * the past and rows are still sitting in user_cosmetics.
+ */
+export function visibleOwned(user: UserRow, ids: Iterable<string>): Set<string> {
+  if (isOwner(user)) return new Set(ids);
+  return new Set(
+    [...ids].filter((id) => COSMETICS_BY_ID.get(id)?.unlock.type !== "owner"),
+  );
+}
 
 export class AccountError extends Error {
   readonly code: string;
@@ -42,7 +58,15 @@ export function statsOf(user: UserRow): PlayerStats {
 }
 
 export function equippedOf(user: UserRow): Loadout {
-  return { ...defaultLoadout(), ...(user.equipped ?? {}) } as Loadout;
+  const loadout = { ...defaultLoadout(), ...(user.equipped ?? {}) } as Loadout;
+  if (!isOwner(user)) {
+    for (const slot of Object.keys(SLOT_FALLBACK) as (keyof Loadout)[]) {
+      if (COSMETICS_BY_ID.get(loadout[slot])?.unlock.type === "owner") {
+        loadout[slot] = SLOT_FALLBACK[slot];
+      }
+    }
+  }
+  return loadout;
 }
 
 export function toPublicUser(user: UserRow): PublicUser {
@@ -60,6 +84,7 @@ export function toPublicUser(user: UserRow): PublicUser {
     winEffect: equippedOf(user).winEffect,
     stats: statsOf(user),
     createdAt: user.createdAt.getTime(),
+    owner: isOwner(user),
   };
 }
 
@@ -82,16 +107,29 @@ export interface SyncResult {
  * achievement rewards) and reports what was just unlocked.
  */
 export async function syncUnlocks(user: UserRow): Promise<SyncResult> {
-  const owned = await getOwnedIds(user.id);
+  const rawOwned = await getOwnedIds(user.id);
+  const owned = visibleOwned(user, rawOwned);
   const stats = statsOf(user);
   const level = levelForXp(user.xp);
+  const owner = isOwner(user);
+
+  // If the owner flag was removed, purge the hidden rows so counts and
+  // achievement progress cannot be inflated by them.
+  const stale = [...rawOwned].filter((id) => !owned.has(id));
+  if (stale.length > 0) {
+    await db
+      .delete(userCosmetics)
+      .where(and(eq(userCosmetics.userId, user.id), inArray(userCosmetics.itemId, stale)));
+  }
 
   const base = COSMETICS.filter(
     (item) =>
-      item.unlock.type === "default" || (item.unlock.type === "level" && level >= item.unlock.level),
+      item.unlock.type === "default" ||
+      (item.unlock.type === "level" && level >= item.unlock.level) ||
+      (item.unlock.type === "owner" && owner),
   );
   const baseOwned = new Set([...owned, ...base.map((item) => item.id)]);
-  const achievements = completedAchievements(stats, baseOwned.size);
+  const achievements = completedAchievements(stats, countedCosmetics(baseOwned));
 
   const earned = COSMETICS.filter(
     (item) => item.unlock.type === "achievement" && achievements.includes(item.unlock.id),
@@ -106,14 +144,21 @@ export async function syncUnlocks(user: UserRow): Promise<SyncResult> {
         missing.map((item) => ({
           userId: user.id,
           itemId: item.id,
-          source: item.unlock.type === "achievement" ? "achievement" : item.unlock.type === "level" ? "level" : "default",
+          source:
+            item.unlock.type === "achievement"
+              ? "achievement"
+              : item.unlock.type === "level"
+                ? "level"
+                : item.unlock.type === "owner"
+                  ? "owner"
+                  : "default",
         })),
       )
       .onConflictDoNothing();
   }
 
   const finalOwned = new Set([...owned, ...missing.map((item) => item.id)]);
-  const finalAchievements = completedAchievements(stats, finalOwned.size);
+  const finalAchievements = completedAchievements(stats, countedCosmetics(finalOwned));
   return { owned: finalOwned, achievements: finalAchievements, newly: missing.map((item) => item.id) };
 }
 
@@ -163,19 +208,21 @@ export async function profilePayload(user: UserRow): Promise<ProfilePayload> {
   const sync = await syncUnlocks(user);
   return {
     user: toPublicUser(user),
-    items: COSMETICS,
+    // Owner-only pieces are not part of the public catalogue.
+    items: COSMETICS.filter((item) => item.unlock.type !== "owner" || isOwner(user)),
     owned: [...sync.owned],
-    achievements: achievementViews(user, sync.owned.size),
+    achievements: achievementViews(user, countedCosmetics(sync.owned)),
     equipped: equippedOf(user),
   };
 }
 
-export async function itemIsOwned(userId: string, item: CosmeticItem): Promise<boolean> {
+export async function itemIsOwned(user: UserRow, item: CosmeticItem): Promise<boolean> {
   if (item.unlock.type === "default") return true;
+  if (item.unlock.type === "owner") return isOwner(user);
   const [row] = await db
     .select({ itemId: userCosmetics.itemId })
     .from(userCosmetics)
-    .where(and(eq(userCosmetics.userId, userId), eq(userCosmetics.itemId, item.id)))
+    .where(and(eq(userCosmetics.userId, user.id), eq(userCosmetics.itemId, item.id)))
     .limit(1);
   return Boolean(row);
 }
@@ -186,7 +233,7 @@ export async function purchaseItem(user: UserRow, itemId: string): Promise<{ use
   if (item.unlock.type !== "shop") {
     throw new AccountError("not_for_sale", "You cannot buy that one — it has to be earned.", 400);
   }
-  if (await itemIsOwned(user.id, item)) {
+  if (await itemIsOwned(user, item)) {
     throw new AccountError("already_owned", "You already own that.", 409);
   }
 
@@ -215,7 +262,7 @@ export async function purchaseItem(user: UserRow, itemId: string): Promise<{ use
 export async function equipItem(user: UserRow, itemId: string): Promise<{ user: UserRow; profile: ProfilePayload }> {
   const item = COSMETICS_BY_ID.get(itemId);
   if (!item) throw new AccountError("unknown_item", "That cosmetic does not exist.", 404);
-  if (!(await itemIsOwned(user.id, item))) {
+  if (!(await itemIsOwned(user, item))) {
     throw new AccountError("not_owned", "Unlock that first.", 403);
   }
   const loadout = { ...equippedOf(user), [item.slot]: item.id };

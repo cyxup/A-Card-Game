@@ -1,13 +1,15 @@
-import { MotionConfig } from "motion/react";
-import { Suspense, lazy } from "react";
+import { AnimatePresence, MotionConfig, motion } from "motion/react";
+import { Suspense, lazy, useEffect } from "react";
 import { Route, Switch, useLocation } from "wouter";
 import { GuestPrompt } from "@/components/auth/guest-prompt";
 import { Footer, Nav } from "@/components/layout/nav";
 import { Spinner } from "@/components/ui/spinner";
 import { Toaster } from "@/components/ui/toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { easeOutExpo } from "@/lib/motion";
 import { usePrefs } from "@/lib/prefs";
 import { SessionProvider } from "@/lib/session";
+import { playSound, primeAudio } from "@/lib/sound";
 import HomePage from "@/pages/Home";
 import NotFoundPage from "@/pages/NotFound";
 
@@ -41,6 +43,20 @@ export default function App() {
   const prefs = usePrefs();
   const inRoom = location.startsWith("/room/");
 
+  useEffect(() => {
+    const onPointerDown = (event: PointerEvent) => {
+      primeAudio();
+      const target = (event.target as Element | null)?.closest<HTMLElement>("button, a, [role='tab']");
+      if (!target) return;
+      if (target.matches(":disabled") || target.getAttribute("aria-disabled") === "true") return;
+      // Cards, the deck and emotes have their own, richer sounds.
+      if (target.closest(".pcard, .emote-button, .deck-button")) return;
+      playSound(target.getAttribute("role") === "tab" ? "tab" : "click");
+    };
+    window.addEventListener("pointerdown", onPointerDown, { passive: true });
+    return () => window.removeEventListener("pointerdown", onPointerDown);
+  }, []);
+
   return (
     <MotionConfig reducedMotion={prefs.reducedMotion ? "always" : "never"}>
       <TooltipProvider delayDuration={300}>
@@ -56,17 +72,28 @@ export default function App() {
             {!inRoom && <Nav />}
             <main id="main" className="relative z-10 flex-1">
               <Suspense fallback={<PageLoader />}>
-                <Switch>
-                  <Route path="/" component={HomePage} />
-                  <Route path="/play" component={PlayPage} />
-                  <Route path="/room/:code" component={RoomPage} />
-                  <Route path="/login" component={LoginPage} />
-                  <Route path="/signup" component={SignupPage} />
-                  <Route path="/profile" component={ProfilePage} />
-                  <Route path="/leaderboard" component={LeaderboardPage} />
-                  <Route path="/rules" component={RulesPage} />
-                  <Route component={NotFoundPage} />
-                </Switch>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={location}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.32, ease: easeOutExpo }}
+                    className="min-h-full"
+                  >
+                    <Switch>
+                      <Route path="/" component={HomePage} />
+                      <Route path="/play" component={PlayPage} />
+                      <Route path="/room/:code" component={RoomPage} />
+                      <Route path="/login" component={LoginPage} />
+                      <Route path="/signup" component={SignupPage} />
+                      <Route path="/profile" component={ProfilePage} />
+                      <Route path="/leaderboard" component={LeaderboardPage} />
+                      <Route path="/rules" component={RulesPage} />
+                      <Route component={NotFoundPage} />
+                    </Switch>
+                  </motion.div>
+                </AnimatePresence>
               </Suspense>
             </main>
             {!inRoom && <Footer />}

@@ -15,12 +15,11 @@ room; accounts, cosmetics and match results live in PostgreSQL.
 - **Playable multiplayer** — public matchmaking, private tables with 5-letter codes, practice vs bots.
 - **The full hybrid ruleset** — UNO deck + Blazing 8s cards (Giddy Up, Wrong Way, Quick Draw, Wild Eight, Oscar's Swap).
 - **Host-configurable table rules** — stacking modes, jump-ins, swap-anytime, seven-zero, draw-until-playable, turn timer, seats, starting hand.
-- **Accounts and guests** — scrypt password hashing, opaque httpOnly session cookies, rate limits, guest sessions that can be upgraded.
-- **Progression** — XP, levels, coins, match rewards, achievements.
-- **Cosmetics** — card backs, table felts, avatars, name effects and win effects, visible to everyone at the table.
+- **Accounts and guests** — scrypt password hashing, opaque httpOnly session cookies, rate limits, guest sessions that can be upgraded, and one-time recovery codes for password resets.
+- **Progression** — XP, levels, coins, match rewards, achievements. Starter cosmetics no longer count toward collection achievements.
+- **Cosmetics** — card backs, table felts, avatars, name effects and win effects, visible to everyone at the table. Owner accounts also get animated rainbow-only pieces and a badge.
 - **A table that talks back** — opponents' hands are fanned card backs with live counts, cards fly to the discard, the draw deck breathes, seats glow on their turn, and every play/draw/skip lands with a readable action banner.
-- **Built to look alive** — CSS cards and a focused set of Motion animations; no bitmap payloads, no canvas, and an optional low-power/reduce-motion escape hatch.
-- **Synthesised audio** — tiny WebAudio blips instead of downloaded sound files.
+- **Built to look alive** — CSS cards, route fades, Motion springs, animated seats and synthesised UI/game sounds; no bitmap payloads, no canvas, and an optional low-power/reduce-motion escape hatch.
 - **Authoritative server** — hands are masked per player, actions are validated by the engine, timers and bots run server-side.
 
 ---
@@ -146,6 +145,35 @@ poolers out of the box.
 - Auth endpoints are rate limited in-memory per IP. Put the platform firewall in front if you
   expect abuse.
 
+### Owner accounts
+
+Owner-only cosmetics are **not part of the public catalogue**: regular players never see them in
+the shop, in the collection or in the API response. The `is_owner` column is added by migration
+`0002_sparkling_medusa.sql`, so deploy first (with `MIGRATE_ON_START=true`), then enable it per
+account directly in PostgreSQL:
+
+```sql
+UPDATE users SET is_owner = true WHERE lower(username) = 'your_username';
+```
+
+That grants the Prism Foil card back, The Owner's Box felt, The Ace avatar, Spectrum name effect,
+Prism Burst win effect and the `owner` badge at the table. To revoke it:
+
+```sql
+UPDATE users SET is_owner = false WHERE lower(username) = 'your_username';
+```
+
+Rows for owner-only items are purged on the next login/profile sync, and any equipped owner item
+falls back to the slot default. No environment variable is involved.
+
+### Recovery codes
+
+Every account gets a one-time recovery code at registration, shown once in a dialog. The server
+stores only its SHA-256 digest. The sign-in screen has a **Lost your password?** flow that accepts
+username + code + a new password, rotates the code and invalidates every existing session on the
+account. Existing accounts created before this feature receive a code on their next successful
+login, and can rotate it from Profile → Account → Recovery code.
+
 ---
 
 ## Rules in one screen
@@ -155,11 +183,13 @@ poolers out of the box.
 - **Giddy Up (skip)** removes the next player's turn. **Wrong Way (reverse)** flips direction
   (with two players it acts as a skip).
 - **Quick Draw (+2)** and **Wild Draw Four** add to a stack. Hosts choose: same card only, mixed
-  (+2/+4), or no stacking. The player facing the stack may stack or take it all.
+  (+2/+4), or no stacking. The player facing the stack may stack, or the server takes the pile
+  automatically when they have nothing stackable — no dead turn.
 - **Jump in:** for 5 seconds after a card lands, anyone holding the exact same card (same colour,
   same number/action) can play it out of turn.
 - **Oscar's Swap:** pick a player and a colour, take their hand. With *swap anytime* enabled it is
-  also legal out of turn inside the jump window.
+  also legal out of turn inside the jump window. In a two-player game the only opponent is
+  targeted automatically.
 - **Seven-zero (optional):** a 7 swaps hands with the next player; a 0 rotates every hand one seat.
 - **Draw until playable (optional):** keep drawing until you find a legal card.
 - **Win:** empty your hand. Rewards are paid, the host can deal again instantly.
@@ -175,8 +205,10 @@ Guests can play everything, but only accounts keep coins, XP, levels and cosmeti
 | `GET /api/session` | current user or guest |
 | `POST /api/auth/guest` | start a named guest session |
 | `POST /api/auth/register` / `login` / `logout` | accounts |
+| `POST /api/auth/recover` | reset a password with a recovery code |
 | `GET /api/me/profile` | user + owned cosmetics + achievements |
 | `POST /api/me/cosmetics/buy` / `equip` | shop and loadout |
+| `POST /api/me/recovery` | rotate the recovery code (password required) |
 | `PATCH /api/me` | display name |
 | `GET /api/leaderboard` | top 50 by XP |
 | `GET /api/rooms` | joinable public lobbies |
@@ -192,9 +224,10 @@ Hands and the drawn card are masked per player; the draw-pile count is public.
 
 ## Motion & performance
 
-The table is deliberately expressive: Motion springs for layout, a shared-layout flight from
-hand to discard, flying card backs for opponent draws, animated seat rings, a turn spotlight and
-a readable action banner. It is still a light DOM app:
+The table is deliberately expressive: route fades, Motion springs for layout, a shared-layout flight
+from hand to discard, flying card backs for opponent draws, animated seat rings, a turn spotlight, a
+readable action banner, and synthesised sounds for cards, turns, stacks, jumps and rewards. It is
+still a light DOM app:
 
 - Cards are DOM elements styled with CSS; one tree, no canvas, no sprite sheets.
 - No background images or video. Fonts are self-hosted Geist with unicode-range subsets, so only
@@ -202,9 +235,11 @@ a readable action banner. It is still a light DOM app:
 - Route-level code splitting: the table (the heaviest screen) is a separate chunk.
 - Server broadcasts only on state changes. Turn timers are computed from a deadline field.
 - Animations use `motion/react` with shared spring presets; no per-frame loops in application code.
-- An in-app **Reduce motion** toggle (Profile ? Performance) turns off springs and flights.
+- The hand panel adapts its card size to short viewports so the header, Pass button and hand stay
+  on screen.
+- An in-app **Reduce motion** toggle (Profile → Performance) turns off springs and flights.
   **Low-power mode** is optional, not auto-forced.
-- Audio is synthesised on demand, never downloaded.
+- Audio is synthesised on demand with WebAudio; no sound files are downloaded.
 
 ---
 
@@ -214,9 +249,10 @@ a readable action banner. It is still a light DOM app:
 npm test
 ```
 
-The suite covers deck construction, matching, wilds, draw stacking, jump-in windows, Oscar's Swap,
-turn timeouts, bot legality and rules normalisation. The engine is pure, so more scenarios are
-easy to add in `packages/shared/test/game.test.ts`.
+The suite covers deck construction, matching, wilds, table-colour updates, draw stacking and auto-take,
+jump-in windows, Oscar's Swap (including two-player auto-target), turn timeouts, bot legality, rules
+normalisation and starter-cosmetic counting. The engine is pure, so more scenarios are easy to add in
+`packages/shared/test/game.test.ts`.
 
 ---
 

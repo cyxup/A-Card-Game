@@ -392,10 +392,14 @@ function applyPlay(
 
   let target: GamePlayer | undefined;
   if (card.kind === "swap") {
-    if (!action.targetId || action.targetId === player.id) {
+    let targetId = action.targetId;
+    if (!targetId && state.players.length === 2) {
+      targetId = state.players.find((candidate) => candidate.id !== player.id)?.id;
+    }
+    if (!targetId || targetId === player.id) {
       throw new GameError("target_required", "Pick someone to swap hands with.");
     }
-    target = state.players.find((candidate) => candidate.id === action.targetId);
+    target = state.players.find((candidate) => candidate.id === targetId);
     if (!target) throw new GameError("invalid_target", "That player is not at this table.");
   }
 
@@ -405,6 +409,7 @@ function applyPlay(
   state.lastPlayAt = ctx.now;
   state.discard.push(card);
   if (action.color) state.color = action.color;
+  else if (card.color) state.color = card.color;
 
   pushLog(state, {
     at: ctx.now,
@@ -470,6 +475,17 @@ function applyPlay(
         state.pending += amount;
         state.pendingKind = card.kind;
         advance(state, ctx.now, 1);
+        const victim = state.players[state.turn];
+        // If there is nothing to stack, asking for an explicit "take" is just
+        // busywork. Resolve it for the player.
+        if (victim && !victim.hand.some((candidate) => canStack(state, candidate))) {
+          const drawn = drawCards(state, victim, state.pending, ctx);
+          pushLog(state, { at: ctx.now, kind: "draw_penalty", actor: victim.id, count: drawn });
+          state.pending = 0;
+          state.pendingKind = null;
+          state.lastCard = null;
+          advance(state, ctx.now, 1);
+        }
       }
       return state;
     }

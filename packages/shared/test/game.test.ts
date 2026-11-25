@@ -120,6 +120,19 @@ describe("playing cards", () => {
     expect(done.results?.find((r) => r.id === "b")?.cardsLeft).toBe(2);
   });
 
+  it("sets the table colour from the played card", () => {
+    const s = state({
+      players: players([
+        [card("a1", "red", "number", 5), card("a2", "blue", "number", 2)],
+        [card("b1", "green", "number", 5), card("b2", "yellow", "skip")],
+      ]),
+      discard: [card("t1", "green", "number", 5)],
+      color: "green",
+    });
+    const out = reduce(s, "a", { type: "play", cardId: "a1" }, ctx);
+    expect(out.color).toBe("red");
+  });
+
   it("treats reverse as a skip with two players", () => {
     const s = state({
       players: players([
@@ -139,7 +152,7 @@ describe("draw stacking", () => {
       players: players([
         [card("a1", "red", "draw2"), card("a2", "blue", "number", 2)],
         [card("b1", "blue", "draw2"), card("b2", "yellow", "skip")],
-        [card("c1", "green", "number", 1)],
+        [card("c1", "green", "draw2"), card("c2", "green", "number", 1)],
       ]),
       color: "red",
     });
@@ -149,14 +162,40 @@ describe("draw stacking", () => {
     s = reduce(s, "b", { type: "play", cardId: "b1", color: "red" }, { ...ctx, now: 6_000 });
     expect(s.pending).toBe(4);
     expect(s.turn).toBe(2);
-    s = reduce(s, "c", { type: "draw" }, { ...ctx, now: 7_000 });
-    expect(s.pending).toBe(0);
-    expect(s.players[2]?.hand).toHaveLength(5);
-    expect(s.turn).toBe(0);
+    expect(s.players[2]?.hand).toHaveLength(2);
   });
 
-  it("resolves instantly when stacking is off", () => {
-    let s = state({
+  it("auto-takes the pile when the next player cannot stack", () => {
+    const s = state({
+      players: players([
+        [card("a1", "red", "draw2"), card("a2", "blue", "number", 2)],
+        [card("b1", "green", "number", 5)],
+      ]),
+      drawPile: [card("d1", "red", "number", 1), card("d2", "blue", "number", 2), card("d3", "green", "number", 3)],
+      color: "red",
+    });
+    const out = reduce(s, "a", { type: "play", cardId: "a1" }, ctx);
+    expect(out.pending).toBe(0);
+    expect(out.turn).toBe(0);
+    expect(out.players[1]?.hand).toHaveLength(3);
+    expect(out.log.some((entry) => entry.kind === "draw_penalty" && entry.actor === "b" && entry.count === 2)).toBe(true);
+  });
+
+  it("leaves the pile for a player who can stack", () => {
+    const s = state({
+      players: players([
+        [card("a1", "red", "draw2"), card("a2", "blue", "number", 2)],
+        [card("b1", "blue", "draw2"), card("b2", "yellow", "skip")],
+      ]),
+      color: "red",
+    });
+    const out = reduce(s, "a", { type: "play", cardId: "a1" }, ctx);
+    expect(out.pending).toBe(2);
+    expect(out.turn).toBe(1);
+    expect(out.players[1]?.hand).toHaveLength(2);
+  });
+
+  it("resolves instantly when stacking is off", () => {    let s = state({
       players: players([
         [card("a1", "red", "draw2"), card("a2", "blue", "number", 2)],
         [card("b1", "blue", "draw2"), card("b2", "yellow", "skip")],
@@ -283,6 +322,19 @@ describe("oscar's swap", () => {
     const out = reduce(s, "a", { type: "play", cardId: "a1", color: "blue", targetId: "c" }, ctx);
     expect(out.players[0]?.hand.map((c) => c.id)).toEqual(["c1", "c2"]);
     expect(out.players[2]?.hand.map((c) => c.id)).toEqual(["a2"]);
+  });
+
+  it("auto-targets the only opponent in a two-player game", () => {
+    const s = state({
+      players: players([
+        [card("a1", null, "swap"), card("a2", "blue", "number", 2)],
+        [card("b1", "green", "number", 5), card("b2", "yellow", "number", 1)],
+      ]),
+    });
+    const out = reduce(s, "a", { type: "play", cardId: "a1", color: "green" }, ctx);
+    expect(out.players[0]?.hand.map((c) => c.id)).toEqual(["b1", "b2"]);
+    expect(out.players[1]?.hand.map((c) => c.id)).toEqual(["a2"]);
+    expect(out.log.some((entry) => entry.kind === "swap" && entry.target === "b")).toBe(true);
   });
 });
 

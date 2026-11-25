@@ -1,6 +1,6 @@
 import { EMOTES, type RoomPlayerView } from "@stacked/shared";
 import { AnimatePresence, motion } from "motion/react";
-import { Crown, WifiOff } from "lucide-react";
+import { Crown, Sparkles, WifiOff } from "lucide-react";
 import { Avatar } from "@/components/brand/avatar";
 import { NameEffect } from "@/components/brand/name-effect";
 import { spring } from "@/lib/motion";
@@ -96,6 +96,11 @@ export function Seat({
           </NameEffect>
           <div className="seat-meta">
             <span>Lv {player.level}</span>
+            {player.owner ? (
+              <span className="seat-owner">
+                <Sparkles className="size-2.5" /> owner
+              </span>
+            ) : null}
             {player.isBot ? <span className="seat-bot">bot</span> : null}
             {active ? <span className="seat-time">{seconds > 0 ? `${seconds}s` : "…"}</span> : null}
           </div>

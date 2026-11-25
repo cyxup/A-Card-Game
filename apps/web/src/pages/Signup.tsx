@@ -1,7 +1,8 @@
 import { ArrowRight, Sparkles } from "lucide-react";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useLocation } from "wouter";
 import { PasswordInput } from "@/components/auth/password-input";
+import { RecoveryCodeDialog } from "@/components/auth/recovery";
 import { CardBack, CardFace } from "@/components/cards/playing-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,10 +19,12 @@ export default function SignupPage() {
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [recoveryCode, setRecoveryCode] = useState<string | null>(null);
+  const signingUp = useRef(false);
 
   useEffect(() => {
-    if (session?.kind === "user") navigate("/profile");
-  }, [session?.kind, navigate]);
+    if (session?.kind === "user" && !signingUp.current && !recoveryCode) navigate("/play");
+  }, [session?.kind, recoveryCode, navigate]);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -40,11 +43,14 @@ export default function SignupPage() {
     }
     setBusy(true);
     setError(null);
+    signingUp.current = true;
     try {
       const data = await register(username, password, displayName || username);
       toast.success(`Welcome to the table, ${data.user?.displayName ?? username}.`);
-      navigate("/play");
+      if (data.recoveryCode) setRecoveryCode(data.recoveryCode);
+      else navigate("/play");
     } catch (caught) {
+      signingUp.current = false;
       const message = caught instanceof Error ? caught.message : "Could not create the account.";
       setError(message);
       toast.error(message);
@@ -165,6 +171,19 @@ export default function SignupPage() {
           </Link>
         </p>
       </div>
+
+      <RecoveryCodeDialog
+        open={Boolean(recoveryCode)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRecoveryCode(null);
+            navigate("/play");
+          }
+        }}
+        code={recoveryCode}
+        title="One last thing."
+        description="This is the only way to reset your password. Save it before you sit down."
+      />
     </div>
   );
 }

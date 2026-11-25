@@ -4,6 +4,7 @@ import {
   GameError,
   botAction,
   completedAchievements,
+  countedCosmetics,
   createGame,
   defaultLoadout,
   levelForXp,
@@ -25,8 +26,10 @@ import { matches, matchPlayers, users } from "../db/schema.js";
 import {
   equippedOf,
   getOwnedIds,
+  isOwner,
   statsOf,
   syncUnlocks,
+  visibleOwned,
 } from "../services/account.js";
 import {
   Room,
@@ -250,6 +253,11 @@ export class RoomManager {
       return;
     }
 
+    this.send(conn, {
+      t: "toast",
+      tone: "info",
+      message: "No open tables right now — we opened a fresh one for you.",
+    });
     const rules = normaliseRules(undefined);
     const room = new Room(this.generateCode(), "public", rules);
     const seat = this.seatFor(conn, room);
@@ -263,7 +271,14 @@ export class RoomManager {
   private seatFor(conn: ClientConn, _room: Room): Seat {
     if (conn.principal.kind === "user") {
       const user = conn.principal.user;
-      return createSeatFromPrincipal(conn.principal, conn.playerId, equippedOf(user), levelForXp(user.xp), user.displayName);
+      return createSeatFromPrincipal(
+        conn.principal,
+        conn.playerId,
+        equippedOf(user),
+        levelForXp(user.xp),
+        user.displayName,
+        isOwner(user),
+      );
     }
     return guestSeat(conn.principal, conn.playerId);
   }
@@ -416,6 +431,7 @@ export class RoomManager {
         ready: true,
         loadout,
         level: 1 + Math.floor(Math.random() * 14),
+        owner: false,
         joinedAt: Date.now(),
         disconnectedAt: null,
         rewards: null,
@@ -434,7 +450,9 @@ export class RoomManager {
     const slots = ["cardBack", "table", "avatar", "nameEffect", "winEffect"] as const;
     const loadout = defaultLoadout();
     for (const slot of slots) {
-      const options = COSMETICS.filter((item) => item.slot === slot && item.unlock.type !== "achievement");
+      const options = COSMETICS.filter(
+        (item) => item.slot === slot && item.unlock.type !== "achievement" && item.unlock.type !== "owner",
+      );
       const chosen = options[Math.floor(Math.random() * options.length)];
       if (chosen) loadout[slot] = chosen.id;
     }
@@ -628,7 +646,10 @@ export class RoomManager {
             const row = oldUsers.get(userId);
             if (!row) return;
             const owned = await getOwnedIds(userId);
-            beforeAchievements.set(userId, completedAchievements(statsOf(row), owned.size));
+            beforeAchievements.set(
+              userId,
+              completedAchievements(statsOf(row), countedCosmetics(visibleOwned(row, owned))),
+            );
           }),
         );
       }

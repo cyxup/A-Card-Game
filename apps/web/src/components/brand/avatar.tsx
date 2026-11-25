@@ -51,6 +51,12 @@ const ICONS: Record<string, ReactNode> = {
       <path d="M12 17.5c1.4 0 2.2-1 2.2-2.2 0-1.7-2.2-3.3-2.2-3.3s.2 1.6-.7 2.6-.8 2.9.7 2.9z" />
     </>
   ),
+  ace: (
+    <>
+      <path d="M12 3.5 19 12l-7 8.5L5 12z" />
+      <path d="M12 7v10M8.5 12h7" />
+    </>
+  ),
 };
 
 export function Avatar({

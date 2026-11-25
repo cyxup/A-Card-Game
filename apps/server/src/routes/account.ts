@@ -1,7 +1,9 @@
 import type { PublicStats } from "@stacked/shared";
-import { count } from "drizzle-orm";
+import { count, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+import { verifyPassword } from "../auth/password.js";
+import { generateRecoveryCode, hashRecoveryCode } from "../auth/recovery.js";
 import { db } from "../db/index.js";
 import { matches, users } from "../db/schema.js";
 import { ApiError, badRequest, requireUser } from "../lib/http.js";
@@ -17,6 +19,7 @@ import {
 
 const itemSchema = z.object({ itemId: z.string().min(1).max(40) });
 const nameSchema = z.object({ displayName: z.string().min(1).max(40) });
+const recoverySchema = z.object({ password: z.string().min(1).max(200) });
 
 let totalsCache: { at: number; players: number; matches: number } = { at: 0, players: 0, matches: 0 };
 
@@ -63,6 +66,22 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
   app.get("/api/leaderboard", async () => leaderboard(50));
 
   app.get("/api/rooms", async () => rooms.listPublic());
+
+  app.post("/api/me/recovery", async (request) => {
+    const principal = requireUser(request);
+    const parsed = recoverySchema.safeParse(request.body);
+    if (!parsed.success) badRequest("Enter your current password.");
+
+    const valid = await verifyPassword(parsed.data.password, principal.user.passwordHash);
+    if (!valid) throw new ApiError(401, "invalid_password", "That password is not right.");
+
+    const recoveryCode = generateRecoveryCode();
+    await db
+      .update(users)
+      .set({ recoveryHash: hashRecoveryCode(recoveryCode), recoveryIssuedAt: new Date() })
+      .where(eq(users.id, principal.user.id));
+    return { recoveryCode };
+  });
 
   app.get("/api/stats", async () => {
     const base = await totals();

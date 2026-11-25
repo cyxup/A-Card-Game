@@ -18,6 +18,8 @@ export interface PublicUser {
   winEffect: string;
   stats: PlayerStats;
   createdAt: number;
+  /** True when users.is_owner is enabled in the database. */
+  owner: boolean;
 }
 
 export interface SessionInfo {
@@ -27,6 +29,11 @@ export interface SessionInfo {
   /** Cosmetic ids the account owns. Guests get defaults only. */
   unlocks: string[];
   achievements: string[];
+  /**
+   * Only present immediately after registering, resetting a password or
+   * rotating the code. The raw value is never stored or returned again.
+   */
+  recoveryCode?: string;
 }
 
 export interface LeaderboardEntry {
@@ -84,6 +91,7 @@ export interface RoomPlayerView {
   winEffect: string;
   cardCount: number;
   placement: number | null;
+  owner?: boolean;
 }
 
 export interface RewardGrant {

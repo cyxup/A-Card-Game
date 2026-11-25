@@ -5,6 +5,7 @@ import {
   Check,
   Coins,
   Gauge,
+  KeyRound,
   Lock,
   LogOut,
   Pencil,
@@ -17,6 +18,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "wouter";
 import { Avatar } from "@/components/brand/avatar";
 import { NameEffect } from "@/components/brand/name-effect";
+import { GenerateRecoveryDialog } from "@/components/auth/recovery";
 import { CardBack } from "@/components/cards/playing-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,6 +39,7 @@ import { toast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
 import { compactNumber } from "@/lib/format";
 import { usePrefs, setPrefs } from "@/lib/prefs";
+import { playSound } from "@/lib/sound";
 import { useSession } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
@@ -58,6 +61,8 @@ function unlockText(item: CosmeticItem): string {
       return `Level ${item.unlock.level}`;
     case "achievement":
       return "Achievement reward";
+    case "owner":
+      return "Owner only";
   }
 }
 
@@ -108,6 +113,7 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [renameOpen, setRenameOpen] = useState(false);
   const [newName, setNewName] = useState("");
+  const [recoveryOpen, setRecoveryOpen] = useState(false);
 
   const userId = session?.kind === "user" ? session.user?.id : null;
 
@@ -137,6 +143,7 @@ export default function ProfilePage() {
     try {
       const data = await api.post<ProfilePayload>("/api/me/cosmetics/equip", { itemId: item.id });
       setProfile(data);
+      playSound("equip");
       toast.success(`${item.name} equipped.`);
       void refresh();
     } catch (caught) {
@@ -152,6 +159,7 @@ export default function ProfilePage() {
     try {
       const data = await api.post<ProfilePayload>("/api/me/cosmetics/buy", { itemId: item.id });
       setProfile(data);
+      playSound("coin");
       toast.success(`${item.name} unlocked.`);
       void refresh();
     } catch (caught) {
@@ -170,6 +178,7 @@ export default function ProfilePage() {
       const data = await api.get<ProfilePayload>("/api/me/profile");
       setProfile(data);
       setRenameOpen(false);
+      playSound("success");
       toast.success("Display name updated.");
       void refresh();
     } catch (caught) {
@@ -263,6 +272,11 @@ export default function ProfilePage() {
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <Badge variant="brand">level {user.level}</Badge>
+                {user.owner && (
+                  <Badge variant="warning" className="gap-1">
+                    <Sparkles className="size-3" /> owner
+                  </Badge>
+                )}
                 <Badge variant="outline" className="gap-1">
                   <Coins className="size-3 text-brand" /> {compactNumber(user.coins)}
                 </Badge>
@@ -325,6 +339,7 @@ export default function ProfilePage() {
                         className={cn(
                           "panel flex flex-col overflow-hidden rounded-2xl transition-colors",
                           equipped && "border-brand/35",
+                          item.unlock.type === "owner" && "owner-card",
                         )}
                       >
                         <div className="relative flex h-28 items-center justify-center border-b border-white/6 bg-black/20">
@@ -457,6 +472,9 @@ export default function ProfilePage() {
               <Button variant="outline" className="justify-start gap-2" onClick={() => { setNewName(user.displayName); setRenameOpen(true); }}>
                 <Pencil /> Change display name
               </Button>
+              <Button variant="outline" className="justify-start gap-2" onClick={() => setRecoveryOpen(true)}>
+                <KeyRound /> Recovery code
+              </Button>
               <Button
                 variant="ghost"
                 className="justify-start gap-2 text-muted-foreground"
@@ -470,6 +488,8 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      <GenerateRecoveryDialog open={recoveryOpen} onOpenChange={setRecoveryOpen} />
 
       <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
         <DialogContent size="sm">

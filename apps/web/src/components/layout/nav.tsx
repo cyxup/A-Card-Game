@@ -57,7 +57,7 @@ export function Nav() {
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/8 bg-background/92 supports-[backdrop-filter]:bg-background/80">
+    <header className="site-nav sticky top-0 z-40 border-b border-white/8 bg-background/92 supports-[backdrop-filter]:bg-background/80">
       <div className="mx-auto flex h-14 w-full max-w-7xl items-center gap-5 px-4 sm:px-6">
         <Logo />
         <nav className="hidden items-center gap-0.5 md:flex" aria-label="Primary">

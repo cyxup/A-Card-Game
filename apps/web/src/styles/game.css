@@ -232,6 +232,26 @@ button.pcard:focus-visible {
   --back-accent: #ffa9c4;
 }
 
+.back-prism {
+  --back-a: #23103f;
+  --back-b: #07040d;
+  --back-accent: #ffe0fa;
+}
+
+.back-prism .pcard-inner {
+  border-color: rgb(255 255 255 / 0.45);
+  background:
+    conic-gradient(from 210deg at 50% 45%, #ff5a2b, #ffd166, #42d392, #4aa8ff, #b96bff, #ff2d55, #ff5a2b);
+  animation: prism-spin 8s linear infinite;
+}
+
+.back-prism .back-mark {
+  color: #fff;
+  text-shadow:
+    0 0 12px rgb(255 255 255 / 0.8),
+    0 0 22px rgb(255 160 240 / 0.6);
+}
+
 /* card interactions */
 
 .pcard-playable {
@@ -619,6 +639,21 @@ button.pcard:focus-visible {
   border: 2px solid color-mix(in oklch, var(--brand) 80%, transparent);
   box-shadow: 0 0 60px color-mix(in oklch, var(--brand) 45%, transparent);
   animation: shockwave 1.6s var(--ease-out-expo) forwards;
+  pointer-events: none;
+}
+
+.prism-burst-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 34vmin;
+  height: 34vmin;
+  border-radius: 999px;
+  background: conic-gradient(from 0deg, #ff5a2b, #ffd166, #42d392, #4aa8ff, #b96bff, #ff2d55, #ff5a2b);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 5px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 5px));
+  filter: drop-shadow(0 0 20px rgb(255 150 220 / 0.75));
+  animation: shockwave 1.8s var(--ease-out-expo) forwards;
   pointer-events: none;
 }
 

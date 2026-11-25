@@ -36,7 +36,11 @@ export function GameOverDialog({
 
   useEffect(() => {
     playSound(rewards?.placement === 1 ? "win" : "lose");
-  }, [rewards?.placement]);
+    if (rewards?.banked) {
+      const timer = window.setTimeout(() => playSound("reward"), 520);
+      return () => window.clearTimeout(timer);
+    }
+  }, [rewards?.placement, rewards?.banked]);
 
   const unlocked = (rewards?.unlocked ?? [])
     .map((id) => COSMETICS_BY_ID.get(id))

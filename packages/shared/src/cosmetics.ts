@@ -10,7 +10,9 @@ export type Unlock =
   | { type: "default" }
   | { type: "shop"; price: number }
   | { type: "level"; level: number }
-  | { type: "achievement"; id: string };
+  | { type: "achievement"; id: string }
+  /** Hidden from the public catalogue. Granted by users.is_owner. */
+  | { type: "owner" };
 
 export interface CosmeticItem {
   id: string;
@@ -95,6 +97,14 @@ export const COSMETICS: CosmeticItem[] = [
     rarity: "epic",
     unlock: { type: "shop", price: 1800 },
   },
+  {
+    id: "prism",
+    slot: "cardBack",
+    name: "Prism Foil",
+    description: "Owner only. A full spectrum folded into the deck.",
+    rarity: "legendary",
+    unlock: { type: "owner" },
+  },
 
   // ── Tables ──────────────────────────────────────────────────────────────
   {
@@ -152,6 +162,14 @@ export const COSMETICS: CosmeticItem[] = [
     description: "A table that bites back.",
     rarity: "legendary",
     unlock: { type: "shop", price: 1500 },
+  },
+  {
+    id: "owners-box",
+    slot: "table",
+    name: "The Owner's Box",
+    description: "Owner only. The felt itself refuses to pick one colour.",
+    rarity: "legendary",
+    unlock: { type: "owner" },
   },
 
   // ── Avatars ─────────────────────────────────────────────────────────────
@@ -219,6 +237,14 @@ export const COSMETICS: CosmeticItem[] = [
     rarity: "legendary",
     unlock: { type: "achievement", id: "win_5" },
   },
+  {
+    id: "ace",
+    slot: "avatar",
+    name: "The Ace",
+    description: "Owner only. The house always has one more card.",
+    rarity: "legendary",
+    unlock: { type: "owner" },
+  },
 
   // ── Name effects ────────────────────────────────────────────────────────
   {
@@ -268,6 +294,14 @@ export const COSMETICS: CosmeticItem[] = [
     description: "Cold letters that smoke when you win.",
     rarity: "epic",
     unlock: { type: "shop", price: 1200 },
+  },
+  {
+    id: "spectrum",
+    slot: "nameEffect",
+    name: "Spectrum",
+    description: "Owner only. Every colour, all at once, forever.",
+    rarity: "legendary",
+    unlock: { type: "owner" },
   },
 
   // ── Win effects ─────────────────────────────────────────────────────────
@@ -319,6 +353,14 @@ export const COSMETICS: CosmeticItem[] = [
     rarity: "legendary",
     unlock: { type: "achievement", id: "win_25" },
   },
+  {
+    id: "prism-burst",
+    slot: "winEffect",
+    name: "Prism Burst",
+    description: "Owner only. A rainbow detonates over the table.",
+    rarity: "legendary",
+    unlock: { type: "owner" },
+  },
 ];
 
 export const COSMETICS_BY_ID = new Map(COSMETICS.map((item) => [item.id, item]));
@@ -331,6 +373,20 @@ export function cosmeticsForSlot(slot: CosmeticSlot): CosmeticItem[] {
 
 export function defaultLoadout(): Loadout {
   return { ...SLOT_FALLBACK };
+}
+
+/** House defaults should not inflate collection achievements. */
+export function isDefaultCosmetic(itemId: string): boolean {
+  return COSMETICS_BY_ID.get(itemId)?.unlock.type === "default";
+}
+
+/** Number of genuinely earned / bought cosmetics, ignoring starter items. */
+export function countedCosmetics(ids: Iterable<string>): number {
+  let count = 0;
+  for (const id of ids) {
+    if (!isDefaultCosmetic(id)) count++;
+  }
+  return count;
 }
 
 export interface Achievement {
@@ -354,7 +410,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "jump_10", name: "Sniper", description: "Jump in on ten plays.", metric: "jumps", goal: 10 },
   { id: "stack_10", name: "The stack", description: "Stack ten draw cards.", metric: "stacks", goal: 10 },
   { id: "cards_250", name: "Dealer's hand", description: "Play 250 cards.", metric: "cardsPlayed", goal: 250 },
-  { id: "collector_10", name: "Collector", description: "Unlock ten cosmetics.", metric: "cosmetics", goal: 10 },
+  { id: "collector_10", name: "Collector", description: "Unlock ten cosmetics. Starter items don't count.", metric: "cosmetics", goal: 10 },
 ];
 
 export interface PlayerStats {

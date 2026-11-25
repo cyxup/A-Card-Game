@@ -10,6 +10,7 @@ interface SessionContextValue {
   becomeGuest: (name: string) => Promise<SessionInfo>;
   login: (username: string, password: string) => Promise<SessionInfo>;
   register: (username: string, password: string, displayName?: string) => Promise<SessionInfo>;
+  recover: (username: string, token: string, password: string) => Promise<SessionInfo>;
   logout: () => Promise<void>;
 }
 
@@ -69,6 +70,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     return data;
   }, []);
 
+  const recover = useCallback(async (username: string, token: string, password: string) => {
+    const data = await api.post<SessionInfo>("/api/auth/recover", { username, token, password });
+    game.reset();
+    setSession(data);
+    return data;
+  }, []);
+
   const logout = useCallback(async () => {
     await api.post("/api/auth/logout");
     game.reset();
@@ -76,8 +84,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<SessionContextValue>(
-    () => ({ session, loading, refresh, becomeGuest, login, register, logout }),
-    [session, loading, refresh, becomeGuest, login, register, logout],
+    () => ({ session, loading, refresh, becomeGuest, login, register, recover, logout }),
+    [session, loading, refresh, becomeGuest, login, register, recover, logout],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

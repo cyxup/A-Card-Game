@@ -11,6 +11,7 @@
   margin: 0 auto;
   padding: 10px;
   isolation: isolate;
+  overflow: hidden;
 }
 
 .table-surface-live {
@@ -649,6 +650,13 @@
   color: rgb(255 255 255 / 0.3);
 }
 
+.deck-pass {
+  margin-top: 1px;
+  min-width: 74px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
 .pile-discard {
   position: relative;
 }
@@ -803,6 +811,8 @@
 .hand-panel {
   position: relative;
   z-index: 20;
+  display: flex;
+  flex-direction: column;
   flex: 0 0 auto;
   border-radius: 24px;
   border: 1px solid rgb(255 255 255 / 0.08);
@@ -1130,8 +1140,8 @@
 /* ── card polish ───────────────────────────────────────────────────────── */
 
 .pcard-dim {
-  opacity: 0.56;
-  filter: saturate(0.65) brightness(0.9);
+  opacity: 0.82;
+  filter: saturate(0.9) brightness(0.97);
 }
 
 .pcard-playable {
@@ -1302,4 +1312,71 @@
 .self-emote {
   top: -7px;
   right: -11px;
+}
+
+/* ── short viewports: keep the header, hand and pass button on screen ───── */
+
+@media (max-height: 900px) {
+  .game-stage {
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .table-rail {
+    padding-top: 14px;
+  }
+
+  .play-zone {
+    gap: 8px;
+    padding-bottom: 10px;
+  }
+
+  .my-hand-slot .pcard {
+    --cw: clamp(66px, 8.6dvh, 86px);
+  }
+
+  .my-hand-row {
+    min-height: 0;
+    padding: 8px 0 4px;
+  }
+
+  .hand-header {
+    padding-top: 6px;
+  }
+
+  .hand-footer {
+    padding-bottom: 5px;
+  }
+}
+
+@media (max-height: 720px) {
+  .my-hand-slot .pcard {
+    --cw: 64px;
+  }
+
+  .my-hand-row {
+    padding: 4px 0 2px;
+  }
+
+  .hand-header {
+    gap: 6px;
+    padding-top: 4px;
+  }
+
+  .hand-footer {
+    padding-bottom: 3px;
+  }
+
+  .event-ticker {
+    display: none;
+  }
+
+  .play-zone {
+    gap: 6px;
+    padding-bottom: 6px;
+  }
+
+  .seat-hand {
+    display: none;
+  }
 }

@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { ACHIEVEMENTS, COSMETICS, COSMETICS_BY_ID, DEFAULT_RULES, SLOT_FALLBACK, defaultLoadout } from "../src/index.js";
+import {
+  ACHIEVEMENTS,
+  COSMETICS,
+  COSMETICS_BY_ID,
+  DEFAULT_RULES,
+  SLOT_FALLBACK,
+  countedCosmetics,
+  defaultLoadout,
+  isDefaultCosmetic,
+} from "../src/index.js";
 
 describe("cosmetics catalogue", () => {
   it("has globally unique ids", () => {
@@ -25,6 +34,14 @@ describe("cosmetics catalogue", () => {
     for (const item of COSMETICS) {
       if (item.unlock.type === "shop") expect(item.unlock.price).toBeGreaterThan(0);
     }
+  });
+
+  it("does not count starter items as collected cosmetics", () => {
+    const defaults = COSMETICS.filter((item) => item.unlock.type === "default").map((item) => item.id);
+    expect(defaults.length).toBeGreaterThan(0);
+    expect(countedCosmetics(defaults)).toBe(0);
+    expect(isDefaultCosmetic(SLOT_FALLBACK.avatar)).toBe(true);
+    expect(countedCosmetics([...defaults, "prism"])).toBe(1);
   });
 });
 

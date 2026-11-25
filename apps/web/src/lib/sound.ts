@@ -1,6 +1,26 @@
 import { getPrefs } from "./prefs";
 
-type SoundName = "click" | "deal" | "play" | "draw" | "turn" | "win" | "lose" | "error" | "emote";
+type SoundName =
+  | "click"
+  | "tab"
+  | "deal"
+  | "play"
+  | "draw"
+  | "turn"
+  | "win"
+  | "lose"
+  | "error"
+  | "emote"
+  | "stack"
+  | "jump"
+  | "swap"
+  | "wild"
+  | "shuffle"
+  | "reward"
+  | "coin"
+  | "equip"
+  | "success"
+  | "tick";
 
 let context: AudioContext | null = null;
 let noise: AudioBuffer | null = null;
@@ -55,6 +75,28 @@ function swoosh(audio: AudioContext, gain: number, cutoff: number): void {
   source.start(now);
 }
 
+function slide(
+  audio: AudioContext,
+  from: number,
+  to: number,
+  duration: number,
+  gain: number,
+  type: OscillatorType = "triangle",
+): void {
+  const osc = audio.createOscillator();
+  const amp = audio.createGain();
+  const now = audio.currentTime;
+  osc.type = type;
+  osc.frequency.setValueAtTime(from, now);
+  osc.frequency.exponentialRampToValueAtTime(to, now + duration);
+  amp.gain.setValueAtTime(0.0001, now);
+  amp.gain.exponentialRampToValueAtTime(gain, now + 0.02);
+  amp.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+  osc.connect(amp).connect(audio.destination);
+  osc.start(now);
+  osc.stop(now + duration + 0.02);
+}
+
 export function playSound(name: SoundName): void {
   if (!getPrefs().sound) return;
   const audio = ctx();
@@ -63,6 +105,10 @@ export function playSound(name: SoundName): void {
   switch (name) {
     case "click":
       tone(audio, 620, 0.05, 0.025, "triangle");
+      break;
+    case "tab":
+      tone(audio, 760, 0.045, 0.02, "sine");
+      setTimeout(() => tone(audio, 1020, 0.06, 0.015, "sine"), 35);
       break;
     case "deal":
       swoosh(audio, 0.05, 2400);
@@ -93,6 +139,49 @@ export function playSound(name: SoundName): void {
     case "emote":
       tone(audio, 880, 0.07, 0.03, "sine");
       setTimeout(() => tone(audio, 1175, 0.1, 0.025, "sine"), 60);
+      break;
+    case "stack":
+      swoosh(audio, 0.05, 900);
+      tone(audio, 96, 0.16, 0.06, "triangle");
+      setTimeout(() => tone(audio, 72, 0.18, 0.045, "triangle"), 60);
+      break;
+    case "jump":
+      slide(audio, 360, 1180, 0.18, 0.045, "sawtooth");
+      tone(audio, 1320, 0.09, 0.025, "sine");
+      break;
+    case "swap":
+      swoosh(audio, 0.055, 2000);
+      setTimeout(() => swoosh(audio, 0.045, 1500), 90);
+      break;
+    case "wild":
+      [660, 880, 1100, 1320].forEach((frequency, index) => {
+        setTimeout(() => tone(audio, frequency, 0.12, 0.02, "sine"), index * 45);
+      });
+      break;
+    case "shuffle":
+      swoosh(audio, 0.035, 3200);
+      setTimeout(() => swoosh(audio, 0.03, 2600), 70);
+      break;
+    case "coin":
+      tone(audio, 1046, 0.07, 0.03, "triangle");
+      setTimeout(() => tone(audio, 1568, 0.12, 0.028, "triangle"), 55);
+      break;
+    case "reward":
+      [659, 880, 1046, 1318].forEach((frequency, index) => {
+        setTimeout(() => tone(audio, frequency, 0.2, 0.032, "sine"), index * 85);
+      });
+      break;
+    case "equip":
+      tone(audio, 620, 0.08, 0.025, "triangle");
+      setTimeout(() => tone(audio, 930, 0.16, 0.03, "sine"), 60);
+      break;
+    case "success":
+      [523, 784, 1046].forEach((frequency, index) => {
+        setTimeout(() => tone(audio, frequency, 0.18, 0.035, "triangle"), index * 70);
+      });
+      break;
+    case "tick":
+      tone(audio, 420, 0.03, 0.018, "square");
       break;
   }
 }

@@ -38,6 +38,35 @@ export function WinEffect({ effect }: { effect: string | null | undefined }) {
     );
   }
 
+  if (effect === "prism-burst") {
+    return (
+      <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden">
+        <span className="prism-burst-ring" />
+        <span className="prism-burst-ring" style={{ animationDelay: ".25s" }} />
+        {particles.map((particle, index) => (
+          <span
+            key={index}
+            className="win-confetti"
+            style={
+              {
+                left: `${particle.left}%`,
+                background: `hsl(${(index * 37) % 360} 92% 66%)`,
+                width: 7,
+                height: 12,
+                animationDelay: `${particle.delay}s`,
+                animationDuration: `${particle.duration}s`,
+                "--drift": `${particle.drift}px`,
+                "--spin": `${particle.spin}deg`,
+                scale: String(particle.scale),
+                boxShadow: `0 0 12px hsl(${(index * 37) % 360} 92% 66% / 0.7)`,
+              } as React.CSSProperties
+            }
+          />
+        ))}
+      </div>
+    );
+  }
+
   if (lowPower && effect !== "confetti") return null;
 
   return (
