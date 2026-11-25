@@ -1,9 +1,10 @@
 import type { Card, PublicStats } from "@stacked/shared";
-import { ArrowRight, Bot, Layers, Palette, Sparkles, Swords, Users, Zap } from "lucide-react";
+import { ArrowRight, BookOpen, Bot, Layers, Palette, Sparkles, Swords, Users, Zap } from "lucide-react";
 import { useEffect, useState, type CSSProperties } from "react";
 import { Link, useLocation } from "wouter";
 import { askForName } from "@/components/auth/guest-prompt";
 import { CardFace } from "@/components/cards/playing-card";
+import { TutorialDialog } from "@/components/game/tutorial-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
@@ -36,6 +37,18 @@ export default function HomePage() {
   const [, navigate] = useLocation();
   const [stats, setStats] = useState<PublicStats | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [tutorialOpen, setTutorialOpen] = useState(false);
+
+  useEffect(() => {
+    if (window.localStorage.getItem("stacked:tutorial-seen")) return;
+    const timer = window.setTimeout(() => setTutorialOpen(true), 800);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  function closeTutorial(open: boolean) {
+    setTutorialOpen(open);
+    if (!open) window.localStorage.setItem("stacked:tutorial-seen", "1");
+  }
 
   useEffect(() => {
     let alive = true;
@@ -133,6 +146,14 @@ export default function HomePage() {
               onClick={() => ensure(practice)}
             >
               <Bot /> {t("Practice")}
+            </Button>
+            <Button
+              variant="ghost"
+              size="xl"
+              className="text-muted-foreground"
+              onClick={() => setTutorialOpen(true)}
+            >
+              <BookOpen /> {t("Tutorial")}
             </Button>
           </div>
 
@@ -326,6 +347,15 @@ export default function HomePage() {
           </Button>
         </Link>
       </section>
+
+      <TutorialDialog
+        open={tutorialOpen}
+        onOpenChange={closeTutorial}
+        onPractice={() => {
+          closeTutorial(false);
+          ensure(practice);
+        }}
+      />
     </div>
   );
 }

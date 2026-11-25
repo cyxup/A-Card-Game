@@ -17,9 +17,9 @@ export function localizedCardLabel(card: Card): string {
   const color = card.color ? (COLOR_NAME[card.color] ?? card.color) : "";
   if (card.kind === "number") return `${card.value} ${color}`.trim();
   if (card.kind === "wild" || card.kind === "wild4" || card.kind === "swap") {
-    return KIND_LABEL[card.kind];
+    return tNow(KIND_LABEL[card.kind]);
   }
-  return `${KIND_LABEL[card.kind]} ${color}`.trim();
+  return `${tNow(KIND_LABEL[card.kind])} ${color}`.trim();
 }
 
 export function cardShort(card: Card): string {

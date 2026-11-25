@@ -78,9 +78,9 @@ const FR: Record<string, string> = {
     "Un jeu de cartes hybride pour ceux qui chambrent.",
   // card chips / hero
   "Wild Eight": "Joker +8",
-  "Giddy Up": "Giddy Up",
-  "Wrong Way": "Wrong Way",
-  "Quick Draw": "Quick Draw",
+  "Giddy Up": "Au galop",
+  "Wrong Way": "Mauvais sens",
+  "Quick Draw": "Dégainage",
   "Wild Draw Four": "Joker +4",
   "Oscar's Swap": "Échange d'Oscar",
   "SIGN IN": "CONNEXION",
@@ -1019,6 +1019,82 @@ const FR: Record<string, string> = {
   "Remove bots to start": "Retirez les bots pour commencer",
   "Wager tables need at least two registered players and no bots.":
     "Les tables avec mise nécessitent au moins deux joueurs inscrits et aucun bot.",
+
+  // ── match history ───────────────────────────────────────────────────────
+  History: "Historique",
+  "your record": "votre bilan",
+  "Match history": "Historique des parties",
+  "Every finished round, the result and the full timeline.":
+    "Chaque manche terminée, le résultat et le déroulé complet.",
+  "Could not load your match history.": "Impossible de charger votre historique.",
+  "No matches yet.": "Aucune partie pour le moment.",
+  "Finish a round and it will show up here.":
+    "Terminez une manche et elle apparaîtra ici.",
+  "won by {name}": "remportée par {name}",
+  "{n}s": "{n}s",
+  Win: "Victoire",
+  Loss: "Défaite",
+  "Could not load that match.": "Impossible de charger cette partie.",
+  "Back to history": "Retour à l'historique",
+  "match report": "rapport de partie",
+  "{name} won": "{name} a gagné",
+  "No winner": "Aucun gagnant",
+  Victory: "Victoire",
+  "Place {n}": "Place {n}",
+  "your rewards": "vos récompenses",
+  "final standings": "classement final",
+  "round timeline": "déroulé de la manche",
+  "Replay the round action by action.": "Rejouez la manche action par action.",
+  "Show all": "Tout afficher",
+  "No timeline for this match.": "Aucun déroulé pour cette partie.",
+  forbidden: "Vous n'avez pas accès à cette partie.",
+
+  // ── groups ──────────────────────────────────────────────────────────────
+  group: "groupe",
+  "Start a group": "Créer un groupe",
+  "Your group": "Votre groupe",
+  "Your group is live": "Votre groupe est ouvert",
+  "Invite your online friends and start when everyone is ready.":
+    "Invitez vos amis en ligne et lancez quand tout le monde est prêt.",
+  "The host can invite the rest of the group from the lobby.":
+    "L'hôte peut inviter le reste du groupe depuis le salon.",
+  "Open a private lobby, invite all your online friends at once, then deal.":
+    "Ouvrez un salon privé, invitez tous vos amis en ligne d'un coup, puis distribuez.",
+  "Open lobby": "Ouvrir le salon",
+  "Invite online friends": "Inviter les amis en ligne",
+  "Create a group": "Créer un groupe",
+  "No online friends to invite.": "Aucun ami en ligne à inviter.",
+  "{n} invites sent.": "{n} invitations envoyées.",
+  "No invites could be sent.": "Aucune invitation n'a pu être envoyée.",
+  "Could not create the group.": "Impossible de créer le groupe.",
+
+  // ── tutorial ────────────────────────────────────────────────────────────
+  Tutorial: "Tutoriel",
+  "Empty your hand first.": "Videz votre main en premier.",
+  "Match a card with the colour or the number on the pile. First player with zero cards wins the round.":
+    "Posez une carte de la même couleur ou du même chiffre que la pile. Le premier à zéro carte gagne la manche.",
+  "Match the colour or the number.": "Suivez la couleur ou le chiffre.",
+  "A red 3 can follow a red 7 or a blue 3. Wild cards let you call the next colour.":
+    "Un 3 rouge peut suivre un 7 rouge ou un 3 bleu. Les jokers vous laissent choisir la couleur suivante.",
+  "Special cards change the table.": "Les cartes spéciales changent la table.",
+  "+2 and +4 stack the pain, Skip jumps a seat, Reverse flips the direction, and Oscar's Swap takes another hand.":
+    "Les +2 et +4 empilent la douleur, Skip saute un joueur, Reverse inverse le sens, et l'échange d'Oscar prend une autre main.",
+  "+2 / +4: stack the pile": "+2 / +4 : empilez la pile",
+  "Skip: lose a turn": "Skip : passez un tour",
+  "Reverse: change direction": "Reverse : inversez le sens",
+  "Swap: take a hand": "Échange : prenez une main",
+  "Jump in after someone plays.": "Intervenez après une carte.",
+  "If you hold the exact same card, slam it out of turn during the five-second window. A 7 swaps hands with the next player; a 0 rotates every hand.":
+    "Si vous avez exactement la même carte, posez-la hors tour pendant la fenêtre de cinq secondes. Un 7 échange les mains avec le joueur suivant ; un 0 fait tourner toutes les mains.",
+  "Exact duplicate = jump in": "Copie exacte = intervention",
+  "5 second window": "Fenêtre de 5 secondes",
+  "You're ready.": "Vous êtes prêt.",
+  "Practice against two bots first. No XP or coins, no pressure — then jump into a real table.":
+    "Entraînez-vous d'abord contre deux bots. Pas d'XP ni de pièces, aucune pression — puis lancez-vous à une vraie table.",
+  "Maybe later": "Plus tard",
+  Back: "Retour",
+  Next: "Suivant",
+  "Practice vs bots": "Entraînement contre bots",
 };
 
 function interpolate(text: string, vars?: Vars): string {
@@ -1120,7 +1196,10 @@ const ERROR_FR: Record<string, string> = {
   wager_players: "Les tables avec mise sont réservées aux joueurs inscrits.",
   wager_players_needed: "Une table avec mise nécessite au moins deux joueurs.",
   wager_no_bots: "Pas de bots sur une table avec mise.",
-  wager_no_cheats: "Les cheats sont désactivés sur les tables avec mise.",
+  wager_no_cheats: "Les triches sont désactivées sur les tables avec mise.",
+  starting: "L'hôte distribue la prochaine main.",
+  table_changed: "La table a changé pendant la distribution. Réessayez.",
+  forbidden: "Vous n'avez pas accès à cette partie.",
   cannot_kick_self: "Vous ne pouvez pas vous retirer vous-même.",
   too_many_seats: "Retirez des joueurs avant de réduire les places.",
   busy: "Le serveur est plein. Réessayez bientôt.",

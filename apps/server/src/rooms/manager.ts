@@ -25,9 +25,9 @@ import {
   type RoomSummary,
   type ServerMessage,
 } from "@stacked/shared";
-import { eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db/index.js";
-import { matches, matchPlayers, users } from "../db/schema.js";
+import { matches, matchPlayers, users, wagerEscrows } from "../db/schema.js";
 import { rateLimit } from "../lib/rate-limit.js";
 import {
   equippedOf,
@@ -45,6 +45,7 @@ import {
   makeOwnerCard,
 } from "../services/owner-tools.js";
 import { hasChatPack } from "../services/chat.js";
+import { WagerError, holdWager, refundPendingWagers, refundWager } from "../services/wager.js";
 import {
   Room,
   botName,
@@ -253,6 +254,7 @@ export class RoomManager {
     if (room.rules.wager > 0 && conn.principal.kind !== "user") {
       throw new RoomError("wager_account", "Wager tables need a signed-in account.");
     }
+    if (room.starting) throw new RoomError("starting", "The host is dealing the next hand.");
 
     let seat = room.seat(conn.playerId);
     if (!seat) {
@@ -378,6 +380,7 @@ export class RoomManager {
 
   private deleteRoom(room: Room): void {
     room.clearTimers();
+    void this.refundRoomWager(room);
     this.rooms.delete(room.code);
     for (const conn of room.connections) {
       conn.roomCode = null;
@@ -400,6 +403,7 @@ export class RoomManager {
     const { room, seat } = this.mustSeat(conn);
     if (room.hostId !== seat.id) throw new RoomError("not_host", "Only the host can change the rules.");
     if (room.phase !== "lobby") throw new RoomError("locked", "Rules are locked once the round starts.");
+    if (room.starting) throw new RoomError("starting", "The host is dealing the next hand.");
     const merged = normaliseRules({ ...room.rules, ...(input ?? {}) });
     if (merged.maxPlayers < room.seats.length) {
       throw new RoomError("too_many_seats", "Remove players before lowering the seat count.");
@@ -422,9 +426,37 @@ export class RoomManager {
   private async startGameAsync(conn: ClientConn): Promise<void> {
     const { room, seat } = this.mustSeat(conn);
     if (room.hostId !== seat.id) throw new RoomError("not_host", "Only the host can start.");
-    await this.validateWager(room);
-    if (!this.rooms.has(room.code) || room.phase !== "lobby") return;
-    this.beginRound(room);
+    if (room.starting || room.phase === "playing") throw new RoomError("already_playing", "A round is already in progress.");
+    room.starting = true;
+    const wagerSeatIds = room.seats.map((entry) => entry.id).join("|");
+    try {
+      await this.validateWager(room);
+      const stake = room.rules.wager;
+      if (stake > 0) {
+        room.wager = await holdWager(
+          room.code,
+          room.seats.map((entry) => entry.userId as string),
+          stake,
+        );
+      }
+      if (
+        !this.rooms.has(room.code) ||
+        room.phase !== "lobby" ||
+        (stake > 0 && room.seats.map((entry) => entry.id).join("|") !== wagerSeatIds)
+      ) {
+        await this.refundRoomWager(room);
+        if (stake > 0) throw new RoomError("table_changed", "The table changed while dealing. Try again.");
+        return;
+      }
+      try {
+        this.beginRound(room);
+      } catch (error) {
+        await this.refundRoomWager(room);
+        throw error;
+      }
+    } finally {
+      room.starting = false;
+    }
   }
 
   private rematch(conn: ClientConn): void {
@@ -435,9 +467,48 @@ export class RoomManager {
     const { room, seat } = this.mustSeat(conn);
     if (room.hostId !== seat.id) throw new RoomError("not_host", "Only the host can deal again.");
     if (room.phase !== "ended") throw new RoomError("not_ended", "The round is still going.");
-    await this.validateWager(room);
-    if (!this.rooms.has(room.code) || room.phase !== "ended") return;
-    this.beginRound(room);
+    if (room.starting) throw new RoomError("already_playing", "A round is already starting.");
+    room.starting = true;
+    const wagerSeatIds = room.seats.map((entry) => entry.id).join("|");
+    try {
+      await this.validateWager(room);
+      const stake = room.rules.wager;
+      if (stake > 0) {
+        room.wager = await holdWager(
+          room.code,
+          room.seats.map((entry) => entry.userId as string),
+          stake,
+        );
+      }
+      if (
+        !this.rooms.has(room.code) ||
+        room.phase !== "ended" ||
+        (stake > 0 && room.seats.map((entry) => entry.id).join("|") !== wagerSeatIds)
+      ) {
+        await this.refundRoomWager(room);
+        if (stake > 0) throw new RoomError("table_changed", "The table changed while dealing. Try again.");
+        return;
+      }
+      try {
+        this.beginRound(room);
+      } catch (error) {
+        await this.refundRoomWager(room);
+        throw error;
+      }
+    } finally {
+      room.starting = false;
+    }
+  }
+
+  private async refundRoomWager(room: Room): Promise<void> {
+    const wager = room.wager;
+    room.wager = null;
+    if (!wager || wager.ids.length === 0) return;
+    try {
+      await refundWager(wager.ids);
+    } catch (error) {
+      this.log.error({ err: error, room: room.code }, "wager refund failed");
+    }
   }
 
   private toLobby(conn: ClientConn): void {
@@ -464,7 +535,7 @@ export class RoomManager {
   }
 
   private lobbyError(conn: ClientConn, error: unknown): void {
-    if (error instanceof RoomError) {
+    if (error instanceof RoomError || error instanceof WagerError) {
       this.error(conn, error.code, error.message);
       return;
     }
@@ -535,6 +606,7 @@ export class RoomManager {
     const { room, seat } = this.mustSeat(conn);
     if (room.hostId !== seat.id) throw new RoomError("not_host", "Only the host can manage bots.");
     if (room.phase !== "lobby") throw new RoomError("locked", "Bots join in the lobby.");
+    if (room.starting) throw new RoomError("starting", "The host is dealing the next hand.");
     if (add && room.rules.wager > 0) throw new RoomError("wager_no_bots", "No bots at a wager table.");
 
     if (add) {
@@ -586,6 +658,7 @@ export class RoomManager {
     const { room, seat } = this.mustSeat(conn);
     if (room.hostId !== seat.id) throw new RoomError("not_host", "Only the host can remove players.");
     if (room.phase !== "lobby") throw new RoomError("locked", "You can only remove players in the lobby.");
+    if (room.starting) throw new RoomError("starting", "The host is dealing the next hand.");
     if (playerId === seat.id) throw new RoomError("cannot_kick_self", "You cannot remove yourself.");
     if (!room.seat(playerId)) return;
 
@@ -915,8 +988,12 @@ export class RoomManager {
     const ranked = roundIsRanked(humanCount);
     const humanSeatIds = new Set(humanPlayers.map((seat) => seat.id));
     const wager = room.rules.wager;
-    const wagerWinnerId = wager > 0 ? (winnerSeat?.userId ?? null) : null;
-    const wagerPot = wager > 0 && wagerWinnerId ? wager * Math.max(0, humanCount - 1) : 0;
+    const escrow = room.wager;
+    room.wager = null;
+    const wagerWinnerId = escrow && winnerSeat?.userId ? winnerSeat.userId : null;
+    const wagerPot = escrow?.pot ?? 0;
+    const wagerStake = escrow?.stake ?? wager;
+    const wagerDraw = Boolean(escrow) && !wagerWinnerId;
 
     let oldUsers = new Map<string, (typeof users.$inferSelect)>();
     const beforeAchievements = new Map<string, string[]>();
@@ -959,18 +1036,28 @@ export class RoomManager {
           rewards.coins = 0;
           rewards.xp = 0;
         }
-        // Wager tables pay the pot instead of the normal coin reward.
+        // Wager tables use the escrow held at the start of the round. Winners
+        // are paid the pot in the database; losers were charged when the deal
+        // happened, so their bank delta is zero.
         const coinDelta =
-          wager > 0
-            ? seat.userId && wagerWinnerId
-              ? seat.userId === wagerWinnerId
-                ? wagerPot
-                : -wager
-              : 0
+          escrow
+            ? wagerDraw
+              ? 0
+              : seat.userId === wagerWinnerId
+                ? wagerPot - wagerStake
+                : -wagerStake
             : rewards.coins;
-        if (wager > 0) rewards.coins = 0;
+        const bankCoins =
+          escrow
+            ? wagerDraw
+              ? wagerStake
+              : seat.userId === wagerWinnerId
+                ? wagerPot
+                : 0
+            : rewards.coins;
+        if (escrow) rewards.coins = 0;
         // A cheat-tainted seat is silently unranked, even in a ranked room.
-        return { seat, placement, rewards, coinDelta, ranked: ranked && !seat.cheated };
+        return { seat, placement, rewards, coinDelta, bankCoins, ranked: ranked && !seat.cheated };
       });
 
       const matchId = await db.transaction(async (tx) => {
@@ -983,6 +1070,7 @@ export class RoomManager {
             winnerName: winnerSeat?.name ?? null,
             durationSeconds: Math.max(0, Math.round((room.endedAt - room.startedAt) / 1000)),
             rules: room.rules,
+            log: game.log,
           })
           .returning({ id: matches.id });
         if (!match) throw new Error("match insert failed");
@@ -1013,7 +1101,7 @@ export class RoomManager {
                 .update(users)
                 .set({
                   xp: sql`${users.xp} + ${entry.rewards.xp}`,
-                  coins: sql`greatest(0, ${users.coins} + ${entry.ranked ? entry.coinDelta : 0})`,
+                  coins: sql`greatest(0, ${users.coins} + ${entry.ranked ? entry.bankCoins : 0})`,
                   games: sql`${users.games} + 1`,
                   wins: sql`${users.wins} + ${entry.placement === 1 ? 1 : 0}`,
                   jumps: sql`${users.jumps} + ${seat.stats.jumps}`,
@@ -1055,6 +1143,7 @@ export class RoomManager {
 
           await tx.insert(matchPlayers).values({
             matchId: match.id,
+            seatId: seat.id,
             userId: seat.userId,
             displayName: seat.name,
             isBot: seat.isBot,
@@ -1063,6 +1152,16 @@ export class RoomManager {
             coins: entry.ranked ? entry.coinDelta : 0,
             xp: entry.rewards.xp,
           });
+        }
+        if (escrow && escrow.ids.length > 0) {
+          await tx
+            .update(wagerEscrows)
+            .set({
+              status: wagerDraw ? "refunded" : "settled",
+              matchId: match.id,
+              settledAt: new Date(),
+            })
+            .where(and(inArray(wagerEscrows.id, escrow.ids), eq(wagerEscrows.status, "held")));
         }
         return match.id;
       });
@@ -1087,6 +1186,13 @@ export class RoomManager {
       }
     } catch (error) {
       this.log.error({ err: error, room: room.code }, "persisting match failed");
+      if (escrow && escrow.ids.length > 0) {
+        try {
+          await refundWager(escrow.ids);
+        } catch (refundError) {
+          this.log.error({ err: refundError, room: room.code }, "wager refund failed");
+        }
+      }
       for (const seat of room.seats) {
         if (seat.rewards) seat.rewards.banked = false;
       }
@@ -1211,6 +1317,15 @@ export class RoomManager {
 
   getRoom(code: string): Room | undefined {
     return this.rooms.get(code.toUpperCase());
+  }
+
+  async recoverWagers(): Promise<void> {
+    try {
+      const count = await refundPendingWagers();
+      if (count > 0) this.log.info({ count }, "refunded stale wager escrows");
+    } catch (error) {
+      this.log.error({ err: error }, "wager recovery failed");
+    }
   }
 
   /** Push a server message to every live socket of an account. */

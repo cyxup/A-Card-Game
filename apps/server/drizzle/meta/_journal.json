@@ -50,6 +50,20 @@
       "when": 1795638000091,
       "tag": "0006_misty_moira_mactaggert",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795649602306,
+      "tag": "0007_wager_escrows",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795649775668,
+      "tag": "0008_match_seat_ids",
+      "breakpoints": true
     }
   ]
 }

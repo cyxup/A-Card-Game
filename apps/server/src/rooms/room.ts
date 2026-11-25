@@ -74,6 +74,9 @@ export class Room {
   startedAt = 0;
   endedAt = 0;
   persisted = false;
+  /** Coins already deducted for the running round, held until settlement. */
+  wager: { ids: string[]; pot: number; stake: number } | null = null;
+  starting = false;
 
   constructor(code: string, visibility: "public" | "private", rules: GameRules) {
     this.code = code;

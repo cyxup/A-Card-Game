@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
+import { game as client } from "@/lib/game";
 import { useT } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { cn } from "@/lib/utils";
@@ -133,6 +134,49 @@ export default function FriendsPage() {
     void act(`invite:${friend.id}`, () => api.post("/api/friends/invite", { userId: friend.id }), t("Invite sent."));
   }
 
+  async function inviteOnline() {
+    if (!data || busy) return;
+    const online = data.friends.filter((friend) => friend.presence?.status !== "offline");
+    if (online.length === 0) {
+      toast.info(t("No online friends to invite."));
+      return;
+    }
+    setBusy("invite-all");
+    let sent = 0;
+    try {
+      for (const friend of online) {
+        try {
+          await api.post("/api/friends/invite", { userId: friend.id });
+          sent++;
+        } catch {
+          // A full room or a friend who just went offline should not abort the rest.
+        }
+      }
+      if (sent > 0) toast.success(t("{n} invites sent.", { n: sent }));
+      else toast.error(t("No invites could be sent."));
+      await load();
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function createGroup() {
+    if (busy) return;
+    setBusy("group");
+    try {
+      const room = await client.createRoom({ maxPlayers: 8 }, "private");
+      const online = data?.friends.filter((friend) => friend.presence?.status !== "offline") ?? [];
+      for (const friend of online) {
+        await api.post("/api/friends/invite", { userId: friend.id }).catch(() => undefined);
+      }
+      navigate(`/room/${room.code}`);
+    } catch (caught) {
+      toast.error(caught instanceof Error ? caught.message : t("Could not create the group."));
+    } finally {
+      setBusy(null);
+    }
+  }
+
   if (loading) {
     return (
       <div className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6">
@@ -187,6 +231,56 @@ export default function FriendsPage() {
         <div className="mb-4 rounded-xl border border-destructive/25 bg-destructive/[0.06] px-4 py-3 text-xs text-destructive">
           {error}
         </div>
+      ) : null}
+
+      {data ? (
+        <section className="panel mb-4 flex flex-wrap items-center justify-between gap-4 rounded-2xl p-4 sm:p-5">
+          <div>
+            <p className="eyebrow">{t("group")}</p>
+            <h2 className="mt-1 text-lg font-semibold tracking-[-0.025em]">
+              {data.you.roomCode ? t("Your group is live") : t("Your group")}
+            </h2>
+            <p className="mt-1 max-w-[55ch] text-xs text-muted-foreground">
+              {data.you.roomCode
+                ? data.you.canInvite
+                  ? t("Invite your online friends and start when everyone is ready.")
+                  : t("The host can invite the rest of the group from the lobby.")
+                : t("Open a private lobby, invite all your online friends at once, then deal.")}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {data.you.roomCode ? (
+              <>
+                <Link href={`/room/${data.you.roomCode}`}>
+                  <Button variant="brand" className="gap-1.5">
+                    <Play className="size-4" /> {t("Open lobby")}
+                  </Button>
+                </Link>
+                {data.you.canInvite ? (
+                  <Button
+                    variant="outline"
+                    loading={busy === "invite-all"}
+                    disabled={Boolean(busy)}
+                    onClick={() => void inviteOnline()}
+                    className="gap-1.5"
+                  >
+                    <UserPlus className="size-4" /> {t("Invite online friends")}
+                  </Button>
+                ) : null}
+              </>
+            ) : (
+              <Button
+                variant="brand"
+                loading={busy === "group"}
+                disabled={Boolean(busy)}
+                onClick={() => void createGroup()}
+                className="gap-1.5"
+              >
+                <Users className="size-4" /> {t("Create a group")}
+              </Button>
+            )}
+          </div>
+        </section>
       ) : null}
 
       <form onSubmit={search} className="panel mb-5 flex flex-wrap items-center gap-2 rounded-2xl p-3">

@@ -12,7 +12,7 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import type { GameRules } from "@stacked/shared";
+import type { GameRules, LogEntry } from "@stacked/shared";
 import type { CosmeticSlot } from "@stacked/shared";
 
 export type Loadout = Record<CosmeticSlot, string>;
@@ -146,6 +146,7 @@ export const matches = pgTable(
     winnerName: varchar("winner_name", { length: 24 }),
     durationSeconds: integer("duration_seconds").notNull().default(0),
     rules: jsonb("rules").$type<GameRules>().notNull(),
+    log: jsonb("log").$type<LogEntry[]>().notNull().default([]),
     endedAt: timestamp("ended_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index("matches_ended_idx").on(table.endedAt)],
@@ -158,6 +159,7 @@ export const matchPlayers = pgTable(
     matchId: uuid("match_id")
       .notNull()
       .references(() => matches.id, { onDelete: "cascade" }),
+    seatId: varchar("seat_id", { length: 64 }),
     userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
     displayName: varchar("display_name", { length: 24 }).notNull(),
     isBot: boolean("is_bot").notNull().default(false),
@@ -167,6 +169,27 @@ export const matchPlayers = pgTable(
     xp: integer("xp").notNull().default(0),
   },
   (table) => [index("match_players_match_idx").on(table.matchId), index("match_players_user_idx").on(table.userId)],
+);
+
+export const wagerEscrows = pgTable(
+  "wager_escrows",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    roomCode: varchar("room_code", { length: 8 }).notNull(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    matchId: uuid("match_id").references(() => matches.id, { onDelete: "set null" }),
+    amount: integer("amount").notNull(),
+    status: varchar("status", { length: 16 }).notNull().default("held"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    settledAt: timestamp("settled_at", { withTimezone: true }),
+  },
+  (table) => [
+    index("wager_escrows_room_idx").on(table.roomCode),
+    index("wager_escrows_user_idx").on(table.userId),
+    index("wager_escrows_status_idx").on(table.status),
+  ],
 );
 
 export const adminAudit = pgTable(

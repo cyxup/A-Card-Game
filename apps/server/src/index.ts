@@ -220,6 +220,7 @@ async function main(): Promise<void> {
   }
 
   const app = await build();
+  await rooms.recoverWagers();
 
   const sweep = setInterval(() => rooms.sweep(), 15_000);
   sweep.unref();

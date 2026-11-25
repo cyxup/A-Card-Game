@@ -19,6 +19,8 @@ const LoginPage = lazy(() => import("@/pages/Login"));
 const SignupPage = lazy(() => import("@/pages/Signup"));
 const ProfilePage = lazy(() => import("@/pages/Profile"));
 const FriendsPage = lazy(() => import("@/pages/Friends"));
+const HistoryPage = lazy(() => import("@/pages/History"));
+const MatchPage = lazy(() => import("@/pages/Match"));
 const AdminPage = lazy(() => import("@/pages/Admin"));
 const LeaderboardPage = lazy(() => import("@/pages/Leaderboard"));
 const RulesPage = lazy(() => import("@/pages/Rules"));
@@ -83,6 +85,8 @@ export default function App() {
                     <Route path="/signup" component={SignupPage} />
                     <Route path="/profile" component={ProfilePage} />
                     <Route path="/friends" component={FriendsPage} />
+                    <Route path="/history" component={HistoryPage} />
+                    <Route path="/history/:id" component={MatchPage} />
                     <Route path="/admin" component={AdminPage} />
                     <Route path="/leaderboard" component={LeaderboardPage} />
                     <Route path="/rules" component={RulesPage} />

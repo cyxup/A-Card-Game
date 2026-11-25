@@ -1,11 +1,11 @@
-import type { PublicStats } from "@stacked/shared";
-import { count, eq } from "drizzle-orm";
+import type { MatchHistoryDetail, MatchHistoryItem, PublicStats } from "@stacked/shared";
+import { and, count, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { verifyPassword } from "../auth/password.js";
 import { generateRecoveryCode, hashRecoveryCode } from "../auth/recovery.js";
 import { db } from "../db/index.js";
-import { matches, users } from "../db/schema.js";
+import { matches, matchPlayers, users } from "../db/schema.js";
 import { ApiError, badRequest, requireUser } from "../lib/http.js";
 import { rateLimit } from "../lib/rate-limit.js";
 import { refreshUserConnections } from "../realtime.js";
@@ -86,6 +86,81 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
   });
 
   app.get("/api/leaderboard", async () => leaderboard(50));
+
+  app.get("/api/me/matches", async (request) => {
+    const principal = requireUser(request);
+    if (!rateLimit(`history:${request.ip}`, 120, 60_000).ok) {
+      throw new ApiError(429, "rate_limited", "Slow down a little.");
+    }
+    const rows = await db
+      .select({
+        id: matches.id,
+        roomCode: matches.roomCode,
+        playerCount: matches.playerCount,
+        winnerName: matches.winnerName,
+        endedAt: matches.endedAt,
+        durationSeconds: matches.durationSeconds,
+        placement: matchPlayers.placement,
+        cardsLeft: matchPlayers.cardsLeft,
+        coins: matchPlayers.coins,
+        xp: matchPlayers.xp,
+      })
+      .from(matchPlayers)
+      .innerJoin(matches, eq(matchPlayers.matchId, matches.id))
+      .where(eq(matchPlayers.userId, principal.user.id))
+      .orderBy(desc(matches.endedAt))
+      .limit(40);
+    const items: MatchHistoryItem[] = rows.map((row) => ({
+      id: row.id,
+      roomCode: row.roomCode,
+      playerCount: row.playerCount,
+      winnerName: row.winnerName,
+      endedAt: row.endedAt.getTime(),
+      durationSeconds: row.durationSeconds,
+      placement: row.placement,
+      cardsLeft: row.cardsLeft,
+      coins: row.coins,
+      xp: row.xp,
+    }));
+    return items;
+  });
+
+  app.get("/api/me/matches/:id", async (request) => {
+    const principal = requireUser(request);
+    const parsed = z.string().uuid().safeParse((request.params as { id?: string })?.id);
+    if (!parsed.success) throw new ApiError(404, "not_found", "That match does not exist.");
+    const [match] = await db.select().from(matches).where(eq(matches.id, parsed.data)).limit(1);
+    if (!match) throw new ApiError(404, "not_found", "That match does not exist.");
+    const players = await db.select().from(matchPlayers).where(eq(matchPlayers.matchId, match.id));
+    const mine = players.find((player) => player.userId === principal.user.id);
+    if (!mine) throw new ApiError(403, "forbidden", "You were not at that table.");
+    const detail: MatchHistoryDetail = {
+      id: match.id,
+      roomCode: match.roomCode,
+      playerCount: match.playerCount,
+      winnerName: match.winnerName,
+      endedAt: match.endedAt.getTime(),
+      durationSeconds: match.durationSeconds,
+      placement: mine.placement,
+      cardsLeft: mine.cardsLeft,
+      coins: mine.coins,
+      xp: mine.xp,
+      rules: match.rules,
+      log: match.log ?? [],
+      players: players
+        .map((player) => ({
+          id: player.seatId ?? "",
+          displayName: player.displayName,
+          isBot: player.isBot,
+          placement: player.placement,
+          cardsLeft: player.cardsLeft,
+          coins: player.coins,
+          xp: player.xp,
+        }))
+        .sort((a, b) => a.placement - b.placement),
+    };
+    return detail;
+  });
 
   app.get("/api/rooms", async () => rooms.listPublic());
 

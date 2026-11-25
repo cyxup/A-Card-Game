@@ -60,6 +60,35 @@ export interface PublicStats {
   matches: number;
 }
 
+export interface MatchHistoryItem {
+  id: string;
+  roomCode: string;
+  playerCount: number;
+  winnerName: string | null;
+  endedAt: number;
+  durationSeconds: number;
+  placement: number;
+  cardsLeft: number;
+  coins: number;
+  xp: number;
+}
+
+export interface MatchHistoryPlayer {
+  id: string;
+  displayName: string;
+  isBot: boolean;
+  placement: number;
+  cardsLeft: number;
+  coins: number;
+  xp: number;
+}
+
+export interface MatchHistoryDetail extends MatchHistoryItem {
+  rules: GameRules;
+  log: LogEntry[];
+  players: MatchHistoryPlayer[];
+}
+
 /* ────────────────────────────── Owner tools ────────────────────────────── */
 
 export interface AdminUserView {
