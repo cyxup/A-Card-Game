@@ -253,6 +253,7 @@ export type ClientMessage =
   | { t: "rules"; rules: Partial<GameRules> }
   | { t: "start" }
   | { t: "rematch" }
+  | { t: "lobby" }
   | { t: "bot"; add: boolean }
   | { t: "kick"; playerId: string }
   | { t: "action"; action: GameAction; seq: number }

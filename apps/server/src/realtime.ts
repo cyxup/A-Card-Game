@@ -12,6 +12,18 @@ import type { ClientConn } from "./rooms/room.js";
 
 const connections = new Set<ClientConn>();
 
+/**
+ * Refresh every socket's cached account row after a profile edit. Sockets
+ * resolve their principal once, so without this an equipped name effect or a
+ * display-name change would only appear after a reconnect.
+ */
+export function refreshUserConnections(user: typeof users.$inferSelect): void {
+  for (const conn of connections) {
+    if (conn.principal.kind !== "user" || conn.principal.user.id !== user.id) continue;
+    conn.principal = { kind: "user", sessionId: conn.principal.sessionId, user };
+  }
+}
+
 /** Close every socket authenticated by this session (logout, token rotation). */
 export function disconnectSession(sessionId: string, reason = "session ended"): void {
   for (const conn of connections) {

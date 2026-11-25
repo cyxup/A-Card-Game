@@ -19,10 +19,12 @@ export function GameOverDialog({
   room,
   onLeave,
   onRematch,
+  onLobby,
 }: {
   room: RoomView;
   onLeave: () => void;
   onRematch: () => void;
+  onLobby: () => void;
 }) {
   const { session } = useSession();
   const t = useT();
@@ -203,6 +205,11 @@ export function GameOverDialog({
               {t("Waiting for the host")}
             </Button>
           )}
+          {room.you.isHost ? (
+            <Button variant="secondary" size="lg" className="flex-1" onClick={onLobby}>
+              {t("Back to lobby")}
+            </Button>
+          ) : null}
           <Button variant="outline" size="lg" onClick={onLeave} className="flex-1">
             {t("Leave table")}
           </Button>

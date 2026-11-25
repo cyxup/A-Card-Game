@@ -56,6 +56,8 @@ import {
   type Seat,
 } from "./room.js";
 
+type UserRow = typeof users.$inferSelect;
+
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const MAX_ROOMS = 300;
 const LOBBY_GRACE_MS = 30_000;
@@ -184,6 +186,9 @@ export class RoomManager {
         break;
       case "rematch":
         this.rematch(conn);
+        break;
+      case "lobby":
+        this.toLobby(conn);
         break;
       case "bot":
         this.toggleBot(conn, Boolean(msg.add));
@@ -433,6 +438,29 @@ export class RoomManager {
     await this.validateWager(room);
     if (!this.rooms.has(room.code) || room.phase !== "ended") return;
     this.beginRound(room);
+  }
+
+  private toLobby(conn: ClientConn): void {
+    const { room, seat } = this.mustSeat(conn);
+    if (room.hostId !== seat.id) throw new RoomError("not_host", "Only the host can return to the lobby.");
+    if (room.phase !== "ended") throw new RoomError("not_ended", "The round is still going.");
+    room.clearTimers();
+    room.phase = "lobby";
+    room.game = null;
+    room.endedAt = 0;
+    room.startedAt = 0;
+    for (const roomSeat of room.seats) {
+      roomSeat.rewards = null;
+      roomSeat.stats = { cardsPlayed: 0, jumps: 0, stacks: 0 };
+      roomSeat.ready = false;
+      roomSeat.cheated = false;
+    }
+    for (const roomConn of room.connections) {
+      roomConn.ownerPeek = false;
+      roomConn.ownerPeekUntil = 0;
+    }
+    room.touch();
+    this.broadcast(room);
   }
 
   private lobbyError(conn: ClientConn, error: unknown): void {
@@ -1120,6 +1148,28 @@ export class RoomManager {
         t: "room",
         room: buildRoomView(room, conn.playerId, this.peekActive(conn)),
       });
+    }
+  }
+
+  /**
+   * Apply a fresh account row to any seat already held by this user. Equipping
+   * a cosmetic or renaming an account updates the live table immediately.
+   */
+  refreshUser(user: UserRow): void {
+    for (const room of this.rooms.values()) {
+      let changed = false;
+      for (const seat of room.seats) {
+        if (seat.userId !== user.id) continue;
+        seat.name = user.displayName;
+        seat.loadout = equippedOf(user);
+        seat.level = levelForXp(user.xp);
+        seat.owner = isOwner(user);
+        seat.beta = user.isBetaTester;
+        changed = true;
+      }
+      if (!changed) continue;
+      room.touch();
+      this.broadcast(room);
     }
   }
 

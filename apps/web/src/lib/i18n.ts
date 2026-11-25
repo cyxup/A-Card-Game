@@ -555,6 +555,7 @@ const FR: Record<string, string> = {
     "Continuez à piocher jusqu'à trouver une carte jouable. Plus méchant.",
   "Keep this code safe.": "Gardez ce code en sécurité.",
   "Leave": "Quitter",
+  "Back to lobby": "Retour au salon",
   "Need one more player": "Il manque un joueur",
   "New password": "Nouveau mot de passe",
   "New recovery code generated.": "Nouveau code de récupération généré.",

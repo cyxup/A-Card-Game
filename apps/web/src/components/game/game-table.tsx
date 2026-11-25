@@ -1463,7 +1463,12 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
       </motion.div>
 
       {gameView.phase === "ended" && resultsVisible ? (
-        <GameOverDialog room={room} onLeave={onLeave} onRematch={() => client.rematch()} />
+        <GameOverDialog
+          room={room}
+          onLeave={onLeave}
+          onRematch={() => client.rematch()}
+          onLobby={() => client.toLobby()}
+        />
       ) : null}
     </LayoutGroup>
   );

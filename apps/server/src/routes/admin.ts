@@ -1,6 +1,10 @@
 import type { FastifyInstance } from "fastify";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { db } from "../db/index.js";
+import { users } from "../db/schema.js";
 import { badRequest, requireOwner } from "../lib/http.js";
+import { refreshUserConnections } from "../realtime.js";
 import { rooms } from "../rooms/manager.js";
 import {
   banUser,
@@ -54,7 +58,14 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
     const principal = requireOwner(request);
     const parsed = betaSchema.safeParse(request.body ?? {});
     if (!parsed.success) badRequest("Pick beta access state.");
-    return setBeta(principal.user, targetId(request), parsed.data?.beta ?? false);
+    const id = targetId(request);
+    const updated = await setBeta(principal.user, id, parsed.data?.beta ?? false);
+    const [fresh] = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    if (fresh) {
+      refreshUserConnections(fresh);
+      rooms.refreshUser(fresh);
+    }
+    return updated;
   });
 
   app.post("/api/admin/users/:id/grant", async (request) => {

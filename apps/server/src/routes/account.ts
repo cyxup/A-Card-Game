@@ -8,6 +8,7 @@ import { db } from "../db/index.js";
 import { matches, users } from "../db/schema.js";
 import { ApiError, badRequest, requireUser } from "../lib/http.js";
 import { rateLimit } from "../lib/rate-limit.js";
+import { refreshUserConnections } from "../realtime.js";
 import { rooms } from "../rooms/manager.js";
 import {
   equipItem,
@@ -58,6 +59,8 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
     const parsed = itemSchema.safeParse(request.body);
     if (!parsed.success) badRequest("Pick an item.");
     const result = await equipItem(principal.user, parsed.data.itemId);
+    refreshUserConnections(result.user);
+    rooms.refreshUser(result.user);
     return result.profile;
   });
 
@@ -77,6 +80,8 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
     const parsed = nameSchema.safeParse(request.body);
     if (!parsed.success) throw new ApiError(400, "invalid_name", "Use 2–20 characters.");
     const fresh = await updateDisplayName(principal.user, parsed.data.displayName);
+    refreshUserConnections(fresh);
+    rooms.refreshUser(fresh);
     return sessionInfo({ kind: "user", sessionId: principal.sessionId, user: fresh });
   });
 

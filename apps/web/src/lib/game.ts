@@ -335,6 +335,10 @@ class GameClient {
     this.send({ t: "rematch" });
   }
 
+  toLobby(): void {
+    this.send({ t: "lobby" });
+  }
+
   setReady(ready: boolean): void {
     this.send({ t: "ready", ready });
   }
