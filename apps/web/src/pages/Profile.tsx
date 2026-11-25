@@ -65,6 +65,8 @@ function unlockText(item: CosmeticItem): string {
       return tNow("Achievement reward");
     case "owner":
       return tNow("Owner only");
+    case "beta":
+      return tNow("Beta tester only");
   }
 }
 
@@ -348,6 +350,7 @@ export default function ProfilePage() {
                           "panel flex flex-col overflow-hidden rounded-2xl transition-colors",
                           equipped && "border-brand/35",
                           item.unlock.type === "owner" && "owner-card",
+                          item.unlock.type === "beta" && "beta-card",
                         )}
                       >
                         <div className="relative flex h-28 items-center justify-center border-b border-white/6 bg-black/20">

@@ -46,10 +46,54 @@ export function WinEffect({
   }
 
   if (effect === "prism-burst") {
+    const shards = Array.from({ length: 20 }, (_, index) => {
+      const angle = (index / 20) * Math.PI * 2 + (index % 2 ? 0.16 : -0.12);
+      const distance = 90 + ((index * 37) % 170);
+      return {
+        tx: Math.cos(angle) * distance,
+        ty: Math.sin(angle) * distance,
+        rot: ((index * 53) % 360) - 180,
+        hue: (index * 41) % 360,
+        delay: (index % 5) * 0.02,
+      };
+    });
+
     return (
       <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden">
+        <span className="detonate-flash" />
+        <span className="detonate-core" />
+        {Array.from({ length: 14 }).map((_, index) => (
+          <span
+            key={`ray-${index}`}
+            className="detonate-ray"
+            style={
+              {
+                "--angle": `${index * (360 / 14)}deg`,
+                "--ray-hue": `${(index * 29) % 360}`,
+                animationDelay: `${(index % 4) * 0.015}s`,
+              } as React.CSSProperties
+            }
+          />
+        ))}
         <span className="prism-burst-ring" />
-        <span className="prism-burst-ring" style={{ animationDelay: ".25s" }} />
+        <span className="prism-burst-ring" style={{ animationDelay: ".18s" }} />
+        <span className="prism-burst-ring" style={{ animationDelay: ".38s" }} />
+        {shards.map((shard, index) => (
+          <span
+            key={`shard-${index}`}
+            className="detonate-shard"
+            style={
+              {
+                "--tx": `${shard.tx}px`,
+                "--ty": `${shard.ty}px`,
+                "--rot": `${shard.rot}deg`,
+                background: `hsl(${shard.hue} 95% 66%)`,
+                boxShadow: `0 0 12px hsl(${shard.hue} 95% 66% / 0.8)`,
+                animationDelay: `${shard.delay}s`,
+              } as React.CSSProperties
+            }
+          />
+        ))}
         {particles.map((particle, index) => (
           <span
             key={index}
@@ -60,12 +104,43 @@ export function WinEffect({
                 background: `hsl(${(index * 37) % 360} 92% 66%)`,
                 width: 7,
                 height: 12,
-                animationDelay: `${particle.delay}s`,
+                animationDelay: `${particle.delay + 0.2}s`,
                 animationDuration: `${particle.duration}s`,
                 "--drift": `${particle.drift}px`,
                 "--spin": `${particle.spin}deg`,
                 scale: String(particle.scale),
                 boxShadow: `0 0 12px hsl(${(index * 37) % 360} 92% 66% / 0.7)`,
+              } as React.CSSProperties
+            }
+          />
+        ))}
+      </div>
+    );
+  }
+
+  if (effect === "beta-burst") {
+    return (
+      <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden">
+        <span className="beta-scan" />
+        <span className="beta-ring" />
+        <span className="beta-ring" style={{ animationDelay: ".28s" }} />
+        <span className="beta-ring" style={{ animationDelay: ".56s" }} />
+        {particles.map((particle, index) => (
+          <span
+            key={index}
+            className="win-confetti"
+            style={
+              {
+                left: `${particle.left}%`,
+                background: index % 3 === 0 ? "#ff6ad5" : index % 3 === 1 ? "#7ef9ff" : "#c9a7ff",
+                width: 5,
+                height: 5,
+                animationDelay: `${particle.delay}s`,
+                animationDuration: `${particle.duration - 0.4}s`,
+                "--drift": `${particle.drift}px`,
+                "--spin": `${particle.spin}deg`,
+                scale: String(particle.scale),
+                boxShadow: `0 0 10px ${index % 3 === 0 ? "#ff6ad5" : "#7ef9ff"}`,
               } as React.CSSProperties
             }
           />

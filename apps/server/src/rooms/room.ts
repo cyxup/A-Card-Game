@@ -39,6 +39,7 @@ export interface Seat {
   loadout: Loadout;
   level: number;
   owner: boolean;
+  beta: boolean;
   joinedAt: number;
   disconnectedAt: number | null;
   rewards: RewardGrant | null;
@@ -139,6 +140,7 @@ export function createSeatFromPrincipal(
   level: number,
   name: string,
   owner = false,
+  beta = false,
 ): Seat {
   return {
     id: playerId,
@@ -150,6 +152,7 @@ export function createSeatFromPrincipal(
     loadout,
     level,
     owner,
+    beta,
     joinedAt: Date.now(),
     disconnectedAt: null,
     rewards: null,
@@ -214,6 +217,7 @@ export function buildRoomView(room: Room, viewerId: string): RoomView {
       cardCount: gamePlayer?.hand.length ?? 0,
       placement: placements.get(seat.id) ?? null,
       owner: seat.owner,
+      beta: seat.beta,
     };
   });
 

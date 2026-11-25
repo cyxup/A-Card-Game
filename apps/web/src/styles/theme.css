@@ -268,6 +268,17 @@ body::before {
     radial-gradient(120% 110% at 50% 0%, #0b2028 0%, #071419 58%, #040a0c 100%);
 }
 
+/* Beta-tester felt: the original test bench. */
+.felt-lab {
+  --felt-glow: #7ef9ff;
+  background:
+    repeating-linear-gradient(90deg, rgb(126 249 255 / 0.055) 0 1px, transparent 1px 46px),
+    repeating-linear-gradient(0deg, rgb(126 249 255 / 0.04) 0 1px, transparent 1px 46px),
+    radial-gradient(58% 50% at 50% 0%, rgb(126 249 255 / 0.2), transparent 66%),
+    radial-gradient(50% 44% at 82% 14%, rgb(255 106 213 / 0.14), transparent 68%),
+    radial-gradient(120% 110% at 50% 0%, #071a20 0%, #050d15 58%, #03060a 100%);
+}
+
 /* Owner-only, deliberately loud. */
 .felt-owners-box {
   --felt-glow: #ff8ad8;
@@ -288,9 +299,35 @@ body::before {
   filter: drop-shadow(0 0 8px rgb(255 150 220 / 0.28));
 }
 
+.name-effect-founder {
+  background: linear-gradient(90deg, #7ef9ff 0%, #c9a7ff 32%, #ffd166 58%, #7ef9ff 100%);
+  background-size: 260% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: founder-sweep 4.2s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 7px rgb(126 249 255 / 0.35));
+}
+
+@keyframes founder-sweep {
+  from {
+    background-position: 0% 0;
+  }
+  to {
+    background-position: 100% 0;
+  }
+}
+
 .owner-card {
   position: relative;
   border-color: transparent !important;
+}
+
+.beta-card {
+  border-color: rgb(126 249 255 / 0.35) !important;
+  box-shadow:
+    0 0 0 1px rgb(126 249 255 / 0.14),
+    0 0 26px -12px rgb(126 249 255 / 0.65);
 }
 
 .owner-card::after {
@@ -322,6 +359,20 @@ body::before {
   letter-spacing: 0.08em;
   color: #ffe8ff;
   background: linear-gradient(90deg, rgb(255 90 43 / 0.3), rgb(66 211 146 / 0.3), rgb(74 168 255 / 0.3), rgb(185 107 255 / 0.3));
+}
+
+.seat-beta {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border-radius: 999px;
+  border: 1px solid rgb(126 249 255 / 0.38);
+  padding: 0 4px;
+  font-size: 7px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #c8fffb;
+  background: linear-gradient(90deg, rgb(126 249 255 / 0.22), rgb(201 167 255 / 0.22));
 }
 
 .av-ace {

@@ -12,7 +12,9 @@ export type Unlock =
   | { type: "level"; level: number }
   | { type: "achievement"; id: string }
   /** Hidden from the public catalogue. Granted by users.is_owner. */
-  | { type: "owner" };
+  | { type: "owner" }
+  /** Hidden from the public catalogue. Granted by users.is_beta_tester. */
+  | { type: "beta" };
 
 export interface CosmeticItem {
   id: string;
@@ -105,6 +107,14 @@ export const COSMETICS: CosmeticItem[] = [
     rarity: "legendary",
     unlock: { type: "owner" },
   },
+  {
+    id: "vanguard",
+    slot: "cardBack",
+    name: "Vanguard",
+    description: "Beta tester only. The very first deck ever shuffled. It still hums.",
+    rarity: "legendary",
+    unlock: { type: "beta" },
+  },
 
   // ── Tables ──────────────────────────────────────────────────────────────
   {
@@ -170,6 +180,14 @@ export const COSMETICS: CosmeticItem[] = [
     description: "Owner only. The felt itself refuses to pick one colour.",
     rarity: "legendary",
     unlock: { type: "owner" },
+  },
+  {
+    id: "lab",
+    slot: "table",
+    name: "The Lab",
+    description: "Beta tester only. Where the deck was broken in. The grid never quite switches off.",
+    rarity: "legendary",
+    unlock: { type: "beta" },
   },
 
   // ── Avatars ─────────────────────────────────────────────────────────────
@@ -245,6 +263,14 @@ export const COSMETICS: CosmeticItem[] = [
     rarity: "legendary",
     unlock: { type: "owner" },
   },
+  {
+    id: "flask",
+    slot: "avatar",
+    name: "The Flask",
+    description: "Beta tester only. Every rule was tested in here first.",
+    rarity: "legendary",
+    unlock: { type: "beta" },
+  },
 
   // ── Name effects ────────────────────────────────────────────────────────
   {
@@ -303,6 +329,14 @@ export const COSMETICS: CosmeticItem[] = [
     rarity: "legendary",
     unlock: { type: "owner" },
   },
+  {
+    id: "founder",
+    slot: "nameEffect",
+    name: "Founder",
+    description: "Beta tester only. A signature from before the game had a name.",
+    rarity: "legendary",
+    unlock: { type: "beta" },
+  },
 
   // ── Win effects ─────────────────────────────────────────────────────────
   {
@@ -360,6 +394,14 @@ export const COSMETICS: CosmeticItem[] = [
     description: "Owner only. A rainbow detonates over the table.",
     rarity: "legendary",
     unlock: { type: "owner" },
+  },
+  {
+    id: "beta-burst",
+    slot: "winEffect",
+    name: "Beta Burst",
+    description: "Beta tester only. The build is stable. The table is not.",
+    rarity: "legendary",
+    unlock: { type: "beta" },
   },
 ];
 

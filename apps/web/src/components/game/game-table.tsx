@@ -39,7 +39,7 @@ import { easeOutExpo, spring } from "@/lib/motion";
 import { playSound } from "@/lib/sound";
 import { useCountdown } from "@/lib/use-countdown";
 import { cn } from "@/lib/utils";
-import { COLOR_META, ColorDialog, SwapDialog } from "./color-dialog";
+import { COLOR_META, TableColorPicker, TableSwapPrompt } from "./color-dialog";
 import { GameOverDialog } from "./game-over";
 import { Seat } from "./seat";
 import { WinEffect } from "./win-effect";
@@ -236,6 +236,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
   const prefs = usePrefs();
   const [colorCard, setColorCard] = useState<Card | null>(null);
   const [swapCard, setSwapCard] = useState<Card | null>(null);
+  const [swapTargetId, setSwapTargetId] = useState<string | null>(null);
   const [swapMode, setSwapMode] = useState<"play" | "jump">("play");
   const [sorted, setSorted] = useState(true);
   const [wiggle, setWiggle] = useState<string | null>(null);
@@ -243,6 +244,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
   const [banners, setBanners] = useState<Banner[]>([]);
   const [turnFlash, setTurnFlash] = useState(false);
   const [colorFlash, setColorFlash] = useState<{ id: number; hex: string } | null>(null);
+  const [resultsVisible, setResultsVisible] = useState(false);
 
   const stageRef = useRef<HTMLDivElement>(null);
   const deckRef = useRef<HTMLButtonElement>(null);
@@ -319,9 +321,29 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
     return [...room.players.slice(myIndex + 1), ...room.players.slice(0, myIndex)];
   }, [room.players, meId]);
   const onlyOpponent = opponents.length === 1 ? opponents[0] : null;
+  const swapTarget = swapCard ? room.players.find((player) => player.id === swapTargetId) ?? null : null;
+  const targetingSwap = Boolean(swapCard && !swapTargetId);
+  const pickerCard = swapCard ? (swapTargetId ? swapCard : null) : colorCard;
+  const pickerSubtitle = swapCard && swapTarget
+    ? t("Swapping hands with {name}. Choose the colour that follows.", { name: swapTarget.name })
+    : null;
   const canPass = Boolean(isMyTurn && gameView?.drawnCardId && gameView?.phase === "playing");
   const denseRail = opponents.length > 4;
   const layerId = gameView ? `round-${gameView.startedAt}` : "round";
+
+  function clearTableChoice() {
+    setColorCard(null);
+    setSwapCard(null);
+    setSwapTargetId(null);
+  }
+
+  function beginSwap(card: Card, mode: "play" | "jump") {
+    setSwapMode(mode);
+    setColorCard(null);
+    setSwapCard(card);
+    setSwapTargetId(onlyOpponent?.id ?? null);
+    playSound("swap");
+  }
 
   function nudge(card: Card) {
     setWiggle(card.id);
@@ -331,6 +353,8 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
 
   function onCard(card: Card) {
     if (gameView?.phase !== "playing") return;
+    // A colour call or a swap target is pending: finish it or cancel first.
+    if (colorCard || swapCard) return;
     if (isMyTurn) {
       if (gameView.drawnCardId && card.id !== gameView.drawnCardId) {
         toast.info(t("You can only play the card you drew, or pass."));
@@ -342,25 +366,21 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
         return;
       }
       if (card.kind === "wild" || card.kind === "wild4") {
+        setSwapCard(null);
+        setSwapTargetId(null);
         setColorCard(card);
         playSound("wild");
         return;
       }
       if (card.kind === "swap") {
-        setSwapMode("play");
-        if (onlyOpponent) setColorCard(card);
-        else setSwapCard(card);
-        playSound("swap");
+        beginSwap(card, "play");
         return;
       }
       client.action({ type: "play", cardId: card.id });
       return;
     }
     if (card.kind === "swap" && canSwapIn) {
-      setSwapMode("jump");
-      if (onlyOpponent) setColorCard(card);
-      else setSwapCard(card);
-      playSound("swap");
+      beginSwap(card, "jump");
       return;
     }
     if (jumpableIds.has(card.id)) {
@@ -370,36 +390,33 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
     nudge(card);
   }
 
-  function pickColor(color: Color) {
-    if (!colorCard) return;
-    if (colorCard.kind === "swap" && onlyOpponent) {
-      client.action({
-        type: swapMode,
-        cardId: colorCard.id,
-        color,
-        targetId: onlyOpponent.id,
-      });
-      setColorCard(null);
-      return;
-    }
-    const isJump = jumpableIds.has(colorCard.id) && !isMyTurn;
-    client.action({ type: isJump ? "jump" : "play", cardId: colorCard.id, color });
-    setColorCard(null);
+  function pickSwapTarget(playerId: string) {
+    if (!swapCard) return;
+    setSwapTargetId(playerId);
+    playSound("equip");
   }
 
-  function pickSwap(targetId: string, color: Color) {
-    if (!swapCard) return;
-    client.action({ type: swapMode, cardId: swapCard.id, color, targetId });
-    setSwapCard(null);
+  function pickColor(color: Color) {
+    if (swapCard) {
+      const targetId = swapTargetId ?? onlyOpponent?.id;
+      if (!targetId) return;
+      client.action({ type: swapMode, cardId: swapCard.id, color, targetId });
+      clearTableChoice();
+      return;
+    }
+    if (!colorCard) return;
+    const isJump = jumpableIds.has(colorCard.id) && !isMyTurn;
+    client.action({ type: isJump ? "jump" : "play", cardId: colorCard.id, color });
+    clearTableChoice();
   }
 
   function draw() {
-    if (!canDraw) return;
+    if (!canDraw || colorCard || swapCard) return;
     client.action({ type: "draw" });
   }
 
   function pass() {
-    if (!canPass) return;
+    if (!canPass || colorCard || swapCard) return;
     client.action({ type: "pass" });
   }
 
@@ -562,7 +579,24 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
   useEffect(() => {
     setColorCard(null);
     setSwapCard(null);
+    setSwapTargetId(null);
   }, [gameView?.seq]);
+
+  // An out-of-turn swap has to land inside the jump window.
+  useEffect(() => {
+    if (!swapCard || swapMode !== "jump") return;
+    const remaining = (gameView?.lastPlayAt ?? 0) + 5000 - (Date.now() + offset);
+    if (remaining <= 0) {
+      setSwapCard(null);
+      setSwapTargetId(null);
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      setSwapCard(null);
+      setSwapTargetId(null);
+    }, remaining + 60);
+    return () => window.clearTimeout(timer);
+  }, [swapCard, swapMode, gameView?.lastPlayAt, offset]);
 
   useEffect(() => {
     if (!isMyTurn || gameView?.phase !== "playing") return;
@@ -572,6 +606,21 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMyTurn, gameView?.turnId, gameView?.phase]);
+
+  // Let the winner's effect breathe before the results panel covers the table.
+  useEffect(() => {
+    if (gameView?.phase !== "ended") {
+      setResultsVisible(false);
+      return;
+    }
+    const delay = winnerEffect === "prism-burst" ? 1700 : winnerEffect === "beta-burst" ? 1300 : 0;
+    if (delay === 0) {
+      setResultsVisible(true);
+      return;
+    }
+    const timer = window.setTimeout(() => setResultsVisible(true), delay);
+    return () => window.clearTimeout(timer);
+  }, [gameView?.phase, gameView?.startedAt, winnerEffect]);
 
   if (!gameView) {
     return (
@@ -584,6 +633,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
   const overlap = hand.length > 16 ? 52 : hand.length > 12 ? 42 : hand.length > 9 ? 30 : hand.length > 6 ? 16 : 5;
   const currentColor = COLOR_META[gameView.color];
   const banner = banners[0];
+  const detonating = gameView.phase === "ended" && winnerEffect === "prism-burst";
   const recentLogs = gameView.log.slice(-4).reverse();
   const bannerAccent = banner?.entry.card?.color
     ? COLOR_META[banner.entry.card.color].hex
@@ -600,7 +650,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.7, ease: easeOutExpo }}
       >
-        <div className={cn("table-surface table-surface-live", `felt-${tableId}`)}>
+        <div className={cn("table-surface table-surface-live", `felt-${tableId}`, detonating && "table-detonate")}>
           <div className="table-atmosphere" aria-hidden>
             {Array.from({ length: 14 }).map((_, index) => (
               <span
@@ -673,6 +723,9 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                 offset={offset}
                 dense={denseRail}
                 emote={emotes.findLast((event) => event.playerId === player.id)?.emote}
+                selectable={Boolean(swapCard) && !colorCard}
+                selected={swapTargetId === player.id}
+                onSelect={() => pickSwapTarget(player.id)}
                 className="table-rail-seat"
               />
             ))}
@@ -843,6 +896,28 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
               offset={offset}
               mustDraw={mustDraw}
             />
+
+            {targetingSwap ? (
+              <TableSwapPrompt
+                card={swapCard}
+                title={
+                  swapMode === "jump"
+                    ? t("Swap in! Pick a player before the window closes.")
+                    : t("Pick a player to swap hands with")
+                }
+                onCancel={clearTableChoice}
+              />
+            ) : null}
+
+            {pickerCard ? (
+              <TableColorPicker
+                card={pickerCard}
+                eyebrow={swapCard ? t("Swap hands") : t("Choose a colour")}
+                subtitle={pickerSubtitle}
+                onPick={pickColor}
+                onCancel={clearTableChoice}
+              />
+            ) : null}
           </div>
 
           <div className="event-ticker" aria-hidden>
@@ -976,12 +1051,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                       variant="outline"
                       size="sm"
                       className="gap-1.5"
-                      onClick={() => {
-                        setSwapMode("jump");
-                        if (onlyOpponent) setColorCard(swapInCard);
-                        else setSwapCard(swapInCard);
-                        playSound("swap");
-                      }}
+                      onClick={() => beginSwap(swapInCard, "jump")}
                     >
                       <Zap className="size-3.5" /> {t("Swap in")}
                     </Button>
@@ -1036,23 +1106,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
         </div>
       </motion.div>
 
-      <ColorDialog
-        card={colorCard}
-        open={Boolean(colorCard)}
-        onOpenChange={(open) => (!open ? setColorCard(null) : undefined)}
-        onPick={pickColor}
-      />
-      <SwapDialog
-        card={swapCard}
-        open={Boolean(swapCard)}
-        onOpenChange={(open) => (!open ? setSwapCard(null) : undefined)}
-        players={room.players}
-        meId={meId}
-        outOfTurn={swapMode === "jump"}
-        onConfirm={pickSwap}
-      />
-
-      {gameView.phase === "ended" ? (
+      {gameView.phase === "ended" && resultsVisible ? (
         <GameOverDialog room={room} onLeave={onLeave} onRematch={() => client.rematch()} />
       ) : null}
     </LayoutGroup>

@@ -7,12 +7,12 @@ import {
   grantUser,
   listAudit,
   listUsers,
-  setOwner,
+  setBeta,
   unbanUser,
 } from "../services/admin.js";
 
 const banSchema = z.object({ reason: z.string().max(240).optional() });
-const ownerSchema = z.object({ owner: z.boolean() });
+const betaSchema = z.object({ beta: z.boolean() });
 const grantSchema = z.object({
   coins: z.number().int().min(0).max(1_000_000).optional(),
   xp: z.number().int().min(0).max(1_000_000).optional(),
@@ -50,11 +50,11 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
     return unbanUser(principal.user, targetId(request));
   });
 
-  app.post("/api/admin/users/:id/owner", async (request) => {
+  app.post("/api/admin/users/:id/beta", async (request) => {
     const principal = requireOwner(request);
-    const parsed = ownerSchema.safeParse(request.body ?? {});
-    if (!parsed.success) badRequest("Pick owner state.");
-    return setOwner(principal.user, targetId(request), parsed.data?.owner ?? false);
+    const parsed = betaSchema.safeParse(request.body ?? {});
+    if (!parsed.success) badRequest("Pick beta access state.");
+    return setBeta(principal.user, targetId(request), parsed.data?.beta ?? false);
   });
 
   app.post("/api/admin/users/:id/grant", async (request) => {

@@ -706,3 +706,243 @@ button.pcard:focus-visible {
     font-size: 11px;
   }
 }
+
+/* ── beta-tester cosmetics ─────────────────────────────────────────────── */
+
+.back-vanguard {
+  --back-a: #0b1b3a;
+  --back-b: #05060f;
+  --back-accent: #7ef9ff;
+}
+
+.back-vanguard .pcard-inner {
+  border-color: rgb(126 249 255 / 0.45);
+  background:
+    radial-gradient(1.6px 1.6px at 22% 26%, #c9fffb 45%, transparent 52%),
+    radial-gradient(1.6px 1.6px at 74% 18%, #ffd166 45%, transparent 52%),
+    radial-gradient(1.6px 1.6px at 64% 74%, #7ef9ff 45%, transparent 52%),
+    radial-gradient(1.6px 1.6px at 30% 68%, #c9a7ff 45%, transparent 52%),
+    linear-gradient(160deg, #0b1b3a 0%, #120a2e 55%, #05060f 100%);
+  box-shadow: inset 0 0 26px rgb(126 249 255 / 0.2);
+}
+
+.back-vanguard .back-mark {
+  color: #eafffd;
+  text-shadow:
+    0 0 10px #7ef9ff,
+    0 0 22px rgb(201 167 255 / 0.7);
+}
+
+.av-flask {
+  --av-a: radial-gradient(70% 70% at 32% 24%, #d8fffb, #1b7f8c 55%, #061a2b);
+  color: #eafffd;
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.25),
+    0 0 16px rgb(126 249 255 / 0.35);
+}
+
+/* ── owner detonation ──────────────────────────────────────────────────── */
+
+.table-detonate {
+  animation: table-detonate 0.9s cubic-bezier(0.22, 0.8, 0.2, 1) both;
+}
+
+.table-detonate::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 46%, #fff 0%, rgb(255 224 160 / 0.8) 14%, rgb(255 90 43 / 0.35) 34%, transparent 62%);
+  animation: detonate-flash 0.9s ease-out forwards;
+}
+
+@keyframes table-detonate {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  8% {
+    transform: translate3d(-9px, 5px, 0) rotate(-0.5deg);
+  }
+  16% {
+    transform: translate3d(8px, -6px, 0) rotate(0.45deg);
+  }
+  24% {
+    transform: translate3d(-7px, 3px, 0) rotate(-0.3deg);
+  }
+  34% {
+    transform: translate3d(5px, 4px, 0) rotate(0.25deg);
+  }
+  46% {
+    transform: translate3d(-4px, -2px, 0) rotate(-0.15deg);
+  }
+  60% {
+    transform: translate3d(3px, 2px, 0) rotate(0.1deg);
+  }
+  80% {
+    transform: translate3d(-1px, -1px, 0) rotate(0deg);
+  }
+}
+
+@keyframes detonate-flash {
+  0% {
+    opacity: 0.95;
+  }
+  35% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.detonate-flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  mix-blend-mode: screen;
+  animation: detonate-screen-flash 0.8s ease-out forwards;
+}
+
+@keyframes detonate-screen-flash {
+  0% {
+    opacity: 0.85;
+  }
+  30% {
+    opacity: 0.22;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.detonate-core {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 18vmin;
+  height: 18vmin;
+  translate: -50% -50%;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle,
+    #fff 0%,
+    #ffe08a 24%,
+    #ff7a3c 46%,
+    rgb(255 45 85 / 0.5) 66%,
+    transparent 72%
+  );
+  filter: blur(2px);
+  animation: detonate-core 0.9s var(--ease-out-expo) forwards;
+}
+
+@keyframes detonate-core {
+  0% {
+    opacity: 0;
+    scale: 0.2;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    scale: 5.5;
+  }
+}
+
+.detonate-ray {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 3px;
+  height: 44vmin;
+  translate: -50% -100%;
+  rotate: var(--angle, 0deg);
+  transform-origin: 50% 100%;
+  border-radius: 999px;
+  background: linear-gradient(to top, hsl(var(--ray-hue, 30) 95% 70% / 0.95), transparent 82%);
+  animation: detonate-ray 0.8s ease-out forwards;
+}
+
+@keyframes detonate-ray {
+  0% {
+    opacity: 0;
+    scale: 1 0.15;
+  }
+  12% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 0;
+    scale: 1 1.9;
+  }
+}
+
+.detonate-shard {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 8px;
+  height: 11px;
+  border-radius: 2px;
+  translate: -50% -50%;
+  animation: detonate-shard 0.95s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+
+@keyframes detonate-shard {
+  0% {
+    opacity: 0;
+    translate: -50% -50%;
+    scale: 0.4;
+    rotate: 0deg;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    translate: calc(-50% + var(--tx, 0px)) calc(-50% + var(--ty, 0px));
+    scale: 0.15;
+    rotate: var(--rot, 180deg);
+  }
+}
+
+/* ── beta win effect ───────────────────────────────────────────────────── */
+
+.beta-scan {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, rgb(126 249 255 / 0.12) 0 1px, transparent 1px 5px);
+  mix-blend-mode: screen;
+  animation: beta-scan 1.8s linear forwards;
+}
+
+@keyframes beta-scan {
+  0% {
+    opacity: 0;
+    background-position-y: 0;
+  }
+  12% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 0;
+    background-position-y: 220px;
+  }
+}
+
+.beta-ring {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 30vmin;
+  height: 30vmin;
+  border-radius: 999px;
+  border: 2px solid rgb(126 249 255 / 0.8);
+  box-shadow:
+    0 0 40px rgb(126 249 255 / 0.5),
+    inset 0 0 30px rgb(255 106 213 / 0.35);
+  animation: shockwave 1.7s var(--ease-out-expo) forwards;
+}

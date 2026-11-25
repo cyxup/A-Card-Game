@@ -1,11 +1,8 @@
 import type { Card, Color } from "@stacked/shared";
 import { COLORS } from "@stacked/shared";
-import { useEffect, useState } from "react";
-import { Avatar } from "@/components/brand/avatar";
-import { NameEffect } from "@/components/brand/name-effect";
+import { ArrowRightLeft, X } from "lucide-react";
 import { CardFace } from "@/components/cards/playing-card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
@@ -16,160 +13,103 @@ export const COLOR_META: Record<Color, { label: string; className: string; hex: 
   blue: { label: "Blue", className: "bg-[#2f6ad0]", hex: "#2f6ad0" },
 };
 
-export function ColorDialog({
+/**
+ * UNO-style colour call rendered on the table itself: four swatches around the
+ * card that is being played. No dialog, nothing that covers the table.
+ */
+export function TableColorPicker({
   card,
-  open,
-  onOpenChange,
+  eyebrow,
+  subtitle,
   onPick,
+  onCancel,
 }: {
   card: Card | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  eyebrow?: string;
+  subtitle?: string | null;
   onPick: (color: Color) => void;
+  onCancel: () => void;
 }) {
   const t = useT();
+  if (!card) return null;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="sm" className="sm:max-w-[420px]">
-        <DialogHeader>
-          <DialogTitle className="text-xl tracking-[-0.03em]">{t("Call a colour.")}</DialogTitle>
-          <DialogDescription>
-            {t("The next player has to match it, unless they can stack something worse.")}
-          </DialogDescription>
-        </DialogHeader>
-        {card && (
-          <div className="flex justify-center py-1">
-            <CardFace card={card} style={{ "--cw": "78px" } as React.CSSProperties} />
+    <div className="table-picker-layer">
+      <div className="table-picker" role="group" aria-label={eyebrow ?? t("Choose a colour")}>
+        <div className="table-picker-head">
+          <p className="eyebrow">{eyebrow ?? t("Choose a colour")}</p>
+          {subtitle ? <p className="table-picker-sub">{subtitle}</p> : null}
+        </div>
+
+        <div className="table-picker-wheel">
+          <div className="table-picker-card">
+            <CardFace card={card} style={{ "--cw": "74px" } as React.CSSProperties} />
           </div>
-        )}
-        <div className="grid grid-cols-2 gap-2">
-          {COLORS.map((color) => (
+          {COLORS.map((color, index) => (
             <button
               key={color}
               type="button"
               onClick={() => onPick(color)}
               className={cn(
-                "group flex h-20 items-center justify-center rounded-xl border border-white/10 text-sm font-semibold text-black/75 shadow-inner transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]",
+                "table-picker-swatch",
+                `picker-slot-${index}`,
                 COLOR_META[color].className,
               )}
+              aria-label={t(COLOR_META[color].label)}
             >
-              {t(COLOR_META[color].label)}
+              <span className="table-picker-swatch-label">{t(COLOR_META[color].label)}</span>
             </button>
           ))}
         </div>
-      </DialogContent>
-    </Dialog>
+
+        <button type="button" className="table-picker-cancel" onClick={onCancel}>
+          <X className="size-3.5" /> {t("Cancel")}
+        </button>
+      </div>
+    </div>
   );
 }
 
-export function SwapDialog({
+/**
+ * Targeting hint shown while the player has to pick a seat for Oscar's Swap.
+ * The seats themselves light up; this only explains the interaction and offers
+ * a way out.
+ */
+export function TableSwapPrompt({
   card,
-  open,
-  onOpenChange,
-  players,
-  meId,
-  outOfTurn = false,
-  onConfirm,
+  title,
+  subtitle,
+  onCancel,
 }: {
   card: Card | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  players: { id: string; name: string; avatar: string; nameEffect: string; cardCount: number; isBot: boolean }[];
-  meId: string;
-  outOfTurn?: boolean;
-  onConfirm: (targetId: string, color: Color) => void;
+  title?: string;
+  subtitle?: string;
+  onCancel: () => void;
 }) {
-  const [target, setTarget] = useState<string | null>(null);
-  const [color, setColor] = useState<Color | null>(null);
   const t = useT();
-
-  useEffect(() => {
-    if (open) {
-      setTarget(null);
-      setColor(null);
-    }
-  }, [open, card?.id]);
-
-  const others = players.filter((player) => player.id !== meId);
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="sm" className="sm:max-w-[460px]">
-        <DialogHeader>
-          <DialogTitle className="text-xl tracking-[-0.03em]">
-            {outOfTurn ? t("Swap in!") : t("Oscar's Swap")}
-          </DialogTitle>
-          <DialogDescription>
-            {outOfTurn
-              ? t("You are jumping the queue. Pick a victim and a colour before the window closes.")
-              : t("Take someone else's hand. Pick the victim, then the colour that follows.")}
-          </DialogDescription>
-        </DialogHeader>
-        {card && (
-          <div className="flex justify-center">
-            <CardFace card={card} style={{ "--cw": "64px" } as React.CSSProperties} />
-          </div>
+    <div className="table-swap-layer">
+      <div className="table-swap-pop" role="status">
+        {card ? (
+          <span className="table-swap-card">
+            <CardFace card={card} style={{ "--cw": "46px" } as React.CSSProperties} />
+          </span>
+        ) : (
+          <span className="table-swap-icon">
+            <ArrowRightLeft className="size-4" />
+          </span>
         )}
-
-        <div className="flex flex-col gap-2">
-          <p className="eyebrow">{t("Swap with")}</p>
-          <div className="grid max-h-44 grid-cols-2 gap-1.5 overflow-y-auto pr-1">
-            {others.map((player) => (
-              <button
-                key={player.id}
-                type="button"
-                onClick={() => setTarget(player.id)}
-                className={cn(
-                  "flex items-center gap-2 rounded-lg border px-2.5 py-2 text-left transition-colors",
-                  target === player.id
-                    ? "border-brand/50 bg-brand/[0.08]"
-                    : "border-white/8 hover:border-white/16",
-                )}
-              >
-                <Avatar id={player.avatar} size={26} />
-                <span className="min-w-0 flex-1">
-                  <NameEffect effect={player.nameEffect} className="block text-xs font-medium">
-                    {player.name}
-                  </NameEffect>
-                  <span className="block font-mono text-[10px] text-muted-foreground">
-                    {t(player.cardCount === 1 ? "{n} card" : "{n} cards", { n: player.cardCount })}
-                  </span>
-                </span>
-              </button>
-            ))}
-          </div>
+        <div className="table-swap-copy">
+          <p className="eyebrow">{t("Oscar's Swap")}</p>
+          <p className="table-swap-title">{title ?? t("Pick a player to swap hands with")}</p>
+          <p className="table-swap-sub">
+            {subtitle ?? t("Tap a highlighted seat at the top — their hand becomes yours.")}
+          </p>
         </div>
-
-        <div className="flex flex-col gap-2">
-          <p className="eyebrow">{t("Colour after")}</p>
-          <div className="grid grid-cols-4 gap-1.5">
-            {COLORS.map((entry) => (
-              <button
-                key={entry}
-                type="button"
-                onClick={() => setColor(entry)}
-                aria-label={t(COLOR_META[entry].label)}
-                className={cn(
-                  "h-9 rounded-lg border transition-all",
-                  COLOR_META[entry].className,
-                  color === entry ? "border-white/80 ring-2 ring-white/40" : "border-white/10 opacity-80 hover:opacity-100",
-                )}
-              />
-            ))}
-          </div>
-        </div>
-
-        <Button
-          variant="brand"
-          size="lg"
-          disabled={!target || !color}
-          onClick={() => {
-            if (target && color) onConfirm(target, color);
-          }}
-        >
-          {t("Swap hands")}
+        <Button size="xs" variant="ghost" onClick={onCancel} className="shrink-0 gap-1">
+          <X className="size-3.5" /> {t("Cancel")}
         </Button>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }

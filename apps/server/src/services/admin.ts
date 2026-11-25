@@ -31,6 +31,7 @@ export function toAdminUser(user: UserRow): AdminUserView {
     games: user.games,
     wins: user.wins,
     owner: user.isOwner,
+    beta: user.isBetaTester,
     banned: user.banned,
     banReason: user.banReason ?? null,
     createdAt: user.createdAt.getTime(),
@@ -116,23 +117,23 @@ export async function unbanUser(actor: UserRow, targetId: string): Promise<Admin
   return toAdminUser(fresh);
 }
 
-export async function setOwner(
+export async function setBeta(
   actor: UserRow,
   targetId: string,
-  owner: boolean,
+  beta: boolean,
 ): Promise<AdminUserView> {
   if (targetId === actor.id) {
-    throw new AdminError("cannot_change_own_owner", "You cannot change your own owner flag here.");
+    throw new AdminError("cannot_change_own_beta", "You cannot change your own beta flag here.");
   }
   const target = await targetRow(targetId);
   const [fresh] = await db
     .update(users)
-    .set({ isOwner: owner })
+    .set({ isBetaTester: beta })
     .where(eq(users.id, target.id))
     .returning();
   if (!fresh) throw new AdminError("not_found", "That account does not exist.", 404);
   await syncUnlocks(fresh);
-  await audit(actor, owner ? "owner_grant" : "owner_revoke", target);
+  await audit(actor, beta ? "beta_grant" : "beta_revoke", target);
   return toAdminUser(fresh);
 }
 
@@ -162,7 +163,11 @@ export async function grantUser(
   if (unlockAll) {
     const [current] = await db.select().from(users).where(eq(users.id, target.id)).limit(1);
     if (!current) throw new AdminError("not_found", "That account does not exist.", 404);
-    const visible = COSMETICS.filter((item) => item.unlock.type !== "owner" || current.isOwner);
+    const visible = COSMETICS.filter(
+      (item) =>
+        (item.unlock.type !== "owner" || current.isOwner) &&
+        (item.unlock.type !== "beta" || current.isBetaTester || current.isOwner),
+    );
     if (visible.length > 0) {
       await db
         .insert(userCosmetics)

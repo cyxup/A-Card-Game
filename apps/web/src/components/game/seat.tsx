@@ -1,6 +1,6 @@
 import { EMOTES, type RoomPlayerView } from "@stacked/shared";
 import { AnimatePresence, motion } from "motion/react";
-import { Crown, Sparkles, WifiOff } from "lucide-react";
+import { ArrowRightLeft, Check, Crown, FlaskConical, Sparkles, WifiOff } from "lucide-react";
 import { Avatar } from "@/components/brand/avatar";
 import { NameEffect } from "@/components/brand/name-effect";
 import { spring } from "@/lib/motion";
@@ -16,6 +16,9 @@ export function Seat({
   offset,
   dense = false,
   emote,
+  selectable = false,
+  selected = false,
+  onSelect,
   className,
 }: {
   player: RoomPlayerView;
@@ -24,6 +27,9 @@ export function Seat({
   offset: number;
   dense?: boolean;
   emote?: string;
+  selectable?: boolean;
+  selected?: boolean;
+  onSelect?: () => void;
   className?: string;
 }) {
   const left = useCountdown(deadline, offset, active);
@@ -37,13 +43,42 @@ export function Seat({
     <motion.div
       layout
       initial={{ opacity: 0, y: -14, scale: 0.96 }}
-      animate={{ opacity: offline ? 0.45 : 1, y: 0, scale: active ? 1.02 : 1 }}
+      animate={{ opacity: offline ? 0.45 : 1, y: 0, scale: active || selected ? 1.02 : 1 }}
+      whileHover={selectable ? { scale: 1.045 } : undefined}
+      whileTap={selectable ? { scale: 0.98 } : undefined}
       transition={spring.smooth}
-      className={cn("seat-plate", active && "seat-plate-active", dense && "seat-plate-dense", className)}
+      className={cn(
+        "seat-plate",
+        active && "seat-plate-active",
+        dense && "seat-plate-dense",
+        selectable && "seat-plate-target",
+        selected && "seat-plate-chosen",
+        className,
+      )}
       data-seat-id={player.id}
       data-turn={active}
       aria-current={active ? "true" : undefined}
+      role={selectable ? "button" : undefined}
+      tabIndex={selectable ? 0 : undefined}
+      aria-label={selectable ? `${t("Swap hands with")} ${player.name}` : undefined}
+      onClick={selectable ? onSelect : undefined}
+      onKeyDown={
+        selectable
+          ? (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onSelect?.();
+              }
+            }
+          : undefined
+      }
     >
+      {selectable ? (
+        <span className={cn("seat-swap-tag", selected && "is-chosen")}>
+          {selected ? <Check className="size-3" /> : <ArrowRightLeft className="size-3" />}
+          {selected ? t("Chosen") : t("Swap")}
+        </span>
+      ) : null}
       {active && <div className="seat-plate-spotlight" />}
       <AnimatePresence>
         {emote ? (
@@ -101,6 +136,11 @@ export function Seat({
             {player.owner ? (
               <span className="seat-owner">
                 <Sparkles className="size-2.5" /> {t("owner")}
+              </span>
+            ) : null}
+            {player.beta ? (
+              <span className="seat-beta">
+                <FlaskConical className="size-2.5" /> beta
               </span>
             ) : null}
             {player.isBot ? <span className="seat-bot">{t("bot")}</span> : null}

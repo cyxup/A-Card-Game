@@ -278,6 +278,7 @@ export class RoomManager {
         levelForXp(user.xp),
         user.displayName,
         isOwner(user),
+        user.isBetaTester,
       );
     }
     return guestSeat(conn.principal, conn.playerId);
@@ -432,6 +433,7 @@ export class RoomManager {
         loadout,
         level: 1 + Math.floor(Math.random() * 14),
         owner: false,
+        beta: false,
         joinedAt: Date.now(),
         disconnectedAt: null,
         rewards: null,
@@ -451,7 +453,7 @@ export class RoomManager {
     const loadout = defaultLoadout();
     for (const slot of slots) {
       const options = COSMETICS.filter(
-        (item) => item.slot === slot && item.unlock.type !== "achievement" && item.unlock.type !== "owner",
+        (item) => item.slot === slot && item.unlock.type !== "achievement" && item.unlock.type !== "owner" && item.unlock.type !== "beta",
       );
       const chosen = options[Math.floor(Math.random() * options.length)];
       if (chosen) loadout[slot] = chosen.id;

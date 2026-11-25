@@ -25,6 +25,8 @@ export const users = pgTable(
     displayName: varchar("display_name", { length: 24 }).notNull(),
     /** Toggled by hand in the database. Grants owner-only cosmetics + badge. */
     isOwner: boolean("is_owner").notNull().default(false),
+    /** Toggled from the owner console. Grants beta-tester cosmetics + badge. */
+    isBetaTester: boolean("is_beta_tester").notNull().default(false),
     banned: boolean("banned").notNull().default(false),
     banReason: text("ban_reason"),
     bannedAt: timestamp("banned_at", { withTimezone: true }),

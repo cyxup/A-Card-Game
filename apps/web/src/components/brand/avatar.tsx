@@ -57,6 +57,13 @@ const ICONS: Record<string, ReactNode> = {
       <path d="M12 7v10M8.5 12h7" />
     </>
   ),
+  flask: (
+    <>
+      <path d="M9.5 3h5M10.5 3v5.1L6 16.4A3.2 3.2 0 0 0 8.8 21h6.4a3.2 3.2 0 0 0 2.8-4.6L13.5 8.1V3" />
+      <path d="M8 14.5h8" />
+      <path d="M10.4 17.2h.01M13.6 17.2h.01" />
+    </>
+  ),
 };
 
 export function Avatar({

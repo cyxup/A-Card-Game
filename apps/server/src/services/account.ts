@@ -26,14 +26,32 @@ export function isOwner(user: Pick<UserRow, "isOwner">): boolean {
   return user.isOwner;
 }
 
+export function isBetaTester(user: Pick<UserRow, "isBetaTester">): boolean {
+  return user.isBetaTester;
+}
+
+/** Owners can wear every hidden piece, including beta-tester items. */
+export function canUseTesterItems(user: Pick<UserRow, "isBetaTester" | "isOwner">): boolean {
+  return user.isBetaTester || user.isOwner;
+}
+
+/** Hidden catalogue rows only exist for the accounts allowed to see them. */
+function unlockAllowed(user: UserRow, unlock: CosmeticItem["unlock"]): boolean {
+  if (unlock.type === "owner") return isOwner(user);
+  if (unlock.type === "beta") return canUseTesterItems(user);
+  return true;
+}
+
 /**
- * A non-owner must never receive owner-only ids, even if they had the flag in
- * the past and rows are still sitting in user_cosmetics.
+ * A non-owner must never receive owner-only ids — and a non-beta account must
+ * never receive beta ids — even if rows are still sitting in user_cosmetics.
  */
 export function visibleOwned(user: UserRow, ids: Iterable<string>): Set<string> {
-  if (isOwner(user)) return new Set(ids);
   return new Set(
-    [...ids].filter((id) => COSMETICS_BY_ID.get(id)?.unlock.type !== "owner"),
+    [...ids].filter((id) => {
+      const item = COSMETICS_BY_ID.get(id);
+      return !item || unlockAllowed(user, item.unlock);
+    }),
   );
 }
 
@@ -59,11 +77,10 @@ export function statsOf(user: UserRow): PlayerStats {
 
 export function equippedOf(user: UserRow): Loadout {
   const loadout = { ...defaultLoadout(), ...(user.equipped ?? {}) } as Loadout;
-  if (!isOwner(user)) {
-    for (const slot of Object.keys(SLOT_FALLBACK) as (keyof Loadout)[]) {
-      if (COSMETICS_BY_ID.get(loadout[slot])?.unlock.type === "owner") {
-        loadout[slot] = SLOT_FALLBACK[slot];
-      }
+  for (const slot of Object.keys(SLOT_FALLBACK) as (keyof Loadout)[]) {
+    const item = COSMETICS_BY_ID.get(loadout[slot]);
+    if (item && !unlockAllowed(user, item.unlock)) {
+      loadout[slot] = SLOT_FALLBACK[slot];
     }
   }
   return loadout;
@@ -85,6 +102,7 @@ export function toPublicUser(user: UserRow): PublicUser {
     stats: statsOf(user),
     createdAt: user.createdAt.getTime(),
     owner: isOwner(user),
+    beta: isBetaTester(user),
   };
 }
 
@@ -126,7 +144,8 @@ export async function syncUnlocks(user: UserRow): Promise<SyncResult> {
     (item) =>
       item.unlock.type === "default" ||
       (item.unlock.type === "level" && level >= item.unlock.level) ||
-      (item.unlock.type === "owner" && owner),
+      (item.unlock.type === "owner" && owner) ||
+      (item.unlock.type === "beta" && canUseTesterItems(user)),
   );
   const baseOwned = new Set([...owned, ...base.map((item) => item.id)]);
   const achievements = completedAchievements(stats, countedCosmetics(baseOwned));
@@ -151,7 +170,9 @@ export async function syncUnlocks(user: UserRow): Promise<SyncResult> {
                 ? "level"
                 : item.unlock.type === "owner"
                   ? "owner"
-                  : "default",
+                  : item.unlock.type === "beta"
+                    ? "beta"
+                    : "default",
         })),
       )
       .onConflictDoNothing();
@@ -208,8 +229,8 @@ export async function profilePayload(user: UserRow): Promise<ProfilePayload> {
   const sync = await syncUnlocks(user);
   return {
     user: toPublicUser(user),
-    // Owner-only pieces are not part of the public catalogue.
-    items: COSMETICS.filter((item) => item.unlock.type !== "owner" || isOwner(user)),
+    // Owner-only and beta-only pieces are not part of the public catalogue.
+    items: COSMETICS.filter((item) => unlockAllowed(user, item.unlock)),
     owned: [...sync.owned],
     achievements: achievementViews(user, countedCosmetics(sync.owned)),
     equipped: equippedOf(user),
@@ -219,6 +240,7 @@ export async function profilePayload(user: UserRow): Promise<ProfilePayload> {
 export async function itemIsOwned(user: UserRow, item: CosmeticItem): Promise<boolean> {
   if (item.unlock.type === "default") return true;
   if (item.unlock.type === "owner") return isOwner(user);
+  if (item.unlock.type === "beta") return canUseTesterItems(user);
   const [row] = await db
     .select({ itemId: userCosmetics.itemId })
     .from(userCosmetics)

@@ -20,6 +20,8 @@ export interface PublicUser {
   createdAt: number;
   /** True when users.is_owner is enabled in the database. */
   owner: boolean;
+  /** True when users.is_beta_tester is enabled in the database. */
+  beta: boolean;
 }
 
 export interface SessionInfo {
@@ -67,6 +69,7 @@ export interface AdminUserView {
   games: number;
   wins: number;
   owner: boolean;
+  beta: boolean;
   banned: boolean;
   banReason: string | null;
   createdAt: number;
@@ -124,6 +127,7 @@ export interface RoomPlayerView {
   cardCount: number;
   placement: number | null;
   owner?: boolean;
+  beta?: boolean;
 }
 
 export interface RewardGrant {

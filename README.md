@@ -15,13 +15,13 @@ room; accounts, cosmetics and match results live in PostgreSQL.
 - **Playable multiplayer** — public matchmaking, private tables with 5-letter codes, practice vs bots.
 - **The full hybrid ruleset** — UNO deck + Blazing 8s cards (Giddy Up, Wrong Way, Quick Draw, Wild Eight, Oscar's Swap).
 - **Host-configurable table rules** — stacking modes, jump-ins, swap-anytime, seven-zero, draw-until-playable, turn timer, seats, starting hand.
-- **Owner console** — database-gated `is_owner` accounts get a private `/admin` page: ban/unban, kick, promote owners, give coins/XP, unlock every cosmetic, and an audit log. Owner-only cosmetics stay invisible to everyone else.
-- **Animation previews** — every win effect can be replayed in a mini-table preview from the collection.
+- **Owner console** — database-gated `is_owner` accounts get a private `/admin` page: ban/unban, kick, grant beta access, give coins/XP, unlock every cosmetic, and an audit log. Owner-only and beta-tester cosmetics stay invisible to everyone else.
+- **Animation previews** — every win effect can be replayed in a mini-table preview from the collection. The owner-only one detonates the whole table.
 - **English / French** — a persistent language toggle in the nav and profile, with a full French catalogue and French game feed.
 - **Accounts and guests** — scrypt password hashing, opaque httpOnly session cookies, rate limits, guest sessions that can be upgraded, and one-time recovery codes for password resets.
 - **Progression** — XP, levels, coins, match rewards, achievements. Starter cosmetics no longer count toward collection achievements.
-- **Cosmetics** — card backs, table felts, avatars, name effects and win effects, visible to everyone at the table. Owner accounts also get animated rainbow-only pieces and a badge.
-- **A table that talks back** — opponents' hands are fanned card backs with live counts, cards fly to the discard, the draw deck breathes, seats glow on their turn, and every play/draw/skip lands with a readable action banner.
+- **Cosmetics** — card backs, table felts, avatars, name effects and win effects, visible to everyone at the table. Owner accounts get animated rainbow pieces and a badge; beta testers get a hidden teal-and-violet set of their own.
+- **A table that talks back** — opponents' hands are fanned card backs with live counts, cards fly to the discard, the draw deck breathes, seats glow on their turn, colours are called directly on the felt, Oscar's Swap targets a seat instead of a dialog, and every play/draw/skip lands with a readable action banner.
 - **Built to look alive** — CSS cards, route fades, Motion springs, animated seats and synthesised UI/game sounds; no bitmap payloads, no canvas, and an optional low-power/reduce-motion escape hatch.
 - **Authoritative server** — hands are masked per player, actions are validated by the engine, timers and bots run server-side.
 
@@ -169,9 +169,11 @@ Rows for owner-only items are purged on the next login/profile sync, and any equ
 falls back to the slot default.
 
 The console can also ban accounts (`banned`, `ban_reason`, `banned_at`, `banned_by` — migration
-`0003_wakeful_siren.sql`), close their sessions, kick them from tables, toggle other owners, grant
-coins/XP, unlock every cosmetic and inspect the `admin_audit` log. Banned accounts are blocked at
-login and every existing session is invalidated.
+`0003_wakeful_siren.sql`), close their sessions, kick them from tables, grant or revoke beta
+access (`is_beta_tester` — migration `0004_careless_toxin.sql`), give coins/XP, unlock every
+cosmetic and inspect the `admin_audit` log. Banned accounts are blocked at login and every existing
+session is invalidated. Owner promotion is intentionally not exposed in the console: `is_owner` is
+set directly in PostgreSQL.
 
 ### Language
 
@@ -226,7 +228,7 @@ Guests can play everything, but only accounts keep coins, XP, levels and cosmeti
 | `PATCH /api/me` | display name |
 | `GET /api/admin/users` / `audit` | owner console lists |
 | `POST /api/admin/users/:id/ban` / `unban` / `kick` | moderation |
-| `POST /api/admin/users/:id/owner` / `grant` | owner flags and cheats |
+| `POST /api/admin/users/:id/beta` / `grant` | beta access, coins/XP, unlock all |
 | `POST /api/admin/cheat` | self-service owner cheats |
 | `GET /api/leaderboard` | top 50 by XP |
 | `GET /api/rooms` | joinable public lobbies |

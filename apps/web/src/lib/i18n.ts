@@ -442,10 +442,29 @@ const FR: Record<string, string> = {
   grant: "don de pièces/XP",
   owner_grant: "statut owner donné",
   owner_revoke: "statut owner retiré",
+  beta_grant: "accès beta accordé",
+  beta_revoke: "accès beta retiré",
   kick: "expulsion",
-  "Bans, owner flags and cheats. Every action is logged.":
-    "Bans, statuts owner et triches. Chaque action est enregistrée.",
+  "Bans, beta access and cheats. Every action is logged.":
+    "Bans, accès beta et triches. Chaque action est enregistrée.",
   "Call a colour.": "Annoncez une couleur.",
+  "Choose a colour": "Choisissez une couleur",
+  "Swap hands with": "Échanger les mains avec",
+  "Swapping hands with {name}. Choose the colour that follows.":
+    "Échange de mains avec {name}. Choisissez la couleur qui suit.",
+  "Pick a player to swap hands with": "Choisissez un joueur avec qui échanger",
+  "Tap a highlighted seat at the top — their hand becomes yours.":
+    "Touchez un siège surligné en haut — sa main devient la vôtre.",
+  "Swap in! Pick a player before the window closes.":
+    "Entrez dans le tour ! Choisissez un joueur avant la fermeture de la fenêtre.",
+  "Chosen": "Choisi",
+  "Swap": "Échange",
+  "Beta tester": "Beta testeur",
+  "Beta testers": "Beta testeurs",
+  "Beta tester only": "Réservé aux beta testeurs",
+  "Make beta": "Nommer beta testeur",
+  "Remove beta": "Retirer beta testeur",
+  "Beta access": "Accès beta",
   "Card backs, felts, avatars, name effects and win animations visible to the table.":
     "Dos de cartes, tapis, avatars, effets de nom et animations de victoire visibles par la table.",
   "Clockwise, until it isn't.": "Dans le sens horaire, jusqu'à ce que non.",
@@ -685,6 +704,9 @@ const FR: Record<string, string> = {
   "Prism Foil": "Foil Prisme",
   "Owner only. A full spectrum folded into the deck.":
     "Réservé à l'owner. Un spectre entier plié dans le deck.",
+  Vanguard: "Avant-garde",
+  "Beta tester only. The very first deck ever shuffled. It still hums.":
+    "Réservé aux beta testeurs. Le tout premier deck jamais mélangé. Il vibre encore.",
   Noir: "Noir",
   "Black felt, warm spotlight, no distractions.":
     "Feutre noir, lumière chaude, aucune distraction.",
@@ -705,6 +727,9 @@ const FR: Record<string, string> = {
   "The Owner's Box": "La loge de l'owner",
   "Owner only. The felt itself refuses to pick one colour.":
     "Réservé à l'owner. Le feutre refuse lui-même de choisir une couleur.",
+  "The Lab": "Le Labo",
+  "Beta tester only. Where the deck was broken in. The grid never quite switches off.":
+    "Réservé aux beta testeurs. Là où le deck a été rodé. La grille ne s'éteint jamais vraiment.",
   Rook: "Tour",
   "A straight edge and a steady hand.": "Une ligne droite et une main sûre.",
   Comet: "Comète",
@@ -725,6 +750,9 @@ const FR: Record<string, string> = {
   "The Ace": "L'As",
   "Owner only. The house always has one more card.":
     "Réservé à l'owner. La maison a toujours une carte de plus.",
+  "The Flask": "Le Flacon",
+  "Beta tester only. Every rule was tested in here first.":
+    "Réservé aux beta testeurs. Chaque règle a d'abord été testée ici.",
   Plain: "Simple",
   "Just your name. Confident enough.": "Juste votre nom. Amplement suffisant.",
   Shimmer: "Scintillement",
@@ -741,6 +769,9 @@ const FR: Record<string, string> = {
   Spectrum: "Spectre",
   "Owner only. Every colour, all at once, forever.":
     "Réservé à l'owner. Toutes les couleurs, d'un coup, pour toujours.",
+  Founder: "Fondateur",
+  "Beta tester only. A signature from before the game had a name.":
+    "Réservé aux beta testeurs. Une signature d'avant que le jeu ait un nom.",
   "Clean Finish": "Fin propre",
   "No fireworks. Just the win.": "Pas de feux d'artifice. Juste la victoire.",
   Confetti: "Confettis",
@@ -756,6 +787,9 @@ const FR: Record<string, string> = {
   "Prism Burst": "Explosion prismatique",
   "Owner only. A rainbow detonates over the table.":
     "Réservé à l'owner. Un arc-en-ciel explose au-dessus de la table.",
+  "Beta Burst": "Explosion beta",
+  "Beta tester only. The build is stable. The table is not.":
+    "Réservé aux beta testeurs. Le build est stable. La table ne l'est pas.",
 
   // ── achievements ─────────────────────────────────────────────────────────
   "First blood": "Premier sang",

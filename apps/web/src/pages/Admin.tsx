@@ -3,6 +3,7 @@ import {
   Ban,
   Coins,
   Crown,
+  FlaskConical,
   Gavel,
   HandCoins,
   RefreshCw,
@@ -110,10 +111,10 @@ export default function AdminPage() {
     setBanTarget(null);
   }
 
-  function toggleOwner(user: AdminUserView) {
+  function toggleBeta(user: AdminUserView) {
     void act(
-      `owner:${user.id}`,
-      () => api.post<AdminUserView>(`/api/admin/users/${user.id}/owner`, { owner: !user.owner }),
+      `beta:${user.id}`,
+      () => api.post<AdminUserView>(`/api/admin/users/${user.id}/beta`, { beta: !user.beta }),
       "equip",
     );
   }
@@ -141,7 +142,7 @@ export default function AdminPage() {
             <Shield className="size-8 text-brand" /> {t("Owner console")}
           </h1>
           <p className="mt-2 max-w-[60ch] text-sm text-muted-foreground">
-            {t("Bans, owner flags and cheats. Every action is logged.")}
+            {t("Bans, beta access and cheats. Every action is logged.")}
           </p>
         </div>
         <Button variant="outline" onClick={() => void load()} className="gap-2">
@@ -260,6 +261,11 @@ export default function AdminPage() {
                             <Crown className="size-3" /> {t("Owner")}
                           </Badge>
                         )}
+                        {user.beta && (
+                          <Badge variant="outline" className="gap-1 border-info/40 text-info">
+                            <FlaskConical className="size-3" /> {t("Beta tester")}
+                          </Badge>
+                        )}
                         {user.banned && (
                           <Badge variant="destructive" className="gap-1">
                             <Ban className="size-3" /> {t("Banned")}
@@ -288,11 +294,11 @@ export default function AdminPage() {
                         <Button
                           size="xs"
                           variant="outline"
-                          loading={busy === `owner:${user.id}`}
-                          onClick={() => toggleOwner(user)}
+                          loading={busy === `beta:${user.id}`}
+                          onClick={() => toggleBeta(user)}
                           className="gap-1"
                         >
-                          <Crown /> {user.owner ? t("Remove owner") : t("Make owner")}
+                          <FlaskConical /> {user.beta ? t("Remove beta") : t("Make beta")}
                         </Button>
                       )}
                       <Button
