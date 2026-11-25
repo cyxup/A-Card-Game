@@ -21,6 +21,7 @@ import { sessions, users } from "../db/schema.js";
 import { ApiError, badRequest } from "../lib/http.js";
 import { rateLimit } from "../lib/rate-limit.js";
 import { cleanDisplayName, cleanUsername } from "../lib/text.js";
+import { disconnectSession, disconnectUser } from "../realtime.js";
 import { sessionInfo, syncUnlocks } from "../services/account.js";
 
 const loginSchema = z.object({
@@ -44,6 +45,11 @@ const recoverSchema = z.object({
   password: z.string().min(8).max(200),
 });
 
+// Always run the expensive/fast comparisons, even for unknown usernames, so
+// response timing does not reveal which accounts exist.
+const dummyPasswordHash = hashPassword("stacked-timing-dummy-password");
+const dummyRecoveryHash = hashRecoveryCode(generateRecoveryCode());
+
 function limit(request: { ip: string }, key: string, max: number, windowMs: number): void {
   const result = rateLimit(`${key}:${request.ip}`, max, windowMs);
   if (!result.ok) {
@@ -52,7 +58,10 @@ function limit(request: { ip: string }, key: string, max: number, windowMs: numb
 }
 
 export async function authRoutes(app: FastifyInstance): Promise<void> {
-  app.get("/api/session", async (request) => sessionInfo(request.principal));
+  app.get("/api/session", async (request) => {
+    limit(request, "session", 300, 60_000);
+    return sessionInfo(request.principal);
+  });
 
   app.post("/api/auth/guest", async (request, reply) => {
     limit(request, "guest", 30, 10 * 60_000);
@@ -106,7 +115,11 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     if (!created) throw new ApiError(500, "server_error", "Could not create the account.");
 
     await syncUnlocks(created);
-    if (request.sessionToken) await deleteSession(hashToken(request.sessionToken)).catch(() => undefined);
+    if (request.sessionToken) {
+      const oldSession = hashToken(request.sessionToken);
+      await deleteSession(oldSession).catch(() => undefined);
+      disconnectSession(oldSession, "session replaced");
+    }
     const { sessionId } = await createSession(reply, { userId: created.id });
     reply.header("Cache-Control", "no-store");
     const info = await sessionInfo({ kind: "user", sessionId, user: created });
@@ -122,10 +135,9 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     if (!username) throw new ApiError(401, "invalid_login", "That username or password is not right.");
 
     let [user] = await db.select().from(users).where(eq(users.username, username)).limit(1);
-    if (!user) throw new ApiError(401, "invalid_login", "That username or password is not right.");
-
-    const valid = await verifyPassword(parsed.data.password, user.passwordHash);
-    if (!valid) throw new ApiError(401, "invalid_login", "That username or password is not right.");
+    const storedHash = user?.passwordHash ?? (await dummyPasswordHash);
+    const valid = await verifyPassword(parsed.data.password, storedHash);
+    if (!user || !valid) throw new ApiError(401, "invalid_login", "That username or password is not right.");
 
     if (user.banned) {
       throw new ApiError(
@@ -147,7 +159,11 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       if (updated) user = updated;
     }
 
-    if (request.sessionToken) await deleteSession(hashToken(request.sessionToken)).catch(() => undefined);
+    if (request.sessionToken) {
+      const oldSession = hashToken(request.sessionToken);
+      await deleteSession(oldSession).catch(() => undefined);
+      disconnectSession(oldSession, "session replaced");
+    }
     const { sessionId } = await createSession(reply, { userId: user.id });
     await db.update(users).set({ lastSeenAt: new Date() }).where(eq(users.id, user.id));
     reply.header("Cache-Control", "no-store");
@@ -169,7 +185,8 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     }
 
     const [user] = await db.select().from(users).where(eq(users.username, username)).limit(1);
-    if (!user || !recoveryMatches(token, user.recoveryHash)) {
+    const storedRecovery = user?.recoveryHash ?? dummyRecoveryHash;
+    if (!user || !recoveryMatches(token, storedRecovery)) {
       throw new ApiError(401, "invalid_recovery", "That username or recovery code is not right.");
     }
 
@@ -187,8 +204,9 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       .returning();
     if (!fresh) throw new ApiError(500, "server_error", "Could not recover that account.");
 
-    // A password reset logs every other device out.
+    // A password reset logs every other device out, including open sockets.
     await db.delete(sessions).where(eq(sessions.userId, user.id));
+    disconnectUser(user.id, "password reset");
     if (request.sessionToken) await deleteSession(hashToken(request.sessionToken)).catch(() => undefined);
     const { sessionId } = await createSession(reply, { userId: fresh.id });
     reply.header("Cache-Control", "no-store");
@@ -197,6 +215,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
   });
 
   app.post("/api/auth/logout", async (request, reply) => {
+    if (request.principal) disconnectSession(request.principal.sessionId, "signed out");
     if (request.sessionToken) {
       await deleteSession(hashToken(request.sessionToken)).catch(() => undefined);
     } else if (request.principal) {
@@ -209,6 +228,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
 
   // Small endpoint the socket uses to make sure the session is still valid.
   app.get("/api/auth/check", async (request, reply) => {
+    limit(request, "session", 300, 60_000);
     const principal = await resolveSession(request.sessionToken);
     if (!principal) {
       reply.code(401).send({ ok: false });

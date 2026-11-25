@@ -25,11 +25,14 @@ services:
       db:
         condition: service_healthy
     environment:
-      NODE_ENV: production
+      # Local smoke test over plain HTTP: keep development mode so the
+      # production cookie/origin guards do not apply. Real deploys are HTTPS.
+      NODE_ENV: development
       PORT: 8080
       HOST: 0.0.0.0
       DATABASE_URL: postgres://stacked:stacked@db:5432/stacked
       APP_ORIGIN: http://localhost:8080
+      COOKIE_SECRET: local-compose-only-secret-do-not-deploy-this-32
       COOKIE_SECURE: "false"
       MIGRATE_ON_START: "true"
     ports:

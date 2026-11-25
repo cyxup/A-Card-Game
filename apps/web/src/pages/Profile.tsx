@@ -4,6 +4,7 @@ import {
   ArrowRight,
   Check,
   Coins,
+  FlaskConical,
   Gauge,
   KeyRound,
   Lock,
@@ -502,6 +503,26 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
+
+          {user.owner ? (
+            <div className="panel rounded-2xl p-5">
+              <div className="mb-3 flex items-center gap-2">
+                <FlaskConical className="size-4 text-info" />
+                <h2 className="text-sm font-semibold">{t("Owner tools")}</h2>
+              </div>
+              <label className="flex items-center justify-between gap-3 py-2">
+                <span className="flex flex-col gap-0.5 text-xs">
+                  <span>{t("In-game cheats")}</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {t(
+                      "Shows the x-ray and hand editor at the table. Cheat-assisted rounds do not pay you XP or coins.",
+                    )}
+                  </span>
+                </span>
+                <Switch checked={prefs.ownerCheats} onCheckedChange={(value) => setPrefs({ ownerCheats: value })} />
+              </label>
+            </div>
+          ) : null}
 
           <div className="panel rounded-2xl p-5">
             <h2 className="text-sm font-semibold">{t("Account")}</h2>

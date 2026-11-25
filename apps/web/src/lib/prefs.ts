@@ -10,6 +10,8 @@ export interface Prefs {
    *  so the animations are visible by default; this toggle is the escape hatch. */
   reducedMotion: boolean;
   locale: Locale;
+  /** Owner-only in-game cheat panel. Off by default; the server still re-checks. */
+  ownerCheats: boolean;
 }
 
 const STORAGE_KEY = "stacked:prefs";
@@ -25,6 +27,7 @@ function read(): Prefs {
     lowPower: false,
     reducedMotion: false,
     locale: browserLocale(),
+    ownerCheats: false,
   };
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -36,6 +39,7 @@ function read(): Prefs {
       reducedMotion:
         typeof parsed.reducedMotion === "boolean" ? parsed.reducedMotion : fallback.reducedMotion,
       locale: parsed.locale === "fr" || parsed.locale === "en" ? parsed.locale : fallback.locale,
+      ownerCheats: typeof parsed.ownerCheats === "boolean" ? parsed.ownerCheats : fallback.ownerCheats,
     };
   } catch {
     return fallback;

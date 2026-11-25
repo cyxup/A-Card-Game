@@ -1,4 +1,4 @@
-import type { Card, Color } from "./cards.js";
+import type { Card, Color, OwnerCardSpec } from "./cards.js";
 import type { GameAction, GameResult, GameRules, LogEntry } from "./game.js";
 import type { PlayerStats, CosmeticItem, Loadout, Achievement } from "./cosmetics.js";
 
@@ -179,6 +179,8 @@ export interface RoomView {
     rewards: RewardGrant | null;
   };
   game: GameView | null;
+  /** Owner-only x-ray. Never sent to non-owner connections. */
+  ownerHands?: Record<string, Card[]>;
 }
 
 export interface RoomSummary {
@@ -194,6 +196,10 @@ export interface RoomSummary {
 
 /* ────────────────────────────── Wire ────────────────────────────── */
 
+export type OwnerAction =
+  | { type: "peek"; enabled: boolean }
+  | { type: "replace"; cardId: string; card: OwnerCardSpec };
+
 export type ClientMessage =
   | { t: "create"; rules?: Partial<GameRules>; visibility?: "public" | "private" }
   | { t: "join"; code: string }
@@ -206,6 +212,7 @@ export type ClientMessage =
   | { t: "bot"; add: boolean }
   | { t: "kick"; playerId: string }
   | { t: "action"; action: GameAction; seq: number }
+  | { t: "owner"; action: OwnerAction }
   | { t: "emote"; emote: string }
   | { t: "ping"; at: number };
 

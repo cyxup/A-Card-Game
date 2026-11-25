@@ -1,6 +1,8 @@
-import type { Card, Color, LogEntry, RoomView } from "@stacked/shared";
+import type { Card, CardKind, Color, LogEntry, RoomView } from "@stacked/shared";
 import {
+  COLORS,
   EMOTES,
+  KIND_LABEL,
   canJumpInView,
   canPlayCard,
 } from "@stacked/shared";
@@ -10,8 +12,12 @@ import {
   ArrowUpDown,
   ChevronRight,
   DoorOpen,
+  Eye,
+  EyeOff,
   Flame,
+  FlaskConical,
   Layers,
+  Pencil,
   RefreshCw,
   Repeat2,
   Share2,
@@ -21,6 +27,7 @@ import {
   Users,
   Volume2,
   VolumeX,
+  X,
   Zap,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from "react";
@@ -231,7 +238,7 @@ function JumpPrompt({ room, hand, offset }: { room: RoomView; hand: Card[]; offs
 
 export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => void }) {
   const gameView = room.game;
-  const { emotes, offset } = useGame();
+  const { emotes, offset, status } = useGame();
   const t = useT();
   const prefs = usePrefs();
   const [colorCard, setColorCard] = useState<Card | null>(null);
@@ -245,6 +252,12 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
   const [turnFlash, setTurnFlash] = useState(false);
   const [colorFlash, setColorFlash] = useState<{ id: number; hex: string } | null>(null);
   const [resultsVisible, setResultsVisible] = useState(false);
+  const [ownerOpen, setOwnerOpen] = useState(false);
+  const [xray, setXray] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editKind, setEditKind] = useState<CardKind>("number");
+  const [editColor, setEditColor] = useState<Color | null>("red");
+  const [editValue, setEditValue] = useState(1);
 
   const stageRef = useRef<HTMLDivElement>(null);
   const deckRef = useRef<HTMLButtonElement>(null);
@@ -252,6 +265,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
   const handPanelRef = useRef<HTMLDivElement>(null);
   const lastLogRef = useRef<number | null>(null);
   const gameStartRef = useRef<number | null>(null);
+  const ownerRoundRef = useRef<number | null>(null);
   const flyerCounter = useRef(0);
   const bannerCounter = useRef(0);
   const flashCounter = useRef(0);
@@ -259,6 +273,13 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
 
   const meId = room.you.id;
   const me = room.players.find((player) => player.id === meId);
+  const ownerMode = Boolean(me?.owner && prefs.ownerCheats);
+  const canEditHand = Boolean(
+    ownerMode &&
+      gameView?.phase === "playing" &&
+      !(gameView.turnId === meId && gameView.drawnCardId),
+  );
+  const revealedHands = ownerMode && xray ? room.ownerHands : undefined;
   const selfEmote = emotes.findLast((event) => event.playerId === meId);
   const isMyTurn = gameView?.turnId === meId;
   const current = room.players.find((player) => player.id === gameView?.turnId);
@@ -408,6 +429,50 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
     const isJump = jumpableIds.has(colorCard.id) && !isMyTurn;
     client.action({ type: isJump ? "jump" : "play", cardId: colorCard.id, color });
     clearTableChoice();
+  }
+
+  function closeOwnerPanel() {
+    setOwnerOpen(false);
+    if (xray) {
+      setXray(false);
+      client.ownerAction({ type: "peek", enabled: false });
+    }
+  }
+
+  function toggleXray() {
+    const next = !xray;
+    setXray(next);
+    if (next && gameView) ownerRoundRef.current = gameView.startedAt;
+    client.ownerAction({ type: "peek", enabled: next });
+  }
+
+  function openEditor(card: Card) {
+    const wild = card.kind === "wild" || card.kind === "wild4" || card.kind === "swap";
+    setEditId(card.id);
+    setEditKind(card.kind);
+    setEditColor(wild ? null : (card.color ?? "red"));
+    setEditValue(card.value ?? 1);
+  }
+
+  function changeEditKind(kind: CardKind) {
+    const wild = kind === "wild" || kind === "wild4" || kind === "swap";
+    setEditKind(kind);
+    setEditColor(wild ? null : (editColor ?? "red"));
+  }
+
+  function applyEdit() {
+    if (!editId) return;
+    const wild = editKind === "wild" || editKind === "wild4" || editKind === "swap";
+    client.ownerAction({
+      type: "replace",
+      cardId: editId,
+      card: {
+        color: wild ? null : (editColor ?? "red"),
+        kind: editKind,
+        value: editKind === "number" ? editValue : null,
+      },
+    });
+    setEditId(null);
   }
 
   function draw() {
@@ -580,6 +645,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
     setColorCard(null);
     setSwapCard(null);
     setSwapTargetId(null);
+    setEditId(null);
   }, [gameView?.seq]);
 
   // An out-of-turn swap has to land inside the jump window.
@@ -617,6 +683,32 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
     const timer = window.setTimeout(() => setResultsVisible(true), delay);
     return () => window.clearTimeout(timer);
   }, [gameView?.phase, gameView?.startedAt, winnerEffect]);
+
+  // The server clears x-ray on every new round; re-request it if still on.
+  useEffect(() => {
+    if (status !== "open") {
+      ownerRoundRef.current = null;
+      return;
+    }
+    if (!me?.owner || !prefs.ownerCheats || !xray || !gameView) return;
+    if (ownerRoundRef.current === gameView.startedAt) return;
+    ownerRoundRef.current = gameView.startedAt;
+    client.ownerAction({ type: "peek", enabled: true });
+  }, [status, me?.owner, prefs.ownerCheats, xray, gameView?.startedAt]);
+
+  // Keep the x-ray lease alive; the server re-checks the owner flag each time.
+  useEffect(() => {
+    if (!me?.owner || !prefs.ownerCheats || !xray || !gameView) return;
+    const timer = window.setInterval(() => client.ownerAction({ type: "peek", enabled: true }), 45_000);
+    return () => window.clearInterval(timer);
+  }, [me?.owner, prefs.ownerCheats, xray, gameView?.startedAt]);
+
+  // Turning the master switch off drops x-ray immediately.
+  useEffect(() => {
+    if (!me?.owner || prefs.ownerCheats || !xray || !gameView) return;
+    setXray(false);
+    client.ownerAction({ type: "peek", enabled: false });
+  }, [me?.owner, prefs.ownerCheats, xray, gameView?.startedAt]);
 
   if (!gameView) {
     return (
@@ -722,6 +814,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                 selectable={Boolean(swapCard) && !colorCard}
                 selected={swapTargetId === player.id}
                 onSelect={() => pickSwapTarget(player.id)}
+                revealedHand={revealedHands?.[player.id]}
                 className="table-rail-seat"
               />
             ))}
@@ -967,6 +1060,17 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
             </div>
 
             <div className="flex items-center gap-1.5">
+              {ownerMode ? (
+                <Button
+                  variant={ownerOpen ? "brand" : "ghost"}
+                  size="sm"
+                  onClick={() => (ownerOpen ? closeOwnerPanel() : setOwnerOpen(true))}
+                  title={t("Owner tools")}
+                  className="gap-1.5"
+                >
+                  <FlaskConical /> <span className="hidden sm:inline">{t("Owner")}</span>
+                </Button>
+              ) : null}
               <Button variant="ghost" size="sm" onClick={() => setSorted((value) => !value)} title={t("Sort hand")}>
                 <ArrowUpDown /> <span className="hidden sm:inline">{t("Sort")}</span>
               </Button>
@@ -1071,6 +1175,127 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
             </div>
           </div>
         </div>
+
+        {ownerMode && ownerOpen ? (
+          <div className="owner-panel" role="dialog" aria-label={t("Owner tools")}>
+            <div className="owner-panel-head">
+              <div>
+                <p className="eyebrow">{t("Owner tools")}</p>
+                <p className="owner-panel-sub">
+                  {t("Silent to the table. Cheat-assisted rounds do not pay you XP or coins.")}
+                </p>
+              </div>
+              <Button size="icon-sm" variant="ghost" onClick={closeOwnerPanel} aria-label={t("Close")}>
+                <X />
+              </Button>
+            </div>
+
+            <div className="owner-panel-row">
+              <span className="flex items-center gap-2 text-xs">
+                {xray ? <EyeOff className="size-3.5 text-info" /> : <Eye className="size-3.5 text-muted-foreground" />}
+                {t("X-ray hands")}
+              </span>
+              <Button size="xs" variant={xray ? "brand" : "outline"} onClick={toggleXray}>
+                {xray ? t("On") : t("Off")}
+              </Button>
+            </div>
+
+            <div className="owner-panel-section">
+              <p className="eyebrow">{t("Edit your hand")}</p>
+              {!canEditHand ? (
+                <p className="owner-panel-hint">{t("Available during play, except after you draw.")}</p>
+              ) : null}
+              <div className="owner-hand-list">
+                {room.you.hand.map((card) => (
+                  <div key={card.id} className={cn("owner-hand-row", editId === card.id && "is-editing")}>
+                    <CardFace card={card} style={{ "--cw": "30px" } as CSSProperties} />
+                    <span className="owner-hand-label">{localizedCardLabel(card)}</span>
+                    <Button size="xs" variant="outline" disabled={!canEditHand} onClick={() => openEditor(card)}>
+                      <Pencil /> {t("Edit")}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+
+              {editId ? (
+                <div className="owner-editor">
+                  <label className="owner-editor-field">
+                    <span>{t("Card")}</span>
+                    <select value={editKind} onChange={(event) => changeEditKind(event.target.value as CardKind)}>
+                      {(Object.keys(KIND_LABEL) as CardKind[]).map((kind) => (
+                        <option key={kind} value={kind}>
+                          {t(KIND_LABEL[kind])}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  {editKind === "number" ? (
+                    <label className="owner-editor-field">
+                      <span>{t("Value")}</span>
+                      <select value={editValue} onChange={(event) => setEditValue(Number(event.target.value))}>
+                        {Array.from({ length: 10 }, (_, value) => (
+                          <option key={value} value={value}>
+                            {value}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
+
+                  {editKind === "number" || editKind === "skip" || editKind === "reverse" || editKind === "draw2" ? (
+                    <div className="owner-editor-colors">
+                      {COLORS.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          className={cn("owner-swatch", COLOR_META[color].className, editColor === color && "is-on")}
+                          onClick={() => setEditColor(color)}
+                          aria-label={t(COLOR_META[color].label)}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="owner-panel-hint">{t("Wild cards keep their colour call for the table.")}</p>
+                  )}
+
+                  <div className="owner-editor-actions">
+                    <Button size="xs" variant="ghost" onClick={() => setEditId(null)}>
+                      {t("Cancel")}
+                    </Button>
+                    <Button size="xs" variant="brand" onClick={applyEdit}>
+                      {t("Replace card")}
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            {xray ? (
+              <div className="owner-panel-section">
+                <p className="eyebrow">{t("Opponents")}</p>
+                <div className="owner-hand-list">
+                  {opponents.map((player) => (
+                    <div key={player.id} className="owner-xray-row">
+                      <span className="owner-hand-label">{player.name}</span>
+                      <div className="owner-xray-cards">
+                        {(room.ownerHands?.[player.id] ?? []).map((card) => (
+                          <span
+                            key={card.id}
+                            className="owner-xray-card"
+                            data-color={card.color ?? "wild"}
+                          >
+                            {localizedCardLabel(card)}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="flyer-layer" aria-hidden>
           <AnimatePresence>

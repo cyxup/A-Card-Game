@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import type { CSSProperties } from "react";
-import { CardBack } from "@/components/cards/playing-card";
+import type { Card } from "@stacked/shared";
+import { CardBack, CardFace } from "@/components/cards/playing-card";
 import { useT } from "@/lib/i18n";
 import { spring } from "@/lib/motion";
 import { cn } from "@/lib/utils";
@@ -12,6 +13,7 @@ import { cn } from "@/lib/utils";
 export function OpponentHand({
   count,
   back,
+  cards,
   size = 28,
   max = 7,
   compact = false,
@@ -19,13 +21,18 @@ export function OpponentHand({
 }: {
   count: number;
   back: string;
+  /** Owner x-ray only: the server sends these. */
+  cards?: Card[];
   size?: number;
   max?: number;
   compact?: boolean;
   className?: string;
 }) {
-  const shown = Math.min(count, max);
-  const overlap = Math.round(size * (compact ? 0.58 : 0.54));
+  const revealed = cards && cards.length > 0 ? cards : null;
+  const shown = Math.min(revealed ? revealed.length : count, max);
+  const overlap = revealed
+    ? Math.round(size * 0.3)
+    : Math.round(size * (compact ? 0.58 : 0.54));
   const indexes = Array.from({ length: shown }, (_, index) => index);
   const t = useT();
 
@@ -39,9 +46,10 @@ export function OpponentHand({
         <AnimatePresence initial={false}>
           {indexes.map((index) => {
             const middle = (shown - 1) / 2;
+            const face = revealed?.[index];
             return (
               <motion.div
-                key={index}
+                key={face ? face.id : index}
                 layout
                 initial={{ opacity: 0, y: -14, scale: 0.7, rotate: -8 }}
                 animate={{
@@ -55,7 +63,11 @@ export function OpponentHand({
                 style={{ marginLeft: index === 0 ? 0 : -overlap, zIndex: index }}
                 className="opp-hand-card"
               >
-                <CardBack back={back} style={{ "--cw": `${size}px` } as CSSProperties} />
+                {face ? (
+                  <CardFace card={face} style={{ "--cw": `${size}px` } as CSSProperties} />
+                ) : (
+                  <CardBack back={back} style={{ "--cw": `${size}px` } as CSSProperties} />
+                )}
               </motion.div>
             );
           })}

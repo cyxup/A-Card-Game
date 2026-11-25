@@ -7,6 +7,7 @@ import { generateRecoveryCode, hashRecoveryCode } from "../auth/recovery.js";
 import { db } from "../db/index.js";
 import { matches, users } from "../db/schema.js";
 import { ApiError, badRequest, requireUser } from "../lib/http.js";
+import { rateLimit } from "../lib/rate-limit.js";
 import { rooms } from "../rooms/manager.js";
 import {
   equipItem,
@@ -36,6 +37,9 @@ async function totals(): Promise<{ players: number; matches: number }> {
 export async function accountRoutes(app: FastifyInstance): Promise<void> {
   app.get("/api/me/profile", async (request) => {
     const principal = requireUser(request);
+    if (!rateLimit(`profile:${request.ip}`, 300, 60_000).ok) {
+      throw new ApiError(429, "rate_limited", "Slow down a little.");
+    }
     return profilePayload(principal.user);
   });
 

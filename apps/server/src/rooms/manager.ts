@@ -1,3 +1,4 @@
+import { randomInt } from "node:crypto";
 import {
   COSMETICS,
   EMOTES,
@@ -17,6 +18,7 @@ import {
   type GameAction,
   type GameRules,
   type Loadout,
+  type OwnerAction,
   type RewardGrant,
   type RoomSummary,
   type ServerMessage,
@@ -24,6 +26,7 @@ import {
 import { eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { matches, matchPlayers, users } from "../db/schema.js";
+import { rateLimit } from "../lib/rate-limit.js";
 import {
   equippedOf,
   getOwnedIds,
@@ -32,6 +35,13 @@ import {
   syncUnlocks,
   visibleOwned,
 } from "../services/account.js";
+import {
+  OwnerToolError,
+  assertLiveOwner,
+  auditOwnerCheat,
+  cardSpec,
+  makeOwnerCard,
+} from "../services/owner-tools.js";
 import {
   Room,
   botName,
@@ -181,6 +191,9 @@ export class RoomManager {
       case "action":
         this.playAction(conn, msg.action, Number(msg.seq));
         break;
+      case "owner":
+        this.ownerAction(conn, msg.action);
+        break;
       case "emote":
         this.emote(conn, String(msg.emote ?? ""));
         break;
@@ -194,7 +207,7 @@ export class RoomManager {
   private generateCode(): string {
     for (let attempt = 0; attempt < 50; attempt++) {
       let code = "";
-      for (let i = 0; i < 5; i++) code += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)];
+      for (let i = 0; i < 5; i++) code += CODE_ALPHABET[randomInt(CODE_ALPHABET.length)];
       if (!this.rooms.has(code)) return code;
     }
     throw new RoomError("no_codes", "Could not create a room right now.");
@@ -215,6 +228,10 @@ export class RoomManager {
   }
 
   private joinRoom(conn: ClientConn, rawCode: string): void {
+    const gate = rateLimit(`join:${conn.ip}`, 40, 5 * 60_000);
+    if (!gate.ok) {
+      throw new RoomError("rate_limited", "Too many table joins. Try again in a few minutes.");
+    }
     const code = rawCode.trim().toUpperCase();
     if (!code) throw new RoomError("bad_code", "Enter a room code.");
     const room = this.rooms.get(code);
@@ -287,6 +304,9 @@ export class RoomManager {
 
   private enter(conn: ClientConn, room: Room): void {
     conn.roomCode = room.code;
+    conn.ownerPeek = false;
+    conn.ownerPeekUntil = 0;
+    conn.lastOwnerActionAt = 0;
     room.connections.add(conn);
     const seat = room.seat(conn.playerId);
     if (seat) {
@@ -297,6 +317,8 @@ export class RoomManager {
   }
 
   private leaveRoom(conn: ClientConn, notify: boolean): void {
+    conn.ownerPeek = false;
+    conn.ownerPeekUntil = 0;
     if (!conn.roomCode) {
       if (notify) this.send(conn, { t: "left" });
       return;
@@ -394,8 +416,15 @@ export class RoomManager {
     for (const seat of room.seats) {
       seat.stats = { cardsPlayed: 0, jumps: 0, stacks: 0 };
       seat.rewards = null;
+      seat.cheated = false;
       seat.ready = true;
       seat.disconnectedAt = seat.connected ? null : Date.now();
+    }
+    // X-ray and cheat state never carry over into a new round; the owner's
+    // client re-requests it explicitly and that request taints the round.
+    for (const conn of room.connections) {
+      conn.ownerPeek = false;
+      conn.ownerPeekUntil = 0;
     }
 
     room.game = createGame(
@@ -435,6 +464,7 @@ export class RoomManager {
         level: 1 + Math.floor(Math.random() * 14),
         owner: false,
         beta: false,
+        cheated: false,
         joinedAt: Date.now(),
         disconnectedAt: null,
         rewards: null,
@@ -484,12 +514,116 @@ export class RoomManager {
 
   /* ─────────────────────────── gameplay ─────────────────────────── */
 
+  /* ─────────────────────────── owner tools ─────────────────────────── */
+
+  private ownerAction(conn: ClientConn, action: OwnerAction): void {
+    void this.runOwnerAction(conn, action).catch((error) => this.ownerError(conn, error));
+  }
+
+  private async runOwnerAction(conn: ClientConn, action: OwnerAction): Promise<void> {
+    const principal = conn.principal;
+    if (principal.kind !== "user") {
+      throw new OwnerToolError("owner_only", "Owner tools are not available.");
+    }
+    if (!action || typeof action !== "object") {
+      throw new OwnerToolError("bad_request", "Unknown owner action.", 400);
+    }
+
+    const now = Date.now();
+    if (conn.lastOwnerActionAt && now - conn.lastOwnerActionAt < 250) {
+      throw new OwnerToolError("slow_down", "Slow down a little.", 429);
+    }
+    conn.lastOwnerActionAt = now;
+
+    // Live check: a revoked owner loses access immediately, not at reconnect.
+    try {
+      await assertLiveOwner(principal.user.id);
+    } catch (error) {
+      conn.ownerPeek = false;
+      conn.ownerPeekUntil = 0;
+      const currentRoom = conn.roomCode ? this.rooms.get(conn.roomCode) : undefined;
+      if (currentRoom) {
+        this.send(conn, { t: "room", room: buildRoomView(currentRoom, conn.playerId, false) });
+      }
+      throw error;
+    }
+
+    const { room, seat } = this.mustSeat(conn);
+    const game = room.game;
+    if (!game || room.phase !== "playing") {
+      throw new OwnerToolError("not_playing", "Start a round first.", 400);
+    }
+
+    if (action.type === "peek") {
+      const enabled = Boolean(action.enabled);
+      const wasEnabled = conn.ownerPeek === true && (conn.ownerPeekUntil ?? 0) > now;
+      conn.ownerPeek = enabled;
+      conn.ownerPeekUntil = enabled ? now + 60_000 : 0;
+      if (enabled) seat.cheated = true;
+      this.send(conn, {
+        t: "room",
+        room: buildRoomView(room, conn.playerId, this.peekActive(conn)),
+      });
+      // Refreshes every minute are silent; only real on/off transitions are audited.
+      if (enabled !== wasEnabled) {
+        await auditOwnerCheat(principal.user, { cheat: "peek", enabled, room: room.code }).catch((error) =>
+          this.log.error({ err: error }, "owner audit failed"),
+        );
+      }
+      return;
+    }
+
+    if (action.type === "replace") {
+      if (game.players[game.turn]?.id === seat.id && game.drawnCard) {
+        throw new OwnerToolError("drawn_card", "Play or pass the drawn card first.", 400);
+      }
+      const player = game.players.find((candidate) => candidate.id === seat.id);
+      const index = player?.hand.findIndex((card) => card.id === String(action.cardId)) ?? -1;
+      const before = index >= 0 ? player?.hand[index] : undefined;
+      if (!player || !before) {
+        throw new OwnerToolError("not_in_hand", "That card is not in your hand.", 400);
+      }
+
+      const after = makeOwnerCard(action.card);
+      player.hand[index] = after;
+      seat.cheated = true;
+      room.touch();
+      this.broadcast(room);
+      await auditOwnerCheat(principal.user, {
+        cheat: "replace",
+        room: room.code,
+        before: cardSpec(before),
+        after: cardSpec(after),
+      }).catch((error) => this.log.error({ err: error }, "owner audit failed"));
+      return;
+    }
+
+    throw new OwnerToolError("bad_request", "Unknown owner action.", 400);
+  }
+
+  private peekActive(conn: ClientConn): boolean {
+    return conn.ownerPeek === true && (conn.ownerPeekUntil ?? 0) > Date.now();
+  }
+
+  private ownerError(conn: ClientConn, error: unknown): void {
+    if (error instanceof OwnerToolError) {
+      this.send(conn, { t: "action_error", code: error.code, message: error.message });
+      return;
+    }
+    if (error instanceof RoomError) {
+      this.error(conn, error.code, error.message);
+      return;
+    }
+    this.log.error({ err: error, playerId: conn.playerId }, "owner action failed");
+    this.error(conn, "server_error", "Something went wrong. Try again.");
+  }
+
   private playAction(conn: ClientConn, action: GameAction, seq: number): void {
     const { room, seat } = this.mustSeat(conn);
     if (room.phase !== "playing" || !room.game) throw new RoomError("not_playing", "The round has not started.");
     if (seq !== room.game.seq) {
       this.send(conn, { t: "action_error", code: "stale", message: "The table moved on. Try again." });
-      this.send(conn, { t: "room", room: buildRoomView(room, conn.playerId) });
+      this.send(conn, { t: "room", room: buildRoomView(room, conn.playerId, this.peekActive(conn)) });
       return;
     }
 
@@ -668,14 +802,17 @@ export class RoomManager {
         const humanOpponentsLeft = results
           .filter((result) => result.id !== seat.id && humanSeatIds.has(result.id))
           .reduce((total, result) => total + result.cardsLeft, 0);
-        const rewards = matchRewardsForHumans({
-          placement,
-          humanPlayers: humanCount,
-          opponentCardsLeft: placement === 1 ? humanOpponentsLeft : 0,
-          cardsPlayed: seat.stats.cardsPlayed,
-          jumps: seat.stats.jumps,
-        });
-        return { seat, placement, rewards, ranked };
+        const rewards = seat.cheated
+          ? { coins: 0, xp: 0 }
+          : matchRewardsForHumans({
+              placement,
+              humanPlayers: humanCount,
+              opponentCardsLeft: placement === 1 ? humanOpponentsLeft : 0,
+              cardsPlayed: seat.stats.cardsPlayed,
+              jumps: seat.stats.jumps,
+            });
+        // A cheat-tainted seat is silently unranked, even in a ranked room.
+        return { seat, placement, rewards, ranked: ranked && !seat.cheated };
       });
 
       const matchId = await db.transaction(async (tx) => {
@@ -849,7 +986,10 @@ export class RoomManager {
 
   private broadcast(room: Room): void {
     for (const conn of room.connections) {
-      this.send(conn, { t: "room", room: buildRoomView(room, conn.playerId) });
+      this.send(conn, {
+        t: "room",
+        room: buildRoomView(room, conn.playerId, this.peekActive(conn)),
+      });
     }
   }
 

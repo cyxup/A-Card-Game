@@ -1681,3 +1681,213 @@
     display: none;
   }
 }
+
+/* ── owner cheat panel ──────────────────────────────────────────────────── */
+
+.owner-panel {
+  position: absolute;
+  top: 74px;
+  right: 14px;
+  z-index: 70;
+  display: flex;
+  width: min(360px, calc(100% - 28px));
+  max-height: calc(100% - 100px);
+  flex-direction: column;
+  overflow-y: auto;
+  border: 1px solid rgb(126 249 255 / 0.3);
+  border-radius: 16px;
+  background:
+    radial-gradient(90% 60% at 50% 0%, rgb(126 249 255 / 0.07), transparent 70%),
+    linear-gradient(180deg, #0d1110 0%, #070908 100%);
+  padding: 12px;
+  box-shadow:
+    0 24px 60px -24px rgb(0 0 0 / 0.95),
+    0 0 0 1px rgb(0 0 0 / 0.4);
+  backdrop-filter: blur(16px);
+}
+
+.owner-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.owner-panel-sub {
+  margin-top: 3px;
+  font-size: 10px;
+  line-height: 1.45;
+  color: rgb(255 255 255 / 0.5);
+}
+
+.owner-panel-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  border-top: 1px solid rgb(255 255 255 / 0.07);
+  padding-top: 8px;
+}
+
+.owner-panel-section {
+  margin-top: 8px;
+  border-top: 1px solid rgb(255 255 255 / 0.07);
+  padding-top: 8px;
+}
+
+.owner-panel-hint {
+  margin: 6px 0;
+  font-size: 10px;
+  line-height: 1.45;
+  color: rgb(255 255 255 / 0.45);
+}
+
+.owner-hand-list {
+  display: flex;
+  max-height: 170px;
+  flex-direction: column;
+  gap: 3px;
+  overflow-y: auto;
+  margin-top: 6px;
+}
+
+.owner-hand-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 3px 4px;
+}
+
+.owner-hand-row.is-editing {
+  border-color: rgb(126 249 255 / 0.4);
+  background: rgb(126 249 255 / 0.06);
+}
+
+.owner-hand-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: rgb(255 255 255 / 0.75);
+  text-transform: capitalize;
+}
+
+.owner-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 8px;
+  border-top: 1px dashed rgb(255 255 255 / 0.12);
+  padding-top: 8px;
+}
+
+.owner-editor-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 10px;
+  color: rgb(255 255 255 / 0.55);
+}
+
+.owner-editor-field select {
+  border: 1px solid rgb(255 255 255 / 0.16);
+  border-radius: 6px;
+  background: #101412;
+  padding: 3px 6px;
+  font-size: 11px;
+  color: #f4efe6;
+}
+
+.owner-editor-colors {
+  display: flex;
+  gap: 6px;
+}
+
+.owner-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 2px solid rgb(255 255 255 / 0.2);
+  transition:
+    scale 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.owner-swatch:hover {
+  scale: 1.08;
+}
+
+.owner-swatch.is-on {
+  border-color: #fff;
+  box-shadow: 0 0 0 2px rgb(255 255 255 / 0.25);
+}
+
+.owner-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.owner-xray-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border-bottom: 1px solid rgb(255 255 255 / 0.06);
+  padding: 4px 2px;
+}
+
+.owner-xray-row:last-child {
+  border-bottom: 0;
+}
+
+.owner-xray-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.owner-xray-card {
+  border: 1px solid rgb(255 255 255 / 0.16);
+  border-radius: 4px;
+  padding: 1px 4px;
+  font-size: 9px;
+  line-height: 1.35;
+  color: rgb(255 255 255 / 0.72);
+  text-transform: capitalize;
+}
+
+.owner-xray-card[data-color="red"] {
+  border-color: rgb(226 66 66 / 0.55);
+  color: #ff9a9a;
+}
+.owner-xray-card[data-color="yellow"] {
+  border-color: rgb(237 183 10 / 0.55);
+  color: #ffe08a;
+}
+.owner-xray-card[data-color="green"] {
+  border-color: rgb(47 157 88 / 0.55);
+  color: #9ef0bb;
+}
+.owner-xray-card[data-color="blue"] {
+  border-color: rgb(47 106 208 / 0.55);
+  color: #a9c8ff;
+}
+.owner-xray-card[data-color="wild"] {
+  border-color: rgb(126 249 255 / 0.45);
+  color: #b9fffb;
+}
+
+@media (max-width: 720px) {
+  .owner-panel {
+    top: 64px;
+    right: 8px;
+    left: 8px;
+    width: auto;
+  }
+}

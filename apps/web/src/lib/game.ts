@@ -2,6 +2,7 @@ import type {
   ClientMessage,
   GameAction,
   GameRules,
+  OwnerAction,
   RoomView,
   ServerMessage,
 } from "@stacked/shared";
@@ -300,6 +301,10 @@ class GameClient {
 
   emote(emote: string): void {
     this.send({ t: "emote", emote });
+  }
+
+  ownerAction(action: OwnerAction): void {
+    this.send({ t: "owner", action });
   }
 
   ping(): void {

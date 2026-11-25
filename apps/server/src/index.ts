@@ -9,6 +9,7 @@ import { runMigrations } from "./db/migrate.js";
 import { sql } from "./db/index.js";
 import { allowedOrigins, env, isProd } from "./env.js";
 import { ApiError } from "./lib/http.js";
+import { rateLimit } from "./lib/rate-limit.js";
 import { registerRealtime } from "./realtime.js";
 import { rooms } from "./rooms/manager.js";
 import { mainShareMeta, missingRoomShareMeta, renderShareHtml, roomShareMeta } from "./share.js";
@@ -19,6 +20,10 @@ import { AccountError } from "./services/account.js";
 import { AdminError } from "./services/admin.js";
 
 const MUTATING = new Set(["POST", "PATCH", "PUT", "DELETE"]);
+
+const SOCKET_ORIGINS = [...allowedOrigins]
+  .map((origin) => origin.replace(/^https:/i, "wss:").replace(/^http:/i, "ws:"))
+  .filter(Boolean);
 
 async function build(): Promise<ReturnType<typeof Fastify>> {
   const app = Fastify({
@@ -56,11 +61,20 @@ async function build(): Promise<ReturnType<typeof Fastify>> {
     request.principal = await resolveSession(token);
   });
 
-  app.addHook("onSend", async (_request, reply, payload) => {
+  app.addHook("onSend", async (request, reply, payload) => {
     reply.header("X-Content-Type-Options", "nosniff");
     reply.header("Referrer-Policy", "strict-origin-when-cross-origin");
     reply.header("X-Frame-Options", "DENY");
     reply.header("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    // Never let shared caches store personal or owner data.
+    if (
+      request.url === "/api/session" ||
+      request.url.startsWith("/api/me") ||
+      request.url.startsWith("/api/admin") ||
+      request.url.startsWith("/api/auth")
+    ) {
+      reply.header("cache-control", "no-store");
+    }
     if (isProd) {
       reply.header(
         "Content-Security-Policy",
@@ -70,7 +84,7 @@ async function build(): Promise<ReturnType<typeof Fastify>> {
           "style-src 'self' 'unsafe-inline'",
           "img-src 'self' data: blob:",
           "font-src 'self'",
-          "connect-src 'self' ws: wss:",
+          `connect-src 'self'${SOCKET_ORIGINS.length ? ` ${SOCKET_ORIGINS.join(" ")}` : ""}`,
           "base-uri 'self'",
           "form-action 'self'",
           "frame-ancestors 'none'",
@@ -99,11 +113,11 @@ async function build(): Promise<ReturnType<typeof Fastify>> {
       prefix: "/",
       setHeaders(res, filePath) {
         if (filePath.endsWith("index.html")) {
-          res.setHeader("cache-control", "no-store");
+          res.header("cache-control", "no-store");
         } else if (filePath.includes(`${path.sep}assets${path.sep}`)) {
-          res.setHeader("cache-control", "public, max-age=31536000, immutable");
+          res.header("cache-control", "public, max-age=31536000, immutable");
         } else {
-          res.setHeader("cache-control", "public, max-age=3600");
+          res.header("cache-control", "public, max-age=3600");
         }
       },
     });
@@ -129,6 +143,10 @@ async function build(): Promise<ReturnType<typeof Fastify>> {
     });
 
     app.get("/room/:code", async (request, reply) => {
+      if (!rateLimit(`og:${request.ip}`, 120, 60_000).ok) {
+        reply.code(429).type("text/plain").send("Too many requests.");
+        return;
+      }
       const raw = String((request.params as { code?: string }).code ?? "").toUpperCase();
       const code = raw.replace(/[^A-Z0-9]/g, "").slice(0, 8) || "?????";
       const room = rooms.getRoom(code);

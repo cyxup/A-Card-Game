@@ -8,8 +8,7 @@ import type {
   RoomView,
   Rng,
 } from "@stacked/shared";
-import { defaultLoadout, isWild, mulberry32, randomSeed, topCard } from "@stacked/shared";
-import type WebSocket from "ws";
+import { cryptoRng, defaultLoadout, isWild, topCard } from "@stacked/shared";import type WebSocket from "ws";
 import type { Principal } from "../auth/session.js";
 
 export interface ClientConn {
@@ -17,10 +16,18 @@ export interface ClientConn {
   socket: WebSocket;
   principal: Principal;
   playerId: string;
+  /** Remote address, used for room-code brute-force limits. */
+  ip: string;
   roomCode: string | null;
   alive: boolean;
   windowStart: number;
   windowCount: number;
+  /** Owner-only x-ray, re-checked against the database before enabling. */
+  ownerPeek?: boolean;
+  /** X-ray expires unless the owner client refreshes it. */
+  ownerPeekUntil?: number;
+  /** Simple throttle for owner cheat actions. */
+  lastOwnerActionAt?: number;
 }
 
 export interface SeatStats {
@@ -40,6 +47,8 @@ export interface Seat {
   level: number;
   owner: boolean;
   beta: boolean;
+  /** Owner used a cheat this round: progression is skipped silently. */
+  cheated: boolean;
   joinedAt: number;
   disconnectedAt: number | null;
   rewards: RewardGrant | null;
@@ -70,7 +79,7 @@ export class Room {
     this.code = code;
     this.visibility = visibility;
     this.rules = rules;
-    this.rng = mulberry32(randomSeed());
+    this.rng = cryptoRng();
     this.hostId = "";
   }
 
@@ -153,6 +162,7 @@ export function createSeatFromPrincipal(
     level,
     owner,
     beta,
+    cheated: false,
     joinedAt: Date.now(),
     disconnectedAt: null,
     rewards: null,
@@ -196,7 +206,7 @@ export function placementMap(game: GameState): Map<string, number> {
   return map;
 }
 
-export function buildRoomView(room: Room, viewerId: string): RoomView {
+export function buildRoomView(room: Room, viewerId: string, ownerPeek = false): RoomView {
   const viewer = room.seat(viewerId);
   const placements = room.game ? placementMap(room.game) : new Map<string, number>();
   const players: RoomPlayerView[] = room.seats.map((seat) => {
@@ -224,6 +234,11 @@ export function buildRoomView(room: Room, viewerId: string): RoomView {
   const game = room.game;
   const hand: Card[] = viewer ? (game?.players.find((player) => player.id === viewer.id)?.hand ?? []) : [];
   const currentId = game ? (game.players[game.turn]?.id ?? "") : "";
+  // X-ray is only attached to the connection that passed the live owner check.
+  const ownerHands =
+    ownerPeek && game
+      ? Object.fromEntries(game.players.map((player) => [player.id, player.hand.map((card) => ({ ...card }))]))
+      : undefined;
 
   return {
     code: room.code,
@@ -267,5 +282,6 @@ export function buildRoomView(room: Room, viewerId: string): RoomView {
           };
         })()
       : null,
+    ...(ownerHands ? { ownerHands } : {}),
   };
 }

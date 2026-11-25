@@ -28,6 +28,29 @@ if (!parsed.success) {
 export const env = parsed.data;
 export const isProd = env.NODE_ENV === "production";
 
+// Fail closed on the configuration mistakes that turn into real incidents.
+if (isProd) {
+  const problems: string[] = [];
+  const secret = env.COOKIE_SECRET;
+  if (
+    secret.length < 32 ||
+    secret === "dev-only-secret-change-me-123" ||
+    /change[-_]?me|dev[-_]?only|example|placeholder/i.test(secret)
+  ) {
+    problems.push("COOKIE_SECRET must be a random value of at least 32 characters.");
+  }
+  if (!env.COOKIE_SECURE) {
+    problems.push("COOKIE_SECURE must be true in production.");
+  }
+  if (/(^|,)\s*https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?\/?(,|$)/i.test(env.APP_ORIGIN)) {
+    problems.push("APP_ORIGIN must be the public HTTPS origin in production.");
+  }
+  if (problems.length > 0) {
+    console.error(`Refusing to start in production:\n- ${problems.join("\n- ")}`);
+    process.exit(1);
+  }
+}
+
 /** Comma separated list of origins allowed to hit mutating routes / the socket. */
 export const allowedOrigins = new Set(
   env.APP_ORIGIN.split(",")

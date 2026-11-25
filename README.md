@@ -17,6 +17,7 @@ room; accounts, cosmetics and match results live in PostgreSQL.
 - **The full hybrid ruleset** — colour matching plus the house action cards (Giddy Up, Wrong Way, Quick Draw, Wild Eight, Oscar's Swap).
 - **Host-configurable table rules** — stacking modes, jump-ins, swap-anytime, seven-zero, draw-until-playable, turn timer, seats, starting hand.
 - **Owner console** — database-gated `is_owner` accounts get a private `/admin` page: ban/unban, kick, grant beta access, give coins/XP, unlock every cosmetic, and an audit log. Owner-only and beta-tester cosmetics stay invisible to everyone else.
+- **In-game owner tools** — a settings switch unlocks x-ray hands and a hand editor mid-round. The server re-reads `is_owner` from PostgreSQL on every action, x-ray expires after 60 seconds, every use is audited, and cheat-assisted rounds are silently unranked for the owner.
 - **Animation previews** — every win effect can be replayed in a mini-table preview from the collection. The owner-only one detonates the whole table.
 - **Share cards** — the main link and every `/room/:code` invite get a 1200×630 preview; invites show the host, table code and seat count.
 - **English / French** — a persistent language toggle in the nav and profile, with a full French catalogue and French game feed.
@@ -126,6 +127,7 @@ resource a hostname. You need two resources: a **PostgreSQL database** and the *
    | `MIGRATE_ON_START` | `true` |
    | `WEB_DIST` | `apps/web/dist` |
    | `PORT` | `8080` |
+   | `TRUST_PROXY` | `true` behind the platform proxy; `false` if Node is directly exposed |
 
 4. **Deploy.** The container runs `node apps/server/dist/index.js`, applies pending migrations,
    then serves the SPA, `/api/*` and `/ws` from the same origin.
@@ -147,8 +149,12 @@ poolers out of the box.
 - `MIGRATE_ON_START` uses Drizzle's migrator and is idempotent; safe on every boot.
 - Sessions are opaque 32-byte tokens; only their SHA-256 is stored. Cookies are `httpOnly`,
   `SameSite=Lax`, `Secure` in production. Mutating API calls reject cross-origin `Origin`s.
-- Auth endpoints are rate limited in-memory per IP. Put the platform firewall in front if you
-  expect abuse.
+- Logout and password reset close the matching WebSockets immediately; every open socket is
+  revalidated against the sessions table every five minutes (expiry, deletion, ban).
+- The server refuses to boot with `NODE_ENV=production` if `COOKIE_SECRET` is a placeholder or
+  shorter than 32 characters, `COOKIE_SECURE` is false, or `APP_ORIGIN` still points at localhost.
+- Auth endpoints are rate limited in-memory per IP; room joins are capped at 40 per five minutes
+  per IP to slow code guessing. Put the platform firewall in front if you expect abuse.
 
 ### Owner accounts
 

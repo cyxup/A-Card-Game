@@ -1,4 +1,4 @@
-import { EMOTES, type RoomPlayerView } from "@stacked/shared";
+import { EMOTES, type Card, type RoomPlayerView } from "@stacked/shared";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowRightLeft, Check, Crown, FlaskConical, Sparkles, WifiOff } from "lucide-react";
 import { Avatar } from "@/components/brand/avatar";
@@ -19,6 +19,7 @@ export function Seat({
   selectable = false,
   selected = false,
   onSelect,
+  revealedHand,
   className,
 }: {
   player: RoomPlayerView;
@@ -30,6 +31,8 @@ export function Seat({
   selectable?: boolean;
   selected?: boolean;
   onSelect?: () => void;
+  /** Owner x-ray only. */
+  revealedHand?: Card[];
   className?: string;
 }) {
   const left = useCountdown(deadline, offset, active);
@@ -163,6 +166,8 @@ export function Seat({
       <OpponentHand
         count={player.cardCount}
         back={player.cardBack}
+        cards={revealedHand}
+        max={revealedHand ? 8 : 7}
         size={handSize}
         compact
         className="seat-hand"

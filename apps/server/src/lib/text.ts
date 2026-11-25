@@ -2,8 +2,9 @@
 export function cleanDisplayName(raw: unknown, max = 20): string | null {
   if (typeof raw !== "string") return null;
   const name = raw
-    // strip control chars and zero-width joiner tricks
-    .replace(/[\u0000-\u001f\u007f\u200b-\u200f\u2028\u2029]/g, "")
+    .normalize("NFC")
+    // strip control and Unicode format chars (bidi overrides, zero-width joiners…)
+    .replace(/[\p{Cc}\p{Cf}]/gu, "")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, max);

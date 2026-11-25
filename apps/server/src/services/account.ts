@@ -263,6 +263,15 @@ export async function purchaseItem(user: UserRow, itemId: string): Promise<{ use
   await db.transaction(async (tx) => {
     const [current] = await tx.select().from(users).where(eq(users.id, user.id)).for("update").limit(1);
     if (!current) throw new AccountError("not_found", "Account not found.", 404);
+    // Re-check inside the lock: two concurrent purchases must not charge twice.
+    const [already] = await tx
+      .select({ itemId: userCosmetics.itemId })
+      .from(userCosmetics)
+      .where(and(eq(userCosmetics.userId, user.id), eq(userCosmetics.itemId, item.id)))
+      .limit(1);
+    if (already) {
+      throw new AccountError("already_owned", "You already own that.", 409);
+    }
     if (current.coins < price) {
       throw new AccountError("not_enough_coins", `You need ${price - current.coins} more coins.`, 402);
     }

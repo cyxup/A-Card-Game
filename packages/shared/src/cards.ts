@@ -25,6 +25,43 @@ export interface Card {
   value: number | null;
 }
 
+/** Owner-only hand editor. The server turns this into a real Card. */
+export interface OwnerCardSpec {
+  color: Color | null;
+  kind: CardKind;
+  value?: number | null;
+}
+
+export function isValidOwnerCardSpec(spec: OwnerCardSpec): boolean {
+  if (!spec || typeof spec !== "object") return false;
+  if (spec.kind === "number") {
+    return (
+      spec.color !== null &&
+      COLORS.includes(spec.color) &&
+      typeof spec.value === "number" &&
+      Number.isInteger(spec.value) &&
+      spec.value >= 0 &&
+      spec.value <= 9
+    );
+  }
+  if (spec.kind === "wild" || spec.kind === "wild4" || spec.kind === "swap") {
+    return spec.color === null;
+  }
+  if (spec.kind === "skip" || spec.kind === "reverse" || spec.kind === "draw2") {
+    return spec.color !== null && COLORS.includes(spec.color);
+  }
+  return false;
+}
+
+export function ownerCardFromSpec(spec: OwnerCardSpec, id: string): Card {
+  return {
+    id,
+    color: spec.color,
+    kind: spec.kind,
+    value: spec.kind === "number" ? (spec.value ?? 0) : null,
+  };
+}
+
 export const KIND_LABEL: Record<CardKind, string> = {
   number: "Number",
   skip: "Giddy Up",

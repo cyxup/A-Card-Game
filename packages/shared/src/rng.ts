@@ -26,6 +26,21 @@ export function randomSeed(): number {
   return (Math.random() * 0xffffffff) >>> 0;
 }
 
+/**
+ * Non-deterministic RNG backed by the platform CSPRNG. Used by live rooms so
+ * the deck order cannot be reconstructed from a 32-bit seed.
+ */
+export function cryptoRng(): Rng {
+  const view = new Uint32Array(1);
+  return () => {
+    if (typeof globalThis.crypto?.getRandomValues === "function") {
+      globalThis.crypto.getRandomValues(view);
+      return (view[0] ?? 0) / 4294967296;
+    }
+    return Math.random();
+  };
+}
+
 export function shuffle<T>(items: T[], rng: Rng): T[] {
   for (let i = items.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
