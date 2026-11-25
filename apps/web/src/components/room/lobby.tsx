@@ -1,0 +1,318 @@
+import type { GameRules, RoomView } from "@stacked/shared";
+import { Bot, Check, Clock, Copy, Crown, DoorOpen, Layers, Play, Plus, Settings2, Trash2, Users } from "lucide-react";
+import { Avatar } from "@/components/brand/avatar";
+import { NameEffect } from "@/components/brand/name-effect";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "@/components/ui/toast";
+import { game as client } from "@/lib/game";
+
+function RuleToggle({
+  label,
+  description,
+  checked,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  description: string;
+  checked: boolean;
+  disabled?: boolean;
+  onChange: (value: boolean) => void;
+}) {
+  return (
+    <label className="flex items-center justify-between gap-3 rounded-lg border border-white/7 bg-white/[0.015] px-3 py-2.5">
+      <span className="flex flex-col gap-0.5">
+        <span className="text-xs font-medium">{label}</span>
+        <span className="text-[11px] leading-snug text-muted-foreground">{description}</span>
+      </span>
+      <Switch checked={checked} disabled={disabled} onCheckedChange={onChange} size="sm" />
+    </label>
+  );
+}
+
+export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }) {
+  const me = room.players.find((player) => player.id === room.you.id);
+  const isHost = room.you.isHost;
+  const canStart = room.players.length >= 2;
+  const emptySeats = Math.max(0, room.rules.maxPlayers - room.players.length);
+  const locked = !isHost;
+
+  async function copyInvite() {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/room/${room.code}`);
+      toast.success("Invite link copied.");
+    } catch {
+      toast.error("Could not copy. Share the code instead.");
+    }
+  }
+
+  function update(patch: Partial<GameRules>) {
+    if (!isHost) return;
+    client.updateRules(patch);
+  }
+
+  return (
+    <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="eyebrow mb-2">{room.visibility === "public" ? "open table" : "private table"}</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-3xl font-semibold tracking-[-0.05em] sm:text-5xl">{room.code}</h1>
+            <Button variant="outline" size="sm" onClick={copyInvite} className="gap-1.5">
+              <Copy className="size-3.5" /> Invite
+            </Button>
+          </div>
+          <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1">
+              <Users className="size-3.5" /> {room.players.length}/{room.rules.maxPlayers} seated
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Clock className="size-3.5" /> {room.rules.turnSeconds}s turns
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Layers className="size-3.5" />
+              {room.rules.stacking === "off"
+                ? "no stacking"
+                : room.rules.stacking === "mixed"
+                  ? "mixed stacking"
+                  : "same-card stacking"}
+            </span>
+            <Badge variant={room.visibility === "public" ? "brand" : "outline"} className="ml-1">
+              {room.visibility}
+            </Badge>
+          </p>
+        </div>
+        <Button variant="ghost" size="sm" onClick={onLeave} className="gap-1.5 text-muted-foreground">
+          <DoorOpen /> Leave
+        </Button>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[1.25fr_0.75fr]">
+        <div className="panel rounded-2xl p-4 sm:p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-sm font-semibold">The table</h2>
+            {isHost && emptySeats > 0 && (
+              <Button variant="outline" size="xs" onClick={() => client.addBot()} className="gap-1">
+                <Bot className="size-3.5" /> Add bot
+              </Button>
+            )}
+          </div>
+
+          <ul className="flex flex-col gap-2">
+            {room.players.map((player) => (
+              <li
+                key={player.id}
+                className="flex items-center gap-3 rounded-xl border border-white/7 bg-white/[0.015] px-3 py-2.5"
+              >
+                <Avatar id={player.avatar} size={34} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <NameEffect effect={player.nameEffect} className="truncate text-sm font-medium">
+                      {player.name}
+                    </NameEffect>
+                    {player.host && <Crown className="size-3.5 shrink-0 text-warning" />}
+                    {player.id === room.you.id && <span className="text-[10px] uppercase tracking-wider text-brand">you</span>}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    level {player.level}
+                    {player.isBot ? " · bot" : ""}
+                    {!player.connected && !player.isBot ? " · reconnecting" : ""}
+                  </p>
+                </div>
+                {player.isBot && <Badge variant="outline">bot</Badge>}
+                {player.ready || player.isBot || player.host ? (
+                  <Badge variant="success" className="gap-1">
+                    <Check className="size-3" /> ready
+                  </Badge>
+                ) : (
+                  <Badge variant="outline">waiting</Badge>
+                )}
+                {isHost && player.isBot && (
+                  <Button variant="ghost" size="icon-xs" onClick={() => client.removeBot()} title="Remove bot">
+                    <Trash2 />
+                  </Button>
+                )}
+                {isHost && !player.isBot && player.id !== room.you.id && (
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    onClick={() => client.kick(player.id)}
+                    title={`Remove ${player.name}`}
+                  >
+                    <Trash2 />
+                  </Button>
+                )}
+              </li>
+            ))}
+
+            {Array.from({ length: Math.min(emptySeats, 8) }).map((_, index) => (
+              <li
+                key={`empty-${index}`}
+                className="flex items-center gap-3 rounded-xl border border-dashed border-white/10 px-3 py-2.5 text-muted-foreground"
+              >
+                <span className="grid size-[34px] place-items-center rounded-full border border-dashed border-white/15">
+                  <Plus className="size-3.5" />
+                </span>
+                <span className="flex-1 text-xs">Open seat</span>
+                {isHost && index === 0 && (
+                  <Button variant="ghost" size="xs" onClick={() => client.addBot()}>
+                    fill with bot
+                  </Button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <div className="panel rounded-2xl p-4 sm:p-5">
+            <div className="mb-3 flex items-center gap-2">
+              <Settings2 className="size-4 text-brand" />
+              <h2 className="text-sm font-semibold">House rules</h2>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="flex flex-col gap-1.5">
+                <span className="eyebrow">turn timer</span>
+                <Select
+                  value={String(room.rules.turnSeconds)}
+                  disabled={locked}
+                  onValueChange={(value) => update({ turnSeconds: Number(value) })}
+                >
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[15, 20, 30, 45, 60, 90].map((seconds) => (
+                      <SelectItem key={seconds} value={String(seconds)}>
+                        {seconds}s
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <span className="eyebrow">seats</span>
+                <Select
+                  value={String(room.rules.maxPlayers)}
+                  disabled={locked}
+                  onValueChange={(value) => update({ maxPlayers: Number(value) })}
+                >
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[2, 3, 4, 5, 6, 7, 8].map((count) => (
+                      <SelectItem key={count} value={String(count)}>
+                        {count}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="mt-2 flex flex-col gap-1.5">
+              <span className="eyebrow">stacking</span>
+              <Select
+                value={room.rules.stacking}
+                disabled={locked}
+                onValueChange={(value) => update({ stacking: value as GameRules["stacking"] })}
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="same">Same card only</SelectItem>
+                  <SelectItem value="mixed">+2 / +4 anywhere</SelectItem>
+                  <SelectItem value="off">No stacking</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="mt-3 flex flex-col gap-2">
+              <RuleToggle
+                label="Jump in"
+                description="Exact duplicates can be played out of turn."
+                checked={room.rules.jumpIn}
+                disabled={locked}
+                onChange={(value) => update({ jumpIn: value })}
+              />
+              <RuleToggle
+                label="Swap anytime"
+                description="Oscar's Swap can be played out of turn."
+                checked={room.rules.swapAnytime}
+                disabled={locked}
+                onChange={(value) => update({ swapAnytime: value })}
+              />
+              <RuleToggle
+                label="Seven-zero"
+                description="7 swaps with the next player. 0 rotates all hands."
+                checked={room.rules.sevenZero}
+                disabled={locked}
+                onChange={(value) => update({ sevenZero: value })}
+              />
+              <RuleToggle
+                label="Draw until playable"
+                description="Keep drawing until you can play. Nasty."
+                checked={room.rules.drawUntilPlayable}
+                disabled={locked}
+                onChange={(value) => update({ drawUntilPlayable: value })}
+              />
+            </div>
+          </div>
+
+          <div className="panel rounded-2xl p-4 sm:p-5">
+            {isHost ? (
+              <>
+                <Button
+                  variant="brand"
+                  size="lg"
+                  className="w-full"
+                  disabled={!canStart}
+                  onClick={() => client.start()}
+                >
+                  <Play /> {canStart ? "Deal the first hand" : "Need one more player"}
+                </Button>
+                <p className="mt-2 text-center text-[11px] text-muted-foreground">
+                  {canStart
+                    ? "Everyone in the lobby comes with you. Rules lock when the round starts."
+                    : "Add a friend with the code, or fill the table with a bot."}
+                </p>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant={me?.ready ? "secondary" : "brand"}
+                  size="lg"
+                  className="w-full"
+                  onClick={() => client.setReady(!me?.ready)}
+                >
+                  {me?.ready ? "Not ready" : "I'm ready"}
+                </Button>
+                <p className="mt-2 text-center text-[11px] text-muted-foreground">
+                  The host starts when the table is ready.
+                </p>
+              </>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-4">
+            <p className="eyebrow mb-1.5">invite link</p>
+            <button
+              type="button"
+              onClick={copyInvite}
+              className="flex w-full items-center justify-between gap-2 rounded-lg border border-white/8 bg-black/20 px-3 py-2 text-left font-mono text-[11px] text-muted-foreground transition-colors hover:border-white/15 hover:text-foreground"
+            >
+              <span className="truncate">/room/{room.code}</span>
+              <Copy className="size-3.5 shrink-0" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

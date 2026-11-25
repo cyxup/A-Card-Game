@@ -1,0 +1,31 @@
+{
+  "name": "stacked",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "npm run build -w @stacked/shared && concurrently -k -n shared,server,web -c magenta,cyan,green \"npm:dev:shared\" \"npm:dev:server\" \"npm:dev:web\"",
+    "dev:shared": "npm run dev -w @stacked/shared",
+    "dev:server": "npm run dev -w @stacked/server",
+    "dev:web": "npm run dev -w @stacked/web",
+    "build": "npm run build -w @stacked/shared && npm run build -w @stacked/web && npm run build -w @stacked/server",
+    "start": "node --env-file-if-exists=.env apps/server/dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "npm run typecheck -w @stacked/shared && npm run typecheck -w @stacked/server && npm run typecheck -w @stacked/web",
+    "db:generate": "npm run db:generate -w @stacked/server",
+    "db:migrate": "npm run db:migrate -w @stacked/server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}

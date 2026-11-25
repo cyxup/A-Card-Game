@@ -1,0 +1,39 @@
+# Optional local stack. On InfraFlow you only need the service + managed
+# Postgres, both created from the dashboard. This is for a quick self-host
+# smoke test on a machine with Docker.
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: stacked
+      POSTGRES_PASSWORD: stacked
+      POSTGRES_DB: stacked
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stacked -d stacked"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  stacked:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      HOST: 0.0.0.0
+      DATABASE_URL: postgres://stacked:stacked@db:5432/stacked
+      APP_ORIGIN: http://localhost:8080
+      COOKIE_SECURE: "false"
+      MIGRATE_ON_START: "true"
+    ports:
+      - "8080:8080"
+
+volumes:
+  pgdata:

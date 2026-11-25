@@ -1,0 +1,269 @@
+/* Stacked theme — sits on top of plum.css tokens. Always dark, ember accent. */
+
+:root {
+  --radius: 0.75rem;
+  --nav-h: 60px;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.dark {
+  color-scheme: dark;
+  --background: oklch(0.142 0.006 70);
+  --foreground: oklch(0.965 0.006 80);
+  --card: oklch(0.178 0.007 70);
+  --card-foreground: oklch(0.965 0.006 80);
+  --popover: oklch(0.192 0.008 70);
+  --popover-foreground: oklch(0.965 0.006 80);
+  --primary: oklch(0.965 0.006 80);
+  --primary-foreground: oklch(0.16 0.006 70);
+  --secondary: oklch(0.225 0.008 70);
+  --secondary-foreground: oklch(0.965 0.006 80);
+  --muted: oklch(0.212 0.008 70);
+  --muted-foreground: oklch(0.7 0.012 75);
+  --accent: oklch(0.245 0.01 70);
+  --accent-foreground: oklch(0.97 0.006 80);
+  --destructive: oklch(0.66 0.21 24);
+  --destructive-foreground: oklch(0.985 0 0);
+  --success: oklch(0.74 0.15 152);
+  --warning: oklch(0.82 0.15 82);
+  --info: oklch(0.72 0.13 245);
+  --brand: oklch(0.69 0.195 40);
+  --brand-foreground: oklch(0.16 0.03 40);
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 13%);
+  --ring: oklch(0.69 0.195 40 / 55%);
+  --overlay: oklch(0 0 0 / 62%);
+  --shadow-color: 20 40% 3%;
+}
+
+@theme inline {
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+}
+
+html,
+body {
+  min-height: 100%;
+  background: var(--background);
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: color-mix(in oklch, var(--brand) 30%, transparent);
+}
+
+/* Faint paper grain. One static layer, no animation, hidden on low-power. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+  min-height: 100dvh;
+}
+
+.perf-low body::before {
+  display: none;
+}
+
+/* ── type helpers ─────────────────────────────────────────────────────── */
+
+.display {
+  font-weight: 600;
+  letter-spacing: -0.055em;
+  line-height: 0.92;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.hero-outline {
+  color: transparent;
+  -webkit-text-stroke: 1.5px color-mix(in oklch, var(--foreground) 42%, transparent);
+}
+
+@media (max-width: 640px) {
+  .hero-outline {
+    -webkit-text-stroke-width: 1px;
+  }
+}
+
+.brand-text {
+  background: linear-gradient(100deg, #ffb27a 0%, #ff6a35 42%, #ff3d2e 78%, #ff2d55 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.warm-glow {
+  background:
+    radial-gradient(52% 48% at 50% 0%, color-mix(in oklch, var(--brand) 22%, transparent), transparent 70%),
+    radial-gradient(38% 38% at 82% 8%, color-mix(in oklch, #ff2d55 10%, transparent), transparent 70%);
+}
+
+.hairline {
+  border-color: color-mix(in oklch, var(--foreground) 9%, transparent);
+}
+
+.panel {
+  border: 1px solid color-mix(in oklch, var(--foreground) 9%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in oklch, var(--foreground) 3.5%, transparent), transparent 42%),
+    color-mix(in oklch, var(--card) 88%, transparent);
+}
+
+.panel-hover {
+  transition:
+    border-color 0.2s var(--ease-out-quart),
+    background-color 0.2s var(--ease-out-quart),
+    transform 0.2s var(--ease-out-quart);
+}
+
+.panel-hover:hover {
+  border-color: color-mix(in oklch, var(--brand) 34%, transparent);
+  transform: translateY(-2px);
+}
+
+/* ── name effects ─────────────────────────────────────────────────────── */
+
+.name-effect-shimmer {
+  background: linear-gradient(90deg, var(--foreground) 20%, #ffd9c0 42%, #fff 50%, #ffd9c0 58%, var(--foreground) 80%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: name-sweep 3.4s linear infinite;
+}
+
+.name-effect-blaze {
+  background: linear-gradient(180deg, #fff0d8, #ff8a4c 60%, #ff4a2f);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 8px rgb(255 90 43 / 0.35));
+}
+
+.name-effect-gold {
+  background: linear-gradient(180deg, #fff6cf, #ffd166 45%, #c98a12);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 6px rgb(255 209 102 / 0.24));
+}
+
+.name-effect-frostbite {
+  background: linear-gradient(180deg, #f2fdff, #9fe6ff 55%, #57b8e8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 8px rgb(120 210 255 / 0.28));
+}
+
+.name-effect-glitch {
+  color: #f2f2f2;
+  text-shadow:
+    1.5px 0 0 rgb(255 45 85 / 0.55),
+    -1.5px 0 0 rgb(64 220 255 / 0.55);
+  animation: name-glitch 2.8s steps(1) infinite;
+}
+
+@keyframes name-sweep {
+  from {
+    background-position: 220% 0;
+  }
+  to {
+    background-position: -220% 0;
+  }
+}
+
+@keyframes name-glitch {
+  0%,
+  92%,
+  100% {
+    transform: translateX(0);
+  }
+  93% {
+    transform: translateX(-1px);
+  }
+  95% {
+    transform: translateX(1.5px);
+  }
+  97% {
+    transform: translateX(-0.5px);
+  }
+}
+
+/* ── table felts ──────────────────────────────────────────────────────── */
+
+.felt-noir {
+  --felt-glow: #ff5a2b;
+  background:
+    radial-gradient(70% 60% at 50% 6%, rgb(255 96 48 / 0.09), transparent 62%),
+    radial-gradient(120% 100% at 50% 0%, #121a17 0%, #0a0e0d 56%, #070908 100%);
+}
+
+.felt-ember-room {
+  --felt-glow: #ff6a35;
+  background:
+    radial-gradient(60% 52% at 50% 0%, rgb(255 106 53 / 0.24), transparent 66%),
+    radial-gradient(120% 110% at 50% 0%, #241310 0%, #130b09 58%, #090605 100%);
+}
+
+.felt-jade-pit {
+  --felt-glow: #42d392;
+  background:
+    radial-gradient(60% 52% at 50% 0%, rgb(66 211 146 / 0.16), transparent 66%),
+    radial-gradient(120% 110% at 50% 0%, #0d211a 0%, #081510 58%, #050b08 100%);
+}
+
+.felt-ocean {
+  --felt-glow: #4aa8ff;
+  background:
+    radial-gradient(60% 52% at 50% 0%, rgb(74 168 255 / 0.18), transparent 66%),
+    radial-gradient(120% 110% at 50% 0%, #0a1a2a 0%, #07121d 58%, #04080d 100%);
+}
+
+.felt-sunset {
+  --felt-glow: #ff8a4c;
+  background:
+    radial-gradient(55% 48% at 20% 0%, rgb(255 90 43 / 0.22), transparent 65%),
+    radial-gradient(55% 48% at 80% 8%, rgb(255 45 85 / 0.16), transparent 65%),
+    radial-gradient(120% 110% at 50% 0%, #241227 0%, #150c1a 58%, #0a060d 100%);
+}
+
+.felt-arcade {
+  --felt-glow: #8a7dff;
+  background:
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.028) 0 1px, transparent 1px 44px),
+    repeating-linear-gradient(0deg, rgb(255 255 255 / 0.022) 0 1px, transparent 1px 44px),
+    radial-gradient(70% 60% at 50% 0%, rgb(138 125 255 / 0.18), transparent 66%),
+    radial-gradient(120% 110% at 50% 0%, #12102a 0%, #0b0a1a 58%, #06050c 100%);
+}
+
+.felt-frost {
+  --felt-glow: #7fdcff;
+  background:
+    radial-gradient(60% 52% at 50% 0%, rgb(127 220 255 / 0.18), transparent 66%),
+    radial-gradient(120% 110% at 50% 0%, #0b2028 0%, #071419 58%, #040a0c 100%);
+}

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://ui.plumsy.dev/schema/config.json",
+  "registry": "https://ui.plumsy.dev/registry",
+  "paths": {
+    "ui": "src/components/ui",
+    "lib": "src/lib",
+    "css": "src/styles/globals.css"
+  },
+  "aliases": {
+    "ui": "@/components/ui",
+    "lib": "@/lib"
+  }
+}
