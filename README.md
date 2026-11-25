@@ -15,6 +15,9 @@ room; accounts, cosmetics and match results live in PostgreSQL.
 - **Playable multiplayer** — public matchmaking, private tables with 5-letter codes, practice vs bots.
 - **The full hybrid ruleset** — UNO deck + Blazing 8s cards (Giddy Up, Wrong Way, Quick Draw, Wild Eight, Oscar's Swap).
 - **Host-configurable table rules** — stacking modes, jump-ins, swap-anytime, seven-zero, draw-until-playable, turn timer, seats, starting hand.
+- **Owner console** — database-gated `is_owner` accounts get a private `/admin` page: ban/unban, kick, promote owners, give coins/XP, unlock every cosmetic, and an audit log. Owner-only cosmetics stay invisible to everyone else.
+- **Animation previews** — every win effect can be replayed in a mini-table preview from the collection.
+- **English / French** — a persistent language toggle in the nav and profile, with a full French catalogue and French game feed.
 - **Accounts and guests** — scrypt password hashing, opaque httpOnly session cookies, rate limits, guest sessions that can be upgraded, and one-time recovery codes for password resets.
 - **Progression** — XP, levels, coins, match rewards, achievements. Starter cosmetics no longer count toward collection achievements.
 - **Cosmetics** — card backs, table felts, avatars, name effects and win effects, visible to everyone at the table. Owner accounts also get animated rainbow-only pieces and a badge.
@@ -156,15 +159,26 @@ account directly in PostgreSQL:
 UPDATE users SET is_owner = true WHERE lower(username) = 'your_username';
 ```
 
-That grants the Prism Foil card back, The Owner's Box felt, The Ace avatar, Spectrum name effect,
-Prism Burst win effect and the `owner` badge at the table. To revoke it:
+`is_owner` unlocks the owner badge, the owner-only cosmetics and the `/admin` console. To revoke it:
 
 ```sql
 UPDATE users SET is_owner = false WHERE lower(username) = 'your_username';
 ```
 
 Rows for owner-only items are purged on the next login/profile sync, and any equipped owner item
-falls back to the slot default. No environment variable is involved.
+falls back to the slot default.
+
+The console can also ban accounts (`banned`, `ban_reason`, `banned_at`, `banned_by` — migration
+`0003_wakeful_siren.sql`), close their sessions, kick them from tables, toggle other owners, grant
+coins/XP, unlock every cosmetic and inspect the `admin_audit` log. Banned accounts are blocked at
+login and every existing session is invalidated.
+
+### Language
+
+The UI ships in English and French. The preference is stored locally (`stacked:prefs`) and the
+default follows `navigator.language` (`fr*` → French). Switch it from the `FR` / `EN` button in the
+nav or Profile → Performance → Language. The game feed, shop, rules, admin console and server error
+codes are translated; user names and table codes are intentionally left untouched. No environment variable is involved.
 
 ### Recovery codes
 
@@ -210,6 +224,10 @@ Guests can play everything, but only accounts keep coins, XP, levels and cosmeti
 | `POST /api/me/cosmetics/buy` / `equip` | shop and loadout |
 | `POST /api/me/recovery` | rotate the recovery code (password required) |
 | `PATCH /api/me` | display name |
+| `GET /api/admin/users` / `audit` | owner console lists |
+| `POST /api/admin/users/:id/ban` / `unban` / `kick` | moderation |
+| `POST /api/admin/users/:id/owner` / `grant` | owner flags and cheats |
+| `POST /api/admin/cheat` | self-service owner cheats |
 | `GET /api/leaderboard` | top 50 by XP |
 | `GET /api/rooms` | joinable public lobbies |
 | `GET /api/stats` | public counters |

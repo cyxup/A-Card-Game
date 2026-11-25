@@ -18,6 +18,7 @@ const RoomPage = lazy(() => import("@/pages/Room"));
 const LoginPage = lazy(() => import("@/pages/Login"));
 const SignupPage = lazy(() => import("@/pages/Signup"));
 const ProfilePage = lazy(() => import("@/pages/Profile"));
+const AdminPage = lazy(() => import("@/pages/Admin"));
 const LeaderboardPage = lazy(() => import("@/pages/Leaderboard"));
 const RulesPage = lazy(() => import("@/pages/Rules"));
 
@@ -88,6 +89,7 @@ export default function App() {
                       <Route path="/login" component={LoginPage} />
                       <Route path="/signup" component={SignupPage} />
                       <Route path="/profile" component={ProfilePage} />
+                      <Route path="/admin" component={AdminPage} />
                       <Route path="/leaderboard" component={LeaderboardPage} />
                       <Route path="/rules" component={RulesPage} />
                       <Route component={NotFoundPage} />

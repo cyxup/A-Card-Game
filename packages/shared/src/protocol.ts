@@ -55,6 +55,38 @@ export interface PublicStats {
   matches: number;
 }
 
+/* ────────────────────────────── Owner tools ────────────────────────────── */
+
+export interface AdminUserView {
+  id: string;
+  username: string;
+  displayName: string;
+  level: number;
+  xp: number;
+  coins: number;
+  games: number;
+  wins: number;
+  owner: boolean;
+  banned: boolean;
+  banReason: string | null;
+  createdAt: number;
+}
+
+export interface AdminAuditView {
+  id: string;
+  actorName: string;
+  action: string;
+  targetName: string | null;
+  detail: Record<string, unknown> | null;
+  createdAt: number;
+}
+
+export interface AdminGrantInput {
+  coins?: number;
+  xp?: number;
+  unlockAll?: boolean;
+}
+
 export interface AchievementView {
   id: string;
   name: string;

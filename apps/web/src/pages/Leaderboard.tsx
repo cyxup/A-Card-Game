@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
 import { compactNumber } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 const MEDALS = ["🥇", "🥈", "🥉"];
@@ -16,6 +17,7 @@ const MEDALS = ["🥇", "🥈", "🥉"];
 export default function LeaderboardPage() {
   const [entries, setEntries] = useState<LeaderboardEntry[] | null>(null);
   const [error, setError] = useState(false);
+  const t = useT();
 
   useEffect(() => {
     let alive = true;
@@ -39,20 +41,20 @@ export default function LeaderboardPage() {
     <div className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 sm:py-16">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="eyebrow mb-2">the wall</p>
-          <h1 className="text-3xl font-semibold tracking-[-0.05em] sm:text-5xl">Who&apos;s stacking?</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Ranked by XP. Wins break the tie.</p>
+          <p className="eyebrow mb-2">{t("the wall")}</p>
+          <h1 className="text-3xl font-semibold tracking-[-0.05em] sm:text-5xl">{t("Who's stacking?")}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{t("Ranked by XP. Wins break the tie.")}</p>
         </div>
         <Link href="/play">
           <Button variant="brand" className="gap-1.5">
-            Play a round <ArrowRight />
+            {t("Play a round")} <ArrowRight />
           </Button>
         </Link>
       </div>
 
       {error && (
         <div className="rounded-xl border border-destructive/25 bg-destructive/[0.06] px-4 py-3 text-xs text-destructive">
-          Could not load the leaderboard. Try again in a moment.
+          {t("Could not load the leaderboard. Try again in a moment.")}
         </div>
       )}
 
@@ -67,8 +69,8 @@ export default function LeaderboardPage() {
       {entries && entries.length === 0 && (
         <div className="rounded-2xl border border-dashed border-white/10 px-6 py-16 text-center">
           <Trophy className="mx-auto mb-3 size-6 text-muted-foreground" />
-          <p className="text-sm font-medium">Nobody on the wall yet.</p>
-          <p className="mt-1 text-xs text-muted-foreground">Win a round and take the top spot.</p>
+          <p className="text-sm font-medium">{t("Nobody on the wall yet.")}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{t("Win a round and take the top spot.")}</p>
         </div>
       )}
 
@@ -92,10 +94,12 @@ export default function LeaderboardPage() {
                   <NameEffect effect={entry.nameEffect}>{entry.displayName}</NameEffect>
                 </p>
                 <p className="font-mono text-[10px] text-muted-foreground">
-                  level {entry.level} · {compactNumber(entry.xp)} xp
+                  {t("level {n}", { n: entry.level })} · {compactNumber(entry.xp)} xp
                 </p>
               </div>
-              <Badge variant={index === 0 ? "brand" : "outline"}>{entry.wins} wins</Badge>
+              <Badge variant={index === 0 ? "brand" : "outline"}>
+                {t("{n} wins", { n: entry.wins })}
+              </Badge>
             </div>
           ))}
         </div>
@@ -113,7 +117,11 @@ export default function LeaderboardPage() {
                     <NameEffect effect={entry.nameEffect}>{entry.displayName}</NameEffect>
                   </p>
                   <p className="font-mono text-[10px] text-muted-foreground">
-                    {entry.wins}W / {entry.games}G · level {entry.level}
+                    {t("{wins}W / {games}G · level {level}", {
+                      wins: entry.wins,
+                      games: entry.games,
+                      level: entry.level,
+                    })}
                   </p>
                 </div>
                 <div className="text-right">
@@ -128,7 +136,7 @@ export default function LeaderboardPage() {
 
       {entries && entries.length > 0 && (
         <p className="mt-6 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
-          <Crown className="size-3 text-warning" /> Guests don&apos;t appear here. Create an account to keep your spot.
+          <Crown className="size-3 text-warning" /> {t("Guests don't appear here. Create an account to keep your spot.")}
         </p>
       )}
     </div>

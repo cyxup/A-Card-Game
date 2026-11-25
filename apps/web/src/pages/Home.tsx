@@ -10,6 +10,7 @@ import { toast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
 import { compactNumber } from "@/lib/format";
 import { game } from "@/lib/game";
+import { useT } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 
 const SHOWCASE: { card: Card; rotate: number; x: number; y: number; delay: string }[] = [
@@ -31,6 +32,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 export default function HomePage() {
   const { session, loading } = useSession();
+  const t = useT();
   const [, navigate] = useLocation();
   const [stats, setStats] = useState<PublicStats | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -63,7 +65,7 @@ export default function HomePage() {
       const room = await game.quickPlay();
       navigate(`/room/${room.code}`);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not find a table.");
+      toast.error(error instanceof Error ? error.message : t("Could not find a table."));
     } finally {
       setBusy(null);
     }
@@ -78,7 +80,7 @@ export default function HomePage() {
       game.addBot();
       navigate(`/room/${room.code}`);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not start practice.");
+      toast.error(error instanceof Error ? error.message : t("Could not start practice."));
     } finally {
       setBusy(null);
     }
@@ -90,21 +92,20 @@ export default function HomePage() {
         <div className="flex flex-col items-start gap-6">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="brand" dot>
-              live tables
+              {t("live tables")}
             </Badge>
-            <span className="eyebrow">2–8 players · 30s turns · no install</span>
+            <span className="eyebrow">{t("2–8 PLAYERS · 30S TURNS · NO INSTALL")}</span>
           </div>
 
           <h1 className="display text-[clamp(3.1rem,8.6vw,7.4rem)]">
-            <span className="hero-outline block">PLAY YOUR</span>
-            <span className="brand-text block">HAND.</span>
-            <span className="mt-1 block text-foreground/95">STACK THE</span>
-            <span className="brand-text block">DECK.</span>
+            <span className="hero-outline block">{t("PLAY YOUR")}</span>
+            <span className="brand-text block">{t("HAND.")}</span>
+            <span className="mt-1 block text-foreground/95">{t("STACK THE")}</span>
+            <span className="brand-text block">{t("DECK.")}</span>
           </h1>
 
           <p className="max-w-[46ch] text-[15px] leading-relaxed text-muted-foreground sm:text-base">
-            UNO&apos;s colour-matching chaos with Blazing 8s&apos; dirty tricks. Stack draw cards, jump in out of turn,
-            steal a hand with Oscar&apos;s Swap and be the first to go empty.
+            {t("UNO's colour-matching chaos with Blazing 8s' dirty tricks. Stack draw cards, jump in out of turn, steal a hand with Oscar's Swap and be the first to go empty.")}
           </p>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -116,11 +117,11 @@ export default function HomePage() {
               disabled={loading || Boolean(busy)}
               onClick={() => ensure(quickPlay)}
             >
-              Play now <ArrowRight />
+              {t("Play now")} <ArrowRight />
             </Button>
             <Link href="/play?tab=create">
               <Button variant="outline" size="xl">
-                Create a table
+                {t("Create a table")}
               </Button>
             </Link>
             <Button
@@ -131,31 +132,26 @@ export default function HomePage() {
               disabled={loading || Boolean(busy)}
               onClick={() => ensure(practice)}
             >
-              <Bot /> Practice
+              <Bot /> {t("Practice")}
             </Button>
           </div>
 
           <p className="text-xs text-muted-foreground">
             {session?.kind === "user" ? (
               <>
-                Signed in as <span className="text-foreground">{session.user?.displayName}</span> · coins and levels
-                save automatically.
+                {t("Signed in as {name} · coins and levels save automatically.", {
+                  name: session.user?.displayName ?? "",
+                })}
               </>
             ) : session?.kind === "guest" ? (
               <>
-                Playing as <span className="text-foreground">{session.guestName}</span> ·{" "}
-                <Link href="/signup" className="underline decoration-border underline-offset-4 hover:text-foreground">
-                  create an account
-                </Link>{" "}
-                to keep cosmetics.
+                {t("Playing as {name} · create an account to keep cosmetics.", {
+                  name: session.guestName ?? "",
+                })}
               </>
             ) : (
               <>
-                No account needed.{" "}
-                <Link href="/signup" className="underline decoration-border underline-offset-4 hover:text-foreground">
-                  Sign up
-                </Link>{" "}
-                to keep your coins.
+                {t("No account needed. Sign up to keep your coins.")}
               </>
             )}
           </p>
@@ -179,32 +175,32 @@ export default function HomePage() {
             ))}
           </div>
           <div className="absolute right-4 top-6 rotate-2 rounded-full border border-white/10 bg-black/50 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-brand backdrop-blur-sm">
-            +4 stacked
+            +4 {t("STACKED")}
           </div>
           <div className="absolute bottom-8 left-2 -rotate-3 rounded-full border border-white/10 bg-black/50 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-foreground/80 backdrop-blur-sm">
-            jump in!
+            {t("JUMP IN!")}
           </div>
           <div className="absolute bottom-24 right-6 rotate-3 rounded-full border border-white/10 bg-black/50 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-foreground/70 backdrop-blur-sm">
-            hand swapped
+            {t("HAND SWAPPED")}
           </div>
         </div>
       </section>
 
       <section className="grid grid-cols-2 gap-6 border-y border-white/8 py-6 sm:grid-cols-4">
-        <Stat label="players" value={stats ? compactNumber(stats.players) : "—"} />
-        <Stat label="online now" value={stats ? String(stats.online) : "—"} />
-        <Stat label="open tables" value={stats ? String(stats.rooms) : "—"} />
-        <Stat label="rounds played" value={stats ? compactNumber(stats.matches) : "—"} />
+        <Stat label={t("PLAYERS")} value={stats ? compactNumber(stats.players) : "—"} />
+        <Stat label={t("ONLINE NOW")} value={stats ? String(stats.online) : "—"} />
+        <Stat label={t("OPEN TABLES")} value={stats ? String(stats.rooms) : "—"} />
+        <Stat label={t("ROUNDS PLAYED")} value={stats ? compactNumber(stats.matches) : "—"} />
       </section>
 
       <section className="py-14 sm:py-20">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="eyebrow mb-2">pick a table</p>
-            <h2 className="text-2xl font-semibold tracking-[-0.04em] sm:text-3xl">Three ways in.</h2>
+            <p className="eyebrow mb-2">{t("PICK A TABLE")}</p>
+            <h2 className="text-2xl font-semibold tracking-[-0.04em] sm:text-3xl">{t("Three ways in.")}</h2>
           </div>
           <Link href="/play" className="text-xs text-muted-foreground underline decoration-border underline-offset-4 hover:text-foreground">
-            See all tables
+            {t("See all tables")}
           </Link>
         </div>
 
@@ -218,13 +214,13 @@ export default function HomePage() {
               <Zap className="size-5" />
             </span>
             <span className="flex flex-col gap-1.5">
-              <span className="text-lg font-semibold tracking-[-0.02em]">Quick play</span>
+              <span className="text-lg font-semibold tracking-[-0.02em]">{t("Quick play")}</span>
               <span className="text-sm leading-relaxed text-muted-foreground">
-                Drop into the first open public table. Strangers, bots, chaos.
+                {t("Drop into the first open public table. Strangers, bots, chaos.")}
               </span>
             </span>
             <span className="mt-auto inline-flex items-center gap-1.5 pt-2 text-xs font-medium text-brand">
-              Find a table <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+              {t("Find a table")} <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
             </span>
           </button>
 
@@ -233,13 +229,13 @@ export default function HomePage() {
               <Users className="size-5" />
             </span>
             <span className="flex flex-col gap-1.5">
-              <span className="text-lg font-semibold tracking-[-0.02em]">Private table</span>
+              <span className="text-lg font-semibold tracking-[-0.02em]">{t("Private table")}</span>
               <span className="text-sm leading-relaxed text-muted-foreground">
-                A five-letter code, your rules, your people. No matchmaking.
+                {t("A five-letter code, your rules, your people. No matchmaking.")}
               </span>
             </span>
             <span className="mt-auto inline-flex items-center gap-1.5 pt-2 text-xs font-medium text-foreground/80">
-              Set the rules <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+              {t("Set the rules")} <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
             </span>
           </Link>
 
@@ -252,13 +248,13 @@ export default function HomePage() {
               <Bot className="size-5" />
             </span>
             <span className="flex flex-col gap-1.5">
-              <span className="text-lg font-semibold tracking-[-0.02em]">Practice</span>
+              <span className="text-lg font-semibold tracking-[-0.02em]">{t("Practice")}</span>
               <span className="text-sm leading-relaxed text-muted-foreground">
-                You and two bots. Learn the stacking rules without the embarrassment.
+                {t("You and two bots. Learn the stacking rules without the embarrassment.")}
               </span>
             </span>
             <span className="mt-auto inline-flex items-center gap-1.5 pt-2 text-xs font-medium text-foreground/80">
-              Deal me in <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+              {t("Deal me in")} <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
             </span>
           </button>
         </div>
@@ -266,19 +262,18 @@ export default function HomePage() {
 
       <section className="grid gap-10 pb-16 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
         <div>
-          <p className="eyebrow mb-3">house rules</p>
+          <p className="eyebrow mb-3">{t("house rules")}</p>
           <h2 className="text-2xl font-semibold tracking-[-0.04em] sm:text-4xl">
-            The polite part of UNO.
+            {t("The polite part of UNO.")}
             <br />
-            <span className="text-muted-foreground">Then the Blazing 8s part.</span>
+            <span className="text-muted-foreground">{t("Then the Blazing 8s part.")}</span>
           </h2>
           <p className="mt-4 max-w-[48ch] text-sm leading-relaxed text-muted-foreground">
-            Every table can toggle the sharp edges: stacking, jump-ins, Oscar&apos;s Swap from anywhere, and the
-            seven-zero hand swap. Hosts set it, everyone sees it before the first card lands.
+            {t("Every table can toggle the sharp edges: stacking, jump-ins, Oscar's Swap from anywhere, and the seven-zero hand swap. Hosts set it, everyone sees it before the first card lands.")}
           </p>
           <Link href="/rules" className="mt-6 inline-flex">
             <Button variant="outline" size="lg">
-              Read the full rules
+              {t("Read the full rules")}
             </Button>
           </Link>
         </div>
@@ -287,23 +282,23 @@ export default function HomePage() {
           {[
             {
               icon: Layers,
-              title: "Stack the pain",
-              body: "+2 on +2, +4 on +4. Make the next player eat the whole pile.",
+              title: t("Stack the pain"),
+              body: t("+2 on +2, +4 on +4. Make the next player eat the whole pile."),
             },
             {
               icon: Swords,
-              title: "Jump in",
-              body: "Hold the exact same card? Slam it out of turn while the window is open.",
+              title: t("Jump in"),
+              body: t("Hold the exact same card? Slam it out of turn while the window is open."),
             },
             {
               icon: Sparkles,
-              title: "Cosmetics that show",
-              body: "Card backs, felts, avatars, name effects and win animations visible to the table.",
+              title: t("Cosmetics that show"),
+              body: t("Card backs, felts, avatars, name effects and win animations visible to the table."),
             },
             {
               icon: Palette,
-              title: "Every move, visible",
-              body: "Cards fly, backs fan out, the active seat glows. The table tells you what happened.",
+              title: t("Every move, visible"),
+              body: t("Cards fly, backs fan out, the active seat glows. The table tells you what happened."),
             },
           ].map((feature) => (
             <div key={feature.title} className="panel rounded-2xl p-5">
@@ -317,18 +312,17 @@ export default function HomePage() {
 
       <section className="mb-16 grid items-center gap-6 overflow-hidden rounded-3xl border border-white/8 bg-gradient-to-br from-white/[0.045] via-transparent to-brand/[0.06] p-6 sm:grid-cols-[1fr_auto] sm:p-10">
         <div>
-          <p className="eyebrow mb-2">earn the good deck</p>
+          <p className="eyebrow mb-2">{t("EARN THE GOOD DECK")}</p>
           <h2 className="text-2xl font-semibold tracking-[-0.04em] sm:text-3xl">
-            Win rounds. Unlock better furniture.
+            {t("Win rounds. Unlock better furniture.")}
           </h2>
           <p className="mt-2 max-w-[52ch] text-sm leading-relaxed text-muted-foreground">
-            Levels unlock card backs and tables. Achievements unlock the loud ones. Coins buy the rest — and every
-            effect is visible to the people you beat.
+            {t("Levels unlock card backs and tables. Achievements unlock the loud ones. Coins buy the rest — and every effect is visible to the people you beat.")}
           </p>
         </div>
         <Link href={session?.kind === "user" ? "/profile" : "/signup"}>
           <Button variant="brand" size="lg">
-            {session?.kind === "user" ? "Open your collection" : "Start collecting"} <ArrowRight />
+            {session?.kind === "user" ? t("Open your collection") : t("Start collecting")} <ArrowRight />
           </Button>
         </Link>
       </section>

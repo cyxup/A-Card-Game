@@ -126,6 +126,14 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     const valid = await verifyPassword(parsed.data.password, user.passwordHash);
     if (!valid) throw new ApiError(401, "invalid_login", "That username or password is not right.");
 
+    if (user.banned) {
+      throw new ApiError(
+        403,
+        "banned",
+        user.banReason ? `This account is banned: ${user.banReason}` : "This account is banned.",
+      );
+    }
+
     // Accounts created before recovery codes existed get one on first login.
     let recoveryCode: string | undefined;
     if (!user.recoveryHash) {

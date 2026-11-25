@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
 import { game, useGame } from "@/lib/game";
+import { useT } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
@@ -51,6 +52,7 @@ function RuleRow({
 
 export default function PlayPage() {
   const { session } = useSession();
+  const t = useT();
   const search = useSearch();
   const initialTab = new URLSearchParams(search).get("tab") ?? "quick";
   const [tab, setTab] = useState(initialTab);
@@ -98,7 +100,7 @@ export default function PlayPage() {
       const joined = await game.quickPlay();
       navigate(`/room/${joined.code}`);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not find a table.");
+      toast.error(error instanceof Error ? error.message : t("Could not find a table."));
     } finally {
       setBusy(null);
     }
@@ -108,7 +110,7 @@ export default function PlayPage() {
     if (busy) return;
     const clean = code.trim().toUpperCase();
     if (clean.length !== 5) {
-      toast.error("Room codes are five characters.");
+      toast.error(t("Room codes are five characters."));
       return;
     }
     setBusy("join");
@@ -116,7 +118,7 @@ export default function PlayPage() {
       const joined = await game.join(clean);
       navigate(`/room/${joined.code}`);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not join that table.");
+      toast.error(error instanceof Error ? error.message : t("Could not join that table."));
     } finally {
       setBusy(null);
     }
@@ -129,7 +131,7 @@ export default function PlayPage() {
       const created = await game.createRoom(rules, visibility);
       navigate(`/room/${created.code}`);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not create the table.");
+      toast.error(error instanceof Error ? error.message : t("Could not create the table."));
     } finally {
       setBusy(null);
     }
@@ -141,7 +143,7 @@ export default function PlayPage() {
       const joined = await game.join(roomCode);
       navigate(`/room/${joined.code}`);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not join that table.");
+      toast.error(error instanceof Error ? error.message : t("Could not join that table."));
     } finally {
       setBusy(null);
     }
@@ -151,16 +153,16 @@ export default function PlayPage() {
     <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="eyebrow mb-2">the floor</p>
-          <h1 className="text-3xl font-semibold tracking-[-0.05em] sm:text-5xl">Find a table.</h1>
+          <p className="eyebrow mb-2">{t("the floor")}</p>
+          <h1 className="text-3xl font-semibold tracking-[-0.05em] sm:text-5xl">{t("Find a table.")}</h1>
           <p className="mt-2 max-w-[52ch] text-sm text-muted-foreground">
-            Quick play with strangers, a code for friends, or a private table with bots while you learn.
+            {t("Quick play with strangers, a code for friends, or a private table with bots while you learn.")}
           </p>
         </div>
         {room && (
           <Link href={`/room/${room.code}`}>
             <Button variant="outline" className="gap-2">
-              <DoorOpen /> Back to {room.code}
+              <DoorOpen /> {t("Back to {code}", { code: room.code })}
             </Button>
           </Link>
         )}
@@ -168,9 +170,9 @@ export default function PlayPage() {
 
       {session?.kind === "guest" && (
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-warning/25 bg-warning/[0.06] px-4 py-3 text-xs text-warning">
-          <span>You&apos;re playing as a guest. Coins, XP and cosmetics won&apos;t be saved.</span>
+          <span>{t("You're playing as a guest. Coins, XP and cosmetics won't be saved.")}</span>
           <Link href="/signup" className="font-medium underline underline-offset-4">
-            Create an account
+            {t("Create an account")}
           </Link>
         </div>
       )}
@@ -178,16 +180,16 @@ export default function PlayPage() {
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="w-full max-w-xl sm:w-fit">
           <TabsTrigger value="quick">
-            <Zap /> Quick
+            <Zap /> {t("Quick")}
           </TabsTrigger>
           <TabsTrigger value="join">
-            <Hash /> Join
+            <Hash /> {t("Join")}
           </TabsTrigger>
           <TabsTrigger value="create">
-            <Plus /> Create
+            <Plus /> {t("Create")}
           </TabsTrigger>
           <TabsTrigger value="browse">
-            <ListFilter /> Browse
+            <ListFilter /> {t("Browse")}
           </TabsTrigger>
         </TabsList>
 
@@ -199,19 +201,18 @@ export default function PlayPage() {
                 <Zap className="size-6" />
               </span>
               <div>
-                <h2 className="text-2xl font-semibold tracking-[-0.035em] sm:text-3xl">One click. One open seat.</h2>
+                <h2 className="text-2xl font-semibold tracking-[-0.035em] sm:text-3xl">{t("One click. One open seat.")}</h2>
                 <p className="mt-2 max-w-[56ch] text-sm leading-relaxed text-muted-foreground">
-                  We put you at the fullest public table that still has room. If the floor is empty, you get a fresh
-                  table and can invite people or add bots.
+                  {t("We put you at the fullest public table that still has room. If the floor is empty, you get a fresh table and can invite people or add bots.")}
                 </p>
               </div>
               <Button variant="brand" size="xl" loading={busy === "quick"} disabled={Boolean(busy)} onClick={() => ensure(quick)}>
-                Find me a table <ArrowRight />
+                {t("Find me a table")} <ArrowRight />
               </Button>
               <div className="grid w-full gap-2 pt-2 text-xs text-muted-foreground sm:grid-cols-3">
-                <span className="rounded-lg border border-white/7 px-3 py-2">2–8 players</span>
-                <span className="rounded-lg border border-white/7 px-3 py-2">30s turn timer</span>
-                <span className="rounded-lg border border-white/7 px-3 py-2">guests welcome</span>
+                <span className="rounded-lg border border-white/7 px-3 py-2">{t("2–8 players")}</span>
+                <span className="rounded-lg border border-white/7 px-3 py-2">{t("30s turn timer")}</span>
+                <span className="rounded-lg border border-white/7 px-3 py-2">{t("guests welcome")}</span>
               </div>
             </div>
           </div>
@@ -219,8 +220,10 @@ export default function PlayPage() {
 
         <TabsContent value="join" className="mt-2">
           <div className="panel rounded-2xl p-6 sm:p-10">
-            <h2 className="text-2xl font-semibold tracking-[-0.035em]">Have a code?</h2>
-            <p className="mt-2 text-sm text-muted-foreground">Five letters, usually shouted across a voice chat.</p>
+            <h2 className="text-2xl font-semibold tracking-[-0.035em]">{t("Have a code?")}</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {t("Five letters, usually shouted across a voice chat.")}
+            </p>
             <div className="mt-6 flex max-w-md flex-col gap-3 sm:flex-row">
               <Input
                 value={code}
@@ -233,7 +236,7 @@ export default function PlayPage() {
                 maxLength={5}
                 autoComplete="off"
                 spellCheck={false}
-                aria-label="Room code"
+                aria-label={t("Room code")}
               />
               <Button
                 variant="brand"
@@ -243,11 +246,11 @@ export default function PlayPage() {
                 disabled={code.length !== 5 || Boolean(busy)}
                 onClick={() => ensure(join)}
               >
-                Join table
+                {t("Join table")}
               </Button>
             </div>
             <p className="mt-4 text-xs text-muted-foreground">
-              No account needed. You can set a display name when you sit down.
+              {t("No account needed. You can set a display name when you sit down.")}
             </p>
           </div>
         </TabsContent>
@@ -257,12 +260,12 @@ export default function PlayPage() {
             <div className="panel rounded-2xl p-6">
               <div className="mb-5 flex items-center gap-2">
                 <Settings2 className="size-4 text-brand" />
-                <h2 className="text-lg font-semibold tracking-[-0.02em]">House rules</h2>
+                <h2 className="text-lg font-semibold tracking-[-0.02em]">{t("House rules")}</h2>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="flex flex-col gap-2">
-                  <Label className="eyebrow">Seats</Label>
+                  <Label className="eyebrow">{t("Seats")}</Label>
                   <Select
                     value={String(rules.maxPlayers)}
                     onValueChange={(value) => setRules((prev) => ({ ...prev, maxPlayers: Number(value) }))}
@@ -273,14 +276,14 @@ export default function PlayPage() {
                     <SelectContent>
                       {[2, 3, 4, 5, 6, 7, 8].map((count) => (
                         <SelectItem key={count} value={String(count)}>
-                          {count} players
+                          {t("{n} players", { n: count })}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label className="eyebrow">Turn timer</Label>
+                  <Label className="eyebrow">{t("Turn timer")}</Label>
                   <Select
                     value={String(rules.turnSeconds)}
                     onValueChange={(value) => setRules((prev) => ({ ...prev, turnSeconds: Number(value) }))}
@@ -291,14 +294,14 @@ export default function PlayPage() {
                     <SelectContent>
                       {[15, 20, 30, 45, 60, 90].map((seconds) => (
                         <SelectItem key={seconds} value={String(seconds)}>
-                          {seconds} seconds
+                          {t("{n} seconds", { n: seconds })}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label className="eyebrow">Starting hand</Label>
+                  <Label className="eyebrow">{t("Starting hand")}</Label>
                   <Select
                     value={String(rules.startingHand)}
                     onValueChange={(value) => setRules((prev) => ({ ...prev, startingHand: Number(value) }))}
@@ -309,14 +312,14 @@ export default function PlayPage() {
                     <SelectContent>
                       {[5, 6, 7, 8, 9, 10].map((count) => (
                         <SelectItem key={count} value={String(count)}>
-                          {count} cards
+                          {t("{n} cards", { n: count })}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label className="eyebrow">Stacking</Label>
+                  <Label className="eyebrow">{t("Stacking")}</Label>
                   <Select
                     value={rules.stacking}
                     onValueChange={(value) =>
@@ -327,9 +330,9 @@ export default function PlayPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="same">Same card only</SelectItem>
-                      <SelectItem value="mixed">+2 and +4 anywhere</SelectItem>
-                      <SelectItem value="off">No stacking</SelectItem>
+                      <SelectItem value="same">{t("Same card only")}</SelectItem>
+                      <SelectItem value="mixed">{t("+2 and +4 anywhere")}</SelectItem>
+                      <SelectItem value="off">{t("No stacking")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -337,26 +340,26 @@ export default function PlayPage() {
 
               <div className="mt-5 grid gap-2">
                 <RuleRow
-                  title="Jump in"
-                  description="Play an exact duplicate out of turn for five seconds after a card lands."
+                  title={t("Jump in")}
+                  description={t("Play an exact duplicate out of turn for five seconds after a card lands.")}
                   checked={Boolean(rules.jumpIn)}
                   onChange={(value) => setRules((prev) => ({ ...prev, jumpIn: value }))}
                 />
                 <RuleRow
-                  title="Oscar's Swap anytime"
-                  description="Swap hands out of turn. Cruel, faithful to Blazing 8s."
+                  title={t("Oscar's Swap anytime")}
+                  description={t("Swap hands out of turn. Cruel, faithful to Blazing 8s.")}
                   checked={Boolean(rules.swapAnytime)}
                   onChange={(value) => setRules((prev) => ({ ...prev, swapAnytime: value }))}
                 />
                 <RuleRow
-                  title="Seven-zero"
-                  description="Play a 7 to swap with the next player. Play a 0 and every hand rotates."
+                  title={t("Seven-zero")}
+                  description={t("Play a 7 to swap with the next player. Play a 0 and every hand rotates.")}
                   checked={Boolean(rules.sevenZero)}
                   onChange={(value) => setRules((prev) => ({ ...prev, sevenZero: value }))}
                 />
                 <RuleRow
-                  title="Draw until playable"
-                  description="Keep drawing until you find something you can play. Meaner games."
+                  title={t("Draw until playable")}
+                  description={t("Keep drawing until you find something you can play. Meaner games.")}
                   checked={Boolean(rules.drawUntilPlayable)}
                   onChange={(value) => setRules((prev) => ({ ...prev, drawUntilPlayable: value }))}
                 />
@@ -365,7 +368,7 @@ export default function PlayPage() {
 
             <div className="flex flex-col gap-4">
               <div className="panel rounded-2xl p-6">
-                <h3 className="text-sm font-semibold">Who can join?</h3>
+                <h3 className="text-sm font-semibold">{t("Who can join?")}</h3>
                 <div className="mt-3 grid gap-2">
                   <button
                     type="button"
@@ -378,9 +381,9 @@ export default function PlayPage() {
                     )}
                   >
                     <span className="flex items-center gap-2 text-sm font-medium">
-                      <DoorOpen className="size-4" /> Private
+                      <DoorOpen className="size-4" /> {t("Private")}
                     </span>
-                    <span className="mt-1 block text-xs text-muted-foreground">Only people with the code.</span>
+                    <span className="mt-1 block text-xs text-muted-foreground">{t("Only people with the code.")}</span>
                   </button>
                   <button
                     type="button"
@@ -393,18 +396,17 @@ export default function PlayPage() {
                     )}
                   >
                     <span className="flex items-center gap-2 text-sm font-medium">
-                      <Users className="size-4" /> Public
+                      <Users className="size-4" /> {t("Public")}
                     </span>
-                    <span className="mt-1 block text-xs text-muted-foreground">Shows up in Browse for anyone.</span>
+                    <span className="mt-1 block text-xs text-muted-foreground">{t("Shows up in Browse for anyone.")}</span>
                   </button>
                 </div>
               </div>
 
               <div className="panel rounded-2xl p-6">
-                <p className="eyebrow mb-2">the default table</p>
+                <p className="eyebrow mb-2">{t("the default table")}</p>
                 <p className="text-xs leading-relaxed text-muted-foreground">
-                  You&apos;ll be the host. Add bots from the lobby, drag friends in with the code, and start when
-                  you&apos;re ready. You can change every rule until the first card is dealt.
+                  {t("You'll be the host. Add bots from the lobby, drag friends in with the code, and start when you're ready. You can change every rule until the first card is dealt.")}
                 </p>
                 <Button
                   variant="brand"
@@ -414,7 +416,7 @@ export default function PlayPage() {
                   disabled={Boolean(busy)}
                   onClick={() => ensure(create)}
                 >
-                  Create {visibility} table <ArrowRight />
+                  {t("Create {visibility} table", { visibility: t(visibility) })} <ArrowRight />
                 </Button>
               </div>
             </div>
@@ -425,11 +427,11 @@ export default function PlayPage() {
           <div className="panel rounded-2xl p-4 sm:p-6">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-semibold tracking-[-0.02em]">Open tables</h2>
-                <p className="text-xs text-muted-foreground">Public lobbies waiting for a player.</p>
+                <h2 className="text-lg font-semibold tracking-[-0.02em]">{t("Open tables")}</h2>
+                <p className="text-xs text-muted-foreground">{t("Public lobbies waiting for a player.")}</p>
               </div>
               <Button variant="outline" size="sm" onClick={() => setRefresh((value) => value + 1)}>
-                <RefreshCw /> Refresh
+                <RefreshCw /> {t("Refresh")}
               </Button>
             </div>
 
@@ -441,22 +443,22 @@ export default function PlayPage() {
 
             {roomsError && (
               <div className="rounded-xl border border-destructive/25 bg-destructive/[0.06] px-4 py-3 text-xs text-destructive">
-                Could not load tables. Try refreshing.
+                {t("Could not load tables. Try refreshing.")}
               </div>
             )}
 
             {rooms && rooms.length === 0 && (
               <div className="rounded-xl border border-dashed border-white/10 px-6 py-12 text-center">
-                <p className="text-sm font-medium">No open tables right now.</p>
+                <p className="text-sm font-medium">{t("No open tables right now.")}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  We can open a fresh public table and put you at it — invite people or add bots once you&apos;re in.
+                  {t("We can open a fresh public table and put you at it — invite people or add bots once you're in.")}
                 </p>
                 <div className="mt-4 flex flex-wrap justify-center gap-2">
                   <Button variant="brand" loading={busy === "quick"} onClick={() => ensure(quick)}>
-                    <Zap /> Open a table for me
+                    <Zap /> {t("Open a table for me")}
                   </Button>
                   <Button variant="outline" onClick={() => setTab("create")}>
-                    Set my own rules
+                    {t("Set my own rules")}
                   </Button>
                 </div>
               </div>
@@ -472,12 +474,20 @@ export default function PlayPage() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">{item.hostName}&apos;s table</p>
                       <p className="text-[11px] text-muted-foreground">
-                        {item.players}/{item.maxPlayers} players · {item.turnSeconds}s turns ·{" "}
-                        {item.stacking === "off" ? "no stacking" : item.stacking === "mixed" ? "mixed stacks" : "same-card stacks"}
+                        {t("{n}/{max} players", { n: item.players, max: item.maxPlayers })} ·{" "}
+                        {t("{n}s turns", { n: item.turnSeconds })} ·{" "}
+                        {item.stacking === "off"
+                          ? t("no stacking")
+                          : item.stacking === "mixed"
+                            ? t("mixed stacks")
+                            : t("same-card stacks")}
                       </p>
                     </div>
                     <Badge variant={item.players >= item.maxPlayers - 1 ? "warning" : "brand"}>
-                      {item.maxPlayers - item.players} seat{item.maxPlayers - item.players === 1 ? "" : "s"} left
+                      {t(
+                        item.maxPlayers - item.players === 1 ? "{n} seat left" : "{n} seats left",
+                        { n: item.maxPlayers - item.players },
+                      )}
                     </Badge>
                     <Button
                       size="sm"
@@ -486,7 +496,7 @@ export default function PlayPage() {
                       disabled={Boolean(busy)}
                       onClick={() => ensure(() => joinRoom(item.code))}
                     >
-                      Join
+                      {t("Join")}
                     </Button>
                   </li>
                 ))}

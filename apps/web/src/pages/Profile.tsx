@@ -20,6 +20,7 @@ import { Avatar } from "@/components/brand/avatar";
 import { NameEffect } from "@/components/brand/name-effect";
 import { GenerateRecoveryDialog } from "@/components/auth/recovery";
 import { CardBack } from "@/components/cards/playing-card";
+import { EffectPreviewDialog } from "@/components/game/effect-preview";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,6 +39,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
 import { compactNumber } from "@/lib/format";
+import { tNow, useT } from "@/lib/i18n";
 import { usePrefs, setPrefs } from "@/lib/prefs";
 import { playSound } from "@/lib/sound";
 import { useSession } from "@/lib/session";
@@ -54,15 +56,15 @@ const RARITY_STYLE = {
 function unlockText(item: CosmeticItem): string {
   switch (item.unlock.type) {
     case "default":
-      return "Default";
+      return tNow("Default");
     case "shop":
-      return `${item.unlock.price} coins`;
+      return tNow("{n} coins", { n: item.unlock.price });
     case "level":
-      return `Level ${item.unlock.level}`;
+      return tNow("Level {n}", { n: item.unlock.level });
     case "achievement":
-      return "Achievement reward";
+      return tNow("Achievement reward");
     case "owner":
-      return "Owner only";
+      return tNow("Owner only");
   }
 }
 
@@ -83,14 +85,14 @@ function ItemPreview({ item }: { item: CosmeticItem }) {
   if (item.slot === "nameEffect") {
     return (
       <NameEffect effect={item.id} className="text-xl font-semibold tracking-[-0.03em]">
-        Your name
+        {tNow("Your name")}
       </NameEffect>
     );
   }
   return (
     <div className="flex items-center gap-2 text-sm text-muted-foreground">
       <Sparkles className="size-4 text-warning" />
-      {item.id === "none" ? "No effect" : `${item.name} animation`}
+      {item.id === "none" ? tNow("No effect") : tNow("{name} animation", { name: item.name })}
     </div>
   );
 }
@@ -106,6 +108,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 export default function ProfilePage() {
   const { session, loading, refresh, logout } = useSession();
+  const t = useT();
   const prefs = usePrefs();
   const [profile, setProfile] = useState<ProfilePayload | null>(null);
   const [tab, setTab] = useState<CosmeticSlot>("cardBack");
@@ -114,6 +117,7 @@ export default function ProfilePage() {
   const [renameOpen, setRenameOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [recoveryOpen, setRecoveryOpen] = useState(false);
+  const [preview, setPreview] = useState<CosmeticItem | null>(null);
 
   const userId = session?.kind === "user" ? session.user?.id : null;
 
@@ -144,10 +148,10 @@ export default function ProfilePage() {
       const data = await api.post<ProfilePayload>("/api/me/cosmetics/equip", { itemId: item.id });
       setProfile(data);
       playSound("equip");
-      toast.success(`${item.name} equipped.`);
+      toast.success(t("{name} equipped.", { name: item.name }));
       void refresh();
     } catch (caught) {
-      toast.error(caught instanceof Error ? caught.message : "Could not equip that.");
+      toast.error(caught instanceof Error ? caught.message : t("Could not equip that."));
     } finally {
       setBusy(null);
     }
@@ -160,10 +164,10 @@ export default function ProfilePage() {
       const data = await api.post<ProfilePayload>("/api/me/cosmetics/buy", { itemId: item.id });
       setProfile(data);
       playSound("coin");
-      toast.success(`${item.name} unlocked.`);
+      toast.success(t("{name} unlocked.", { name: item.name }));
       void refresh();
     } catch (caught) {
-      toast.error(caught instanceof Error ? caught.message : "Could not unlock that.");
+      toast.error(caught instanceof Error ? caught.message : t("Could not unlock that."));
     } finally {
       setBusy(null);
     }
@@ -179,10 +183,10 @@ export default function ProfilePage() {
       setProfile(data);
       setRenameOpen(false);
       playSound("success");
-      toast.success("Display name updated.");
+      toast.success(t("Display name updated."));
       void refresh();
     } catch (caught) {
-      toast.error(caught instanceof Error ? caught.message : "Could not change the name.");
+      toast.error(caught instanceof Error ? caught.message : t("Could not change the name."));
     } finally {
       setBusy(null);
     }
@@ -206,21 +210,23 @@ export default function ProfilePage() {
           <div className="mx-auto mb-4 grid size-12 place-items-center rounded-2xl bg-brand/12 text-brand">
             <UserRound className="size-6" />
           </div>
-          <h1 className="text-2xl font-semibold tracking-[-0.04em]">No collection yet.</h1>
+          <h1 className="text-2xl font-semibold tracking-[-0.04em]">{t("No collection yet.")}</h1>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             {session?.kind === "guest"
-              ? `You're playing as ${session.guestName}. Create an account to keep levels, coins and cosmetics.`
-              : "Sign in or create an account to build a collection."}
+              ? t("You're playing as {name}. Create an account to keep levels, coins and cosmetics.", {
+                  name: session.guestName ?? "",
+                })
+              : t("Sign in or create an account to build a collection.")}
           </p>
           <div className="mt-5 flex flex-col gap-2">
             <Link href={session?.kind === "guest" ? "/signup" : "/login"}>
               <Button variant="brand" size="lg" className="w-full">
-                {session?.kind === "guest" ? "Create an account" : "Sign in"} <ArrowRight />
+                {session?.kind === "guest" ? t("Create an account") : t("Sign in")} <ArrowRight />
               </Button>
             </Link>
             <Link href="/play">
               <Button variant="ghost" size="lg" className="w-full">
-                Back to the tables
+                {t("Back to the tables")}
               </Button>
             </Link>
           </div>
@@ -233,7 +239,7 @@ export default function ProfilePage() {
     return (
       <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
         {error ? (
-          <p className="text-sm text-destructive">{error}</p>
+          <p className="text-sm text-destructive">{error ?? t("Could not load your profile.")}</p>
         ) : (
           <div className="flex flex-col gap-4">
             <Skeleton className="h-44 w-full rounded-2xl" />
@@ -266,22 +272,22 @@ export default function ProfilePage() {
                 <Button variant="ghost" size="icon-xs" onClick={() => {
                   setNewName(user.displayName);
                   setRenameOpen(true);
-                }} title="Change display name">
+                }} title={t("Change display name")}>
                   <Pencil />
                 </Button>
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-2">
-                <Badge variant="brand">level {user.level}</Badge>
+                <Badge variant="brand">{t("level {n}", { n: user.level })}</Badge>
                 {user.owner && (
                   <Badge variant="warning" className="gap-1">
-                    <Sparkles className="size-3" /> owner
+                    <Sparkles className="size-3" /> {t("owner")}
                   </Badge>
                 )}
                 <Badge variant="outline" className="gap-1">
                   <Coins className="size-3 text-brand" /> {compactNumber(user.coins)}
                 </Badge>
                 <Badge variant="outline" className="gap-1">
-                  <Trophy className="size-3 text-warning" /> {user.stats.wins} wins
+                  <Trophy className="size-3 text-warning" /> {t(user.stats.wins === 1 ? "{n} win" : "{n} wins", { n: user.stats.wins })}
                 </Badge>
               </div>
             </div>
@@ -289,17 +295,17 @@ export default function ProfilePage() {
 
           <div className="flex-1 sm:pl-4">
             <div className="mb-1.5 flex items-center justify-between text-[11px] text-muted-foreground">
-              <span>level {user.level}</span>
+              <span>{t("level {n}", { n: user.level })}</span>
               <span className="font-mono">
                 {user.xp - levelFloor}/{nextXp - levelFloor} xp
               </span>
             </div>
             <Progress value={levelPct} variant="brand" />
             <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
-              <Stat label="games" value={String(user.stats.games)} />
-              <Stat label="win rate" value={`${winRate}%`} />
-              <Stat label="jump-ins" value={String(user.stats.jumps)} />
-              <Stat label="stacks" value={String(user.stats.stacks)} />
+              <Stat label={t("games")} value={String(user.stats.games)} />
+              <Stat label={t("win rate")} value={`${winRate}%`} />
+              <Stat label={t("jump-ins")} value={String(user.stats.jumps)} />
+              <Stat label={t("stacks")} value={String(user.stats.stacks)} />
             </div>
           </div>
         </div>
@@ -308,17 +314,19 @@ export default function ProfilePage() {
       <div className="mt-6">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="eyebrow mb-1">the collection</p>
-            <h2 className="text-xl font-semibold tracking-[-0.03em] sm:text-2xl">Dress the table.</h2>
+            <p className="eyebrow mb-1">{t("the collection")}</p>
+            <h2 className="text-xl font-semibold tracking-[-0.03em] sm:text-2xl">{t("Dress the table.")}</h2>
           </div>
-          <p className="text-xs text-muted-foreground">{profile.owned.length} of {profile.items.length} unlocked</p>
+          <p className="text-xs text-muted-foreground">
+            {t("{owned} of {total} unlocked", { owned: profile.owned.length, total: profile.items.length })}
+          </p>
         </div>
 
         <Tabs value={tab} onValueChange={(value) => setTab(value as CosmeticSlot)}>
           <TabsList className="w-full overflow-x-auto sm:w-fit">
             {SLOTS.map((slot) => (
               <TabsTrigger key={slot} value={slot} className="shrink-0">
-                {SLOT_LABEL[slot]}
+                {t(SLOT_LABEL[slot])}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -353,44 +361,51 @@ export default function ProfilePage() {
                         <div className="flex flex-1 flex-col gap-2 p-4">
                           <div className="flex items-start justify-between gap-2">
                             <div>
-                              <p className="text-sm font-semibold tracking-[-0.01em]">{item.name}</p>
+                              <p className="text-sm font-semibold tracking-[-0.01em]">{t(item.name)}</p>
                               <p className={cn("text-[10px] uppercase tracking-[0.16em]", RARITY_STYLE[item.rarity])}>
-                                {item.rarity}
+                                {t(item.rarity)}
                               </p>
                             </div>
                             {equipped && (
                               <Badge variant="success" className="gap-1">
-                                <Check className="size-3" /> equipped
+                                <Check className="size-3" /> {t("equipped")}
                               </Badge>
                             )}
                           </div>
-                          <p className="text-xs leading-relaxed text-muted-foreground">{item.description}</p>
+                          <p className="text-xs leading-relaxed text-muted-foreground">{t(item.description)}</p>
                           <div className="mt-auto flex items-center justify-between gap-2 pt-2">
                             <span className="text-[11px] text-muted-foreground">{unlockText(item)}</span>
-                            {equipped ? (
-                              <Button size="xs" variant="secondary" disabled>
-                                Worn
-                              </Button>
-                            ) : owned ? (
-                              <Button size="xs" variant="outline" loading={busy === item.id} onClick={() => equip(item)}>
-                                Equip
-                              </Button>
-                            ) : item.unlock.type === "shop" ? (
-                              <Button
-                                size="xs"
-                                variant={affordable ? "brand" : "outline"}
-                                disabled={!affordable || Boolean(busy)}
-                                loading={busy === item.id}
-                                onClick={() => buy(item)}
-                                className="gap-1"
-                              >
-                                <Coins /> {item.unlock.price}
-                              </Button>
-                            ) : (
-                              <Button size="xs" variant="outline" disabled>
-                                Locked
-                              </Button>
-                            )}
+                            <div className="flex items-center gap-1.5">
+                              {item.slot === "winEffect" && (
+                                <Button size="xs" variant="ghost" onClick={() => setPreview(item)}>
+                                  {t("Preview")}
+                                </Button>
+                              )}
+                              {equipped ? (
+                                <Button size="xs" variant="secondary" disabled>
+                                  {t("Worn")}
+                                </Button>
+                              ) : owned ? (
+                                <Button size="xs" variant="outline" loading={busy === item.id} onClick={() => equip(item)}>
+                                  {t("Equip")}
+                                </Button>
+                              ) : item.unlock.type === "shop" ? (
+                                <Button
+                                  size="xs"
+                                  variant={affordable ? "brand" : "outline"}
+                                  disabled={!affordable || Boolean(busy)}
+                                  loading={busy === item.id}
+                                  onClick={() => buy(item)}
+                                  className="gap-1"
+                                >
+                                  <Coins /> {item.unlock.price}
+                                </Button>
+                              ) : (
+                                <Button size="xs" variant="outline" disabled>
+                                  {t("Locked")}
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -407,7 +422,7 @@ export default function ProfilePage() {
         <div className="panel rounded-2xl p-5">
           <div className="mb-4 flex items-center gap-2">
             <Trophy className="size-4 text-warning" />
-            <h2 className="text-sm font-semibold">Achievements</h2>
+            <h2 className="text-sm font-semibold">{t("Achievements")}</h2>
           </div>
           <div className="flex flex-col gap-2">
             {profile.achievements.map((achievement) => {
@@ -416,15 +431,15 @@ export default function ProfilePage() {
                 <div key={achievement.id} className="rounded-xl border border-white/7 bg-white/[0.015] px-3 py-2.5">
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium">{achievement.name}</span>
-                      {achievement.unlocked && <Badge variant="success">done</Badge>}
-                      {reward && <span className="text-[10px] text-muted-foreground">→ {reward.name}</span>}
+                      <span className="text-xs font-medium">{t(achievement.name)}</span>
+                      {achievement.unlocked && <Badge variant="success">{t("done")}</Badge>}
+                      {reward && <span className="text-[10px] text-muted-foreground">→ {t(reward.name)}</span>}
                     </div>
                     <span className="font-mono text-[10px] text-muted-foreground">
                       {achievement.progress}/{achievement.goal}
                     </span>
                   </div>
-                  <p className="mt-0.5 text-[11px] text-muted-foreground">{achievement.description}</p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">{t(achievement.description)}</p>
                   <Progress
                     className="mt-2"
                     size="sm"
@@ -442,47 +457,66 @@ export default function ProfilePage() {
           <div className="panel rounded-2xl p-5">
             <div className="mb-3 flex items-center gap-2">
               <Gauge className="size-4 text-brand" />
-              <h2 className="text-sm font-semibold">Performance</h2>
+              <h2 className="text-sm font-semibold">{t("Performance")}</h2>
             </div>
             <label className="flex items-center justify-between gap-3 py-2">
               <span className="flex items-center gap-2 text-xs">
-                <Volume2 className="size-3.5 text-muted-foreground" /> Sound effects
+                <Volume2 className="size-3.5 text-muted-foreground" /> {t("Sound effects")}
               </span>
               <Switch checked={prefs.sound} onCheckedChange={(value) => setPrefs({ sound: value })} />
             </label>
             <label className="flex items-center justify-between gap-3 py-2">
               <span className="flex flex-col gap-0.5 text-xs">
-                <span>Low-power mode</span>
-                <span className="text-[10px] text-muted-foreground">Drops grain and heavy effects.</span>
+                <span>{t("Low-power mode")}</span>
+                <span className="text-[10px] text-muted-foreground">{t("Drops grain and heavy effects.")}</span>
               </span>
               <Switch checked={prefs.lowPower} onCheckedChange={(value) => setPrefs({ lowPower: value })} />
             </label>
             <label className="flex items-center justify-between gap-3 py-2">
               <span className="flex flex-col gap-0.5 text-xs">
-                <span>Reduce motion</span>
-                <span className="text-[10px] text-muted-foreground">Stops the flying cards and springs.</span>
+                <span>{t("Reduce motion")}</span>
+                <span className="text-[10px] text-muted-foreground">{t("Stops the flying cards and springs.")}</span>
               </span>
               <Switch checked={prefs.reducedMotion} onCheckedChange={(value) => setPrefs({ reducedMotion: value })} />
             </label>
+            <div className="flex items-center justify-between gap-3 py-2">
+              <span className="text-xs">{t("Language")}</span>
+              <div className="flex gap-1">
+                <Button
+                  size="xs"
+                  variant={prefs.locale === "en" ? "brand" : "outline"}
+                  onClick={() => setPrefs({ locale: "en" })}
+                >
+                  EN
+                </Button>
+                <Button
+                  size="xs"
+                  variant={prefs.locale === "fr" ? "brand" : "outline"}
+                  onClick={() => setPrefs({ locale: "fr" })}
+                >
+                  FR
+                </Button>
+              </div>
+            </div>
           </div>
 
           <div className="panel rounded-2xl p-5">
-            <h2 className="text-sm font-semibold">Account</h2>
+            <h2 className="text-sm font-semibold">{t("Account")}</h2>
             <div className="mt-3 flex flex-col gap-2">
               <Button variant="outline" className="justify-start gap-2" onClick={() => { setNewName(user.displayName); setRenameOpen(true); }}>
-                <Pencil /> Change display name
+                <Pencil /> {t("Change display name")}
               </Button>
               <Button variant="outline" className="justify-start gap-2" onClick={() => setRecoveryOpen(true)}>
-                <KeyRound /> Recovery code
+                <KeyRound /> {t("Recovery code")}
               </Button>
               <Button
                 variant="ghost"
                 className="justify-start gap-2 text-muted-foreground"
                 onClick={() => {
-                  void logout().then(() => toast.info("Signed out."));
+                  void logout().then(() => toast.info(t("You signed out.")));
                 }}
               >
-                <LogOut /> Sign out
+                <LogOut /> {t("Sign out")}
               </Button>
             </div>
           </div>
@@ -490,16 +524,23 @@ export default function ProfilePage() {
       </div>
 
       <GenerateRecoveryDialog open={recoveryOpen} onOpenChange={setRecoveryOpen} />
+      <EffectPreviewDialog
+        item={preview}
+        open={Boolean(preview)}
+        onOpenChange={(open) => {
+          if (!open) setPreview(null);
+        }}
+      />
 
       <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
         <DialogContent size="sm">
           <DialogHeader>
-            <DialogTitle>Display name</DialogTitle>
-            <DialogDescription>2–20 characters. This is what the table sees.</DialogDescription>
+            <DialogTitle>{t("Display name")}</DialogTitle>
+            <DialogDescription>{t("2–20 characters. This is what the table sees.")}</DialogDescription>
           </DialogHeader>
           <form onSubmit={rename} className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="displayName">New name</Label>
+              <Label htmlFor="displayName">{t("New name")}</Label>
               <Input
                 id="displayName"
                 value={newName}
@@ -509,7 +550,7 @@ export default function ProfilePage() {
               />
             </div>
             <Button type="submit" variant="brand" loading={busy === "rename"} disabled={newName.trim().length < 2}>
-              Save name
+              {t("Save name")}
             </Button>
           </form>
         </DialogContent>

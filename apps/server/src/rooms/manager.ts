@@ -773,6 +773,28 @@ export class RoomManager {
 
   /* ─────────────────────────── queries & housekeeping ─────────────────────────── */
 
+  /** Owner tool: remove a player from every table and close their sockets. */
+  kickPlayer(playerId: string, message = "You were removed from the table."): void {
+    for (const room of [...this.rooms.values()]) {
+      const seat = room.seat(playerId);
+      if (!seat) continue;
+      for (const conn of [...room.connections]) {
+        if (conn.playerId !== playerId) continue;
+        this.send(conn, { t: "toast", tone: "error", message });
+        this.send(conn, { t: "left" });
+        conn.roomCode = null;
+        room.connections.delete(conn);
+        try {
+          conn.socket.close(4003, "removed");
+        } catch {
+          // already gone
+        }
+      }
+      room.removeSeat(playerId);
+      this.afterDeparture(room);
+    }
+  }
+
   private mustSeat(conn: ClientConn): { room: Room; seat: Seat } {
     if (!conn.roomCode) throw new RoomError("no_room", "Join a room first.");
     const room = this.rooms.get(conn.roomCode);

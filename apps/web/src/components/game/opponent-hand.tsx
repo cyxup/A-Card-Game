@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import type { CSSProperties } from "react";
 import { CardBack } from "@/components/cards/playing-card";
+import { useT } from "@/lib/i18n";
 import { spring } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
@@ -26,12 +27,13 @@ export function OpponentHand({
   const shown = Math.min(count, max);
   const overlap = Math.round(size * (compact ? 0.58 : 0.54));
   const indexes = Array.from({ length: shown }, (_, index) => index);
+  const t = useT();
 
   return (
     <div
       className={cn("opp-hand", className)}
       style={{ height: Math.round(size * 1.4) + 8 }}
-      aria-label={`${count} cards in hand`}
+      aria-label={t(count === 1 ? "{n} card in hand" : "{n} cards in hand", { n: count })}
     >
       <div className="opp-hand-fan" style={{ paddingInline: Math.round(size * 0.22) }}>
         <AnimatePresence initial={false}>

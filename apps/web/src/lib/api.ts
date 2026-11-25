@@ -1,3 +1,5 @@
+import { translateError } from "./i18n";
+
 export class ApiError extends Error {
   readonly status: number;
   readonly code: string;
@@ -21,7 +23,7 @@ async function request<T>(method: string, path: string, body?: Json): Promise<T>
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {
-    throw new ApiError("You seem to be offline.", 0, "offline");
+    throw new ApiError(translateError("offline", "You seem to be offline."), 0, "offline");
   }
 
   const text = await response.text();
@@ -36,7 +38,12 @@ async function request<T>(method: string, path: string, body?: Json): Promise<T>
 
   if (!response.ok) {
     const record = (data ?? {}) as { error?: string; code?: string };
-    throw new ApiError(record.error ?? "Something went wrong.", response.status, record.code ?? "server_error");
+    const code = record.code ?? "server_error";
+    throw new ApiError(
+      translateError(code, record.error ?? "Something went wrong."),
+      response.status,
+      code,
+    );
   }
 
   return data as T;

@@ -6,6 +6,7 @@ import { NameEffect } from "@/components/brand/name-effect";
 import { CardFace } from "@/components/cards/playing-card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 export const COLOR_META: Record<Color, { label: string; className: string; hex: string }> = {
@@ -26,12 +27,15 @@ export function ColorDialog({
   onOpenChange: (open: boolean) => void;
   onPick: (color: Color) => void;
 }) {
+  const t = useT();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="sm" className="sm:max-w-[420px]">
         <DialogHeader>
-          <DialogTitle className="text-xl tracking-[-0.03em]">Call a colour.</DialogTitle>
-          <DialogDescription>The next player has to match it, unless they can stack something worse.</DialogDescription>
+          <DialogTitle className="text-xl tracking-[-0.03em]">{t("Call a colour.")}</DialogTitle>
+          <DialogDescription>
+            {t("The next player has to match it, unless they can stack something worse.")}
+          </DialogDescription>
         </DialogHeader>
         {card && (
           <div className="flex justify-center py-1">
@@ -49,7 +53,7 @@ export function ColorDialog({
                 COLOR_META[color].className,
               )}
             >
-              {COLOR_META[color].label}
+              {t(COLOR_META[color].label)}
             </button>
           ))}
         </div>
@@ -77,6 +81,7 @@ export function SwapDialog({
 }) {
   const [target, setTarget] = useState<string | null>(null);
   const [color, setColor] = useState<Color | null>(null);
+  const t = useT();
 
   useEffect(() => {
     if (open) {
@@ -92,12 +97,12 @@ export function SwapDialog({
       <DialogContent size="sm" className="sm:max-w-[460px]">
         <DialogHeader>
           <DialogTitle className="text-xl tracking-[-0.03em]">
-            {outOfTurn ? "Swap in!" : "Oscar's Swap"}
+            {outOfTurn ? t("Swap in!") : t("Oscar's Swap")}
           </DialogTitle>
           <DialogDescription>
             {outOfTurn
-              ? "You are jumping the queue. Pick a victim and a colour before the window closes."
-              : "Take someone else's hand. Pick the victim, then the colour that follows."}
+              ? t("You are jumping the queue. Pick a victim and a colour before the window closes.")
+              : t("Take someone else's hand. Pick the victim, then the colour that follows.")}
           </DialogDescription>
         </DialogHeader>
         {card && (
@@ -107,7 +112,7 @@ export function SwapDialog({
         )}
 
         <div className="flex flex-col gap-2">
-          <p className="eyebrow">Swap with</p>
+          <p className="eyebrow">{t("Swap with")}</p>
           <div className="grid max-h-44 grid-cols-2 gap-1.5 overflow-y-auto pr-1">
             {others.map((player) => (
               <button
@@ -126,7 +131,9 @@ export function SwapDialog({
                   <NameEffect effect={player.nameEffect} className="block text-xs font-medium">
                     {player.name}
                   </NameEffect>
-                  <span className="block font-mono text-[10px] text-muted-foreground">{player.cardCount} cards</span>
+                  <span className="block font-mono text-[10px] text-muted-foreground">
+                    {t(player.cardCount === 1 ? "{n} card" : "{n} cards", { n: player.cardCount })}
+                  </span>
                 </span>
               </button>
             ))}
@@ -134,14 +141,14 @@ export function SwapDialog({
         </div>
 
         <div className="flex flex-col gap-2">
-          <p className="eyebrow">Colour after</p>
+          <p className="eyebrow">{t("Colour after")}</p>
           <div className="grid grid-cols-4 gap-1.5">
             {COLORS.map((entry) => (
               <button
                 key={entry}
                 type="button"
                 onClick={() => setColor(entry)}
-                aria-label={COLOR_META[entry].label}
+                aria-label={t(COLOR_META[entry].label)}
                 className={cn(
                   "h-9 rounded-lg border transition-all",
                   COLOR_META[entry].className,
@@ -160,7 +167,7 @@ export function SwapDialog({
             if (target && color) onConfirm(target, color);
           }}
         >
-          Swap hands
+          {t("Swap hands")}
         </Button>
       </DialogContent>
     </Dialog>

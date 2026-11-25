@@ -7,6 +7,7 @@ import type {
 } from "@stacked/shared";
 import { useSyncExternalStore } from "react";
 import { toast } from "@/components/ui/toast";
+import { translateError, translateMessage } from "./i18n";
 import { playSound } from "./sound";
 
 export type ConnectionStatus = "idle" | "connecting" | "open" | "reconnecting" | "closed";
@@ -132,7 +133,7 @@ class GameClient {
     if (this.reconnectTimer !== null) return;
     if (this.retries >= 7) {
       this.setState({ status: "closed" });
-      toast.error("Lost connection to the table.");
+      toast.error(translateMessage("Lost connection to the table."));
       return;
     }
     const delay = Math.min(8000, 500 * 2 ** this.retries);
@@ -172,16 +173,16 @@ class GameClient {
         this.setState({ room: null, emotes: [] });
         break;
       case "error":
-        toast.error(message.message);
-        this.rejectWaiters(new Error(message.message));
+        toast.error(translateError(message.code, message.message));
+        this.rejectWaiters(new Error(translateError(message.code, message.message)));
         break;
       case "action_error":
-        toast.warning(message.message);
+        toast.warning(translateError(message.code, message.message));
         break;
       case "toast":
-        if (message.tone === "error") toast.error(message.message);
-        else if (message.tone === "success") toast.success(message.message);
-        else toast.info(message.message);
+        if (message.tone === "error") toast.error(translateMessage(message.message));
+        else if (message.tone === "success") toast.success(translateMessage(message.message));
+        else toast.info(translateMessage(message.message));
         break;
       case "emote": {
         const key = ++this.emoteKey;

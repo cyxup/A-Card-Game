@@ -25,6 +25,10 @@ export const users = pgTable(
     displayName: varchar("display_name", { length: 24 }).notNull(),
     /** Toggled by hand in the database. Grants owner-only cosmetics + badge. */
     isOwner: boolean("is_owner").notNull().default(false),
+    banned: boolean("banned").notNull().default(false),
+    banReason: text("ban_reason"),
+    bannedAt: timestamp("banned_at", { withTimezone: true }),
+    bannedBy: varchar("banned_by", { length: 24 }),
     passwordHash: text("password_hash").notNull(),
     xp: integer("xp").notNull().default(0),
     coins: integer("coins").notNull().default(250),
@@ -110,6 +114,21 @@ export const matchPlayers = pgTable(
     xp: integer("xp").notNull().default(0),
   },
   (table) => [index("match_players_match_idx").on(table.matchId), index("match_players_user_idx").on(table.userId)],
+);
+
+export const adminAudit = pgTable(
+  "admin_audit",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    actorId: uuid("actor_id").references(() => users.id, { onDelete: "set null" }),
+    actorName: varchar("actor_name", { length: 24 }).notNull(),
+    action: varchar("action", { length: 32 }).notNull(),
+    targetId: uuid("target_id").references(() => users.id, { onDelete: "set null" }),
+    targetName: varchar("target_name", { length: 24 }),
+    detail: jsonb("detail").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("admin_audit_created_idx").on(table.createdAt)],
 );
 
 export type UserRow = typeof users.$inferSelect;

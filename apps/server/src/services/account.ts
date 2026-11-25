@@ -288,18 +288,19 @@ export async function updateDisplayName(user: UserRow, rawName: unknown): Promis
 }
 
 export async function leaderboard(limit = 50) {
-  const rows = await db
-    .select({
-      id: users.id,
-      displayName: users.displayName,
-      xp: users.xp,
-      wins: users.wins,
-      games: users.games,
-      equipped: users.equipped,
-    })
-    .from(users)
-    .orderBy(desc(users.xp), desc(users.wins))
-    .limit(limit);
+    const rows = await db
+      .select({
+        id: users.id,
+        displayName: users.displayName,
+        xp: users.xp,
+        wins: users.wins,
+        games: users.games,
+        equipped: users.equipped,
+      })
+      .from(users)
+      .where(eq(users.banned, false))
+      .orderBy(desc(users.xp), desc(users.wins))
+      .limit(limit);
 
   return rows.map((row, index) => {
     const loadout = { ...SLOT_FALLBACK, ...(row.equipped ?? {}) };

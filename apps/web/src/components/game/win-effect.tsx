@@ -11,7 +11,14 @@ interface Particle {
   scale: number;
 }
 
-export function WinEffect({ effect }: { effect: string | null | undefined }) {
+export function WinEffect({
+  effect,
+  force = false,
+}: {
+  effect: string | null | undefined;
+  /** Owner previews should play even when low-power mode is on. */
+  force?: boolean;
+}) {
   const { lowPower } = usePrefs();
   const particles = useMemo<Particle[]>(() => {
     const count = 26;
@@ -67,7 +74,7 @@ export function WinEffect({ effect }: { effect: string | null | undefined }) {
     );
   }
 
-  if (lowPower && effect !== "confetti") return null;
+  if (lowPower && effect !== "confetti" && !force) return null;
 
   return (
     <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden">

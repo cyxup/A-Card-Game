@@ -12,8 +12,10 @@ import { ApiError } from "./lib/http.js";
 import { registerRealtime } from "./realtime.js";
 import { rooms } from "./rooms/manager.js";
 import { accountRoutes } from "./routes/account.js";
+import { adminRoutes } from "./routes/admin.js";
 import { authRoutes } from "./routes/auth.js";
 import { AccountError } from "./services/account.js";
+import { AdminError } from "./services/admin.js";
 
 const MUTATING = new Set(["POST", "PATCH", "PUT", "DELETE"]);
 
@@ -82,6 +84,7 @@ async function build(): Promise<ReturnType<typeof Fastify>> {
 
   await app.register(authRoutes);
   await app.register(accountRoutes);
+  await app.register(adminRoutes);
   await registerRealtime(app);
 
   const webDist = path.resolve(env.WEB_DIST);
@@ -128,6 +131,10 @@ async function build(): Promise<ReturnType<typeof Fastify>> {
       return;
     }
     if (error instanceof AccountError) {
+      reply.code(error.status).send({ error: error.message, code: error.code });
+      return;
+    }
+    if (error instanceof AdminError) {
       reply.code(error.status).send({ error: error.message, code: error.code });
       return;
     }

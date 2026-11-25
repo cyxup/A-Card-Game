@@ -3,7 +3,6 @@ import {
   EMOTES,
   canJumpInView,
   canPlayCard,
-  cardLabel,
 } from "@stacked/shared";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import {
@@ -33,8 +32,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { setPrefs, usePrefs } from "@/lib/prefs";
-import { logText } from "@/lib/format";
+import { localizedCardLabel, logText } from "@/lib/format";
 import { game as client, useGame } from "@/lib/game";
+import { useT } from "@/lib/i18n";
 import { easeOutExpo, spring } from "@/lib/motion";
 import { playSound } from "@/lib/sound";
 import { useCountdown } from "@/lib/use-countdown";
@@ -133,6 +133,7 @@ function TurnStatus({
   offset: number;
   mustDraw: boolean;
 }) {
+  const t = useT();
   const game = room.game;
   const left = useCountdown(game?.deadline, offset, game?.phase === "playing");
   const initial = useMemo(() => Math.max(120, left), [game?.deadline]);
@@ -141,21 +142,21 @@ function TurnStatus({
   const color = COLOR_META[game.color];
 
   const hint = game.pending > 0
-    ? `+${game.pending} stacked — play another draw card or take the pile`
+    ? t("+{n} stacked — play another draw card or take the pile", { n: game.pending })
     : isMyTurn
       ? game.drawnCardId
-        ? "You drew — play that card or pass"
+        ? t("You drew — play that card or pass")
         : mustDraw
-          ? "No match — draw a card"
-          : "Play a matching card, or draw"
-      : `Waiting for ${currentName}…`;
+          ? t("No match — draw a card")
+          : t("Play a matching card, or draw")
+      : t("Waiting for {name}…", { name: currentName });
 
   return (
     <div className="turn-status">
       <div className="turn-status-row">
         <span className="turn-status-live" data-active={isMyTurn} />
         <span className={cn("turn-status-name", isMyTurn && "text-brand")} aria-live="polite">
-          {isMyTurn ? "Your turn" : `${currentName}'s turn`}
+          {isMyTurn ? t("Your turn") : t("{name}'s turn", { name: currentName })}
         </span>
         <span className="turn-status-seconds">{seconds > 0 ? `${seconds}s` : "…"}</span>
       </div>
@@ -173,10 +174,10 @@ function TurnStatus({
         <span>{hint}</span>
         <span className="turn-status-meta">
           <span className="turn-color-dot" style={{ background: color.hex, boxShadow: `0 0 10px ${color.hex}` }} />
-          {color.label}
+          {t(color.label)}
           <span className="text-white/15">·</span>
           <RefreshCw className={cn("size-3", game.dir === -1 && "rotate-180")} />
-          {game.dir === 1 ? "clockwise" : "counter-clockwise"}
+          {game.dir === 1 ? t("clockwise") : t("counter-clockwise")}
         </span>
       </div>
     </div>
@@ -184,6 +185,7 @@ function TurnStatus({
 }
 
 function JumpPrompt({ room, hand, offset }: { room: RoomView; hand: Card[]; offset: number }) {
+  const t = useT();
   const game = room.game;
   const [now, setNow] = useState(() => Date.now() + offset);
 
@@ -218,7 +220,7 @@ function JumpPrompt({ room, hand, offset }: { room: RoomView; hand: Card[]; offs
         onClick={() => client.action({ type: "jump", cardId: card.id })}
       >
         <Zap className="size-3.5" />
-        Jump in with
+        {t("Jump in with")}
         <span className="jump-prompt-card">
           <CardFace card={card} style={{ "--cw": "18px" } as CSSProperties} />
         </span>
@@ -230,6 +232,7 @@ function JumpPrompt({ room, hand, offset }: { room: RoomView; hand: Card[]; offs
 export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => void }) {
   const gameView = room.game;
   const { emotes, offset } = useGame();
+  const t = useT();
   const prefs = usePrefs();
   const [colorCard, setColorCard] = useState<Card | null>(null);
   const [swapCard, setSwapCard] = useState<Card | null>(null);
@@ -330,7 +333,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
     if (gameView?.phase !== "playing") return;
     if (isMyTurn) {
       if (gameView.drawnCardId && card.id !== gameView.drawnCardId) {
-        toast.info("You can only play the card you drew, or pass.");
+        toast.info(t("You can only play the card you drew, or pass."));
         nudge(card);
         return;
       }
@@ -403,9 +406,9 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
   async function copyInvite() {
     try {
       await navigator.clipboard.writeText(`${window.location.origin}/room/${room.code}`);
-      toast.success("Invite link copied.");
+      toast.success(t("Invite link copied."));
     } catch {
-      toast.error(`Room code: ${room.code}`);
+      toast.error(t("Room code: {code}", { code: room.code }));
     }
   }
 
@@ -573,7 +576,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
   if (!gameView) {
     return (
       <div className="grid min-h-[50vh] place-items-center text-sm text-muted-foreground">
-        Waiting for the first card…
+        {t("Waiting for the first card…")}
       </div>
     );
   }
@@ -619,12 +622,12 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
             <div className="flex min-w-0 items-center gap-2.5">
               <Logo compact className="table-logo" />
               <span className="topbar-divider" />
-              <span className="eyebrow hidden sm:inline">table</span>
+              <span className="eyebrow hidden sm:inline">{t("table")}</span>
               <button
                 type="button"
                 onClick={copyInvite}
                 className="table-code"
-                title="Copy invite link"
+                title={t("Copy invite link")}
               >
                 {room.code}
                 <Share2 className="size-3" />
@@ -633,7 +636,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                 <Users className="size-3" /> {room.players.length}
               </Badge>
               <span className="live-chip">
-                <span className="live-dot" /> live
+                <span className="live-dot" /> {t("live")}
               </span>
             </div>
             <div className="flex items-center gap-1.5">
@@ -641,8 +644,8 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                 variant="ghost"
                 size="icon-sm"
                 onClick={() => setPrefs({ sound: !prefs.sound })}
-                title={prefs.sound ? "Mute sound" : "Unmute sound"}
-                aria-label={prefs.sound ? "Mute sound" : "Unmute sound"}
+                title={prefs.sound ? t("Mute sound") : t("Unmute sound")}
+                aria-label={prefs.sound ? t("Mute sound") : t("Unmute sound")}
                 className="text-white/60 hover:text-white"
               >
                 {prefs.sound ? <Volume2 /> : <VolumeX />}
@@ -651,8 +654,8 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                 variant="ghost"
                 size="icon-sm"
                 onClick={onLeave}
-                title="Leave table"
-                aria-label="Leave table"
+                title={t("Leave table")}
+                aria-label={t("Leave table")}
                 className="text-white/60 hover:text-white"
               >
                 <DoorOpen />
@@ -687,7 +690,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                   exit={{ opacity: 0, scale: 1.04, filter: "blur(8px)" }}
                   transition={spring.gentle}
                 >
-                  YOUR TURN
+                  {t("YOUR TURN")}
                 </motion.div>
               ) : null}
             </AnimatePresence>
@@ -709,7 +712,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                         <CardFace
                           card={banner.entry.card}
                           style={{ "--cw": "26px" } as CSSProperties}
-                          label={cardLabel(banner.entry.card)}
+                          label={localizedCardLabel(banner.entry.card)}
                         />
                       ) : (
                         <BannerIcon entry={banner.entry} />
@@ -732,7 +735,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
 
             <div className="play-piles">
               <div className="pile-column">
-                <span className="pile-label">draw</span>
+                <span className="pile-label">{t("draw")}</span>
                 <div className="deck-wrap">
                   <motion.button
                     ref={deckRef}
@@ -742,8 +745,8 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                     className={cn("deck-button", canDraw && "deck-ready", gameView.pending > 0 && "deck-stacked")}
                     animate={gameView.pending > 0 ? { rotate: [0, -1.4, 1.4, 0] } : { rotate: 0 }}
                     transition={gameView.pending > 0 ? { duration: 1.9, repeat: Infinity, ease: "easeInOut" } : { duration: 0.25 }}
-                    aria-label={gameView.pending > 0 ? `Take ${gameView.pending} cards` : "Draw a card"}
-                    title={gameView.pending > 0 ? `Take ${gameView.pending} cards` : "Draw a card"}
+                    aria-label={gameView.pending > 0 ? t("Take {n} cards", { n: gameView.pending }) : t("Draw a card")}
+                    title={gameView.pending > 0 ? t("Take {n} cards", { n: gameView.pending }) : t("Draw a card")}
                   >
                     <span className="deck-stack-edge" aria-hidden />
                     <CardBack
@@ -771,7 +774,9 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                       />
                     ) : null}
                   </motion.button>
-                  <span className="deck-hint">{canDraw ? "tap to draw" : `${gameView.drawCount} left`}</span>
+                  <span className="deck-hint">
+                    {canDraw ? t("tap to draw") : t("{n} left", { n: gameView.drawCount })}
+                  </span>
                   <Button
                     type="button"
                     size="sm"
@@ -779,15 +784,15 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                     disabled={!canPass}
                     onClick={pass}
                     className="deck-pass"
-                    title={canPass ? "Pass your turn" : "Draw first, then you can pass"}
+                    title={canPass ? t("Pass your turn") : t("Draw first, then you can pass")}
                   >
-                    Pass
+                    {t("Pass")}
                   </Button>
                 </div>
               </div>
 
               <div className="pile-column pile-discard" ref={discardRef}>
-                <span className="pile-label">discard</span>
+                <span className="pile-label">{t("discard")}</span>
                 <div className="discard-wrap">
                   <motion.span
                     className="discard-aura"
@@ -820,13 +825,13 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                     <CardFace
                       card={gameView.top}
                       style={{ "--cw": "clamp(86px, 9.2vw, 116px)" } as CSSProperties}
-                      label={cardLabel(gameView.top)}
+                      label={localizedCardLabel(gameView.top)}
                     />
                   </motion.div>
                 </div>
                 <span className="pile-hint">
                   <span className="turn-color-dot" style={{ background: currentColor.hex, boxShadow: `0 0 10px ${currentColor.hex}` }} />
-                  {currentColor.label}
+                  {t(currentColor.label)}
                 </span>
               </div>
             </div>
@@ -834,7 +839,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
             <TurnStatus
               room={room}
               isMyTurn={isMyTurn}
-              currentName={current?.name ?? "someone"}
+              currentName={current?.name ?? t("someone")}
               offset={offset}
               mustDraw={mustDraw}
             />
@@ -877,22 +882,22 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
                   <NameEffect effect={me?.nameEffect} className="max-w-[180px] text-sm font-semibold">
-                    {me?.name ?? "You"}
+                    {me?.name ?? t("You")}
                   </NameEffect>
-                  {me?.host ? <Badge variant="outline" className="hidden sm:inline-flex">host</Badge> : null}
+                  {me?.host ? <Badge variant="outline" className="hidden sm:inline-flex">{t("host")}</Badge> : null}
                 </div>
                 <div className="hand-meta">
-                  <span>{hand.length} cards</span>
+                  <span>{t(hand.length === 1 ? "{n} card" : "{n} cards", { n: hand.length })}</span>
                   <span className="text-white/15">·</span>
-                  <span>Lv {me?.level ?? 1}</span>
-                  {isMyTurn ? <span className="hand-turn">your turn</span> : null}
+                  <span>{t("Lv {n}", { n: me?.level ?? 1 })}</span>
+                  {isMyTurn ? <span className="hand-turn">{t("your turn")}</span> : null}
                 </div>
               </div>
             </div>
 
             <div className="flex items-center gap-1.5">
-              <Button variant="ghost" size="sm" onClick={() => setSorted((value) => !value)} title="Sort hand">
-                <ArrowUpDown /> <span className="hidden sm:inline">Sort</span>
+              <Button variant="ghost" size="sm" onClick={() => setSorted((value) => !value)} title={t("Sort hand")}>
+                <ArrowUpDown /> <span className="hidden sm:inline">{t("Sort")}</span>
               </Button>
             </div>
           </div>
@@ -932,13 +937,13 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                       drawn={drawn}
                       className={cn(wiggle === card.id && "pcard-wiggle")}
                       onClick={() => onCard(card)}
-                      label={cardLabel(card)}
+                      label={localizedCardLabel(card)}
                     />
                   </motion.div>
                 );
               })}
               {hand.length === 0 ? (
-                <div className="py-10 text-xs text-muted-foreground">No cards. Either you won or something went very wrong.</div>
+                <div className="py-10 text-xs text-muted-foreground">{t("No cards. Either you won or something went very wrong.")}</div>
               ) : null}
             </div>
           </div>
@@ -948,11 +953,11 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
               <span className={cn("hand-context-dot", isMyTurn && "is-live")} />
               {isMyTurn
                 ? gameView.drawnCardId
-                  ? "Play the card you drew, or pass."
+                  ? t("Play the card you drew, or pass.")
                   : mustDraw
-                    ? "Nothing matches — the deck is waiting."
-                    : "Pick a highlighted card."
-                : `${current?.name ?? "Someone"} is choosing…`}
+                    ? t("Nothing matches — the deck is waiting.")
+                    : t("Pick a highlighted card.")
+                : t("{name} is choosing…", { name: current?.name ?? t("Someone") })}
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2">
               <AnimatePresence initial={false}>
@@ -978,7 +983,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                         playSound("swap");
                       }}
                     >
-                      <Zap className="size-3.5" /> Swap in
+                      <Zap className="size-3.5" /> {t("Swap in")}
                     </Button>
                   </motion.div>
                 ) : null}
@@ -990,8 +995,8 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                   key={emote.id}
                   type="button"
                   onClick={() => client.emote(emote.id)}
-                  title={emote.label}
-                  aria-label={emote.label}
+                  title={t(emote.label)}
+                  aria-label={t(emote.label)}
                   className="emote-button"
                 >
                   {emote.glyph}

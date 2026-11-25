@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/toast";
+import { useT } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 
 let snapshot = { open: false };
@@ -42,6 +43,7 @@ function subscribe(listener: () => void): () => void {
 export function GuestPrompt() {
   const state = useSyncExternalStore(subscribe, () => snapshot, () => snapshot);
   const { becomeGuest } = useSession();
+  const t = useT();
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const fieldId = useId();
@@ -50,13 +52,13 @@ export function GuestPrompt() {
     event.preventDefault();
     const clean = name.trim();
     if (clean.length < 2) {
-      toast.error("Use at least two characters.");
+      toast.error(t("Use at least two characters."));
       return;
     }
     setBusy(true);
     try {
       await becomeGuest(clean);
-      toast.success(`You're in, ${clean}.`);
+      toast.success(t("You're in, {name}.", { name: clean }));
       const after = pending;
       snapshot = { open: false };
       pending = null;
@@ -64,7 +66,7 @@ export function GuestPrompt() {
       setName("");
       after?.();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not set your name.");
+      toast.error(error instanceof Error ? error.message : t("Could not set your name."));
     } finally {
       setBusy(false);
     }
@@ -74,26 +76,26 @@ export function GuestPrompt() {
     <Dialog open={state.open} onOpenChange={(open) => (!open ? close() : undefined)}>
       <DialogContent size="sm" className="sm:max-w-[420px]">
         <DialogHeader>
-          <DialogTitle className="text-xl tracking-[-0.03em]">What should we call you?</DialogTitle>
+          <DialogTitle className="text-xl tracking-[-0.03em]">{t("What should we call you?")}</DialogTitle>
           <DialogDescription>
-            Guests can sit at any table. Coins, levels and cosmetics only stick around on an account.
+            {t("Guests can sit at any table. Coins, levels and cosmetics only stick around on an account.")}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
             <Label htmlFor={fieldId} className="eyebrow">
-              Display name
+              {t("Display name")}
             </Label>
             <Input
               id={fieldId}
               value={name}
               onChange={(event) => setName(event.target.value)}
-              placeholder="e.g. lucky ace"
+              placeholder={t("e.g. lucky ace")}
               maxLength={20}
               autoFocus
               autoComplete="nickname"
             />
-            <p className="text-xs text-muted-foreground">2–20 characters. You can sign up later.</p>
+            <p className="text-xs text-muted-foreground">{t("2–20 characters. You can sign up later.")}</p>
           </div>
           <DialogFooter className="gap-2 sm:justify-between">
             <Link
@@ -101,10 +103,10 @@ export function GuestPrompt() {
               onClick={close}
               className="text-xs text-muted-foreground underline decoration-border underline-offset-4 transition-colors hover:text-foreground"
             >
-              Create an account instead
+              {t("Create an account instead")}
             </Link>
             <Button type="submit" variant="brand" loading={busy} disabled={name.trim().length < 2}>
-              Sit down
+              {t("Sit down")}
             </Button>
           </DialogFooter>
         </form>

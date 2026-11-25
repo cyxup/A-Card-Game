@@ -5,6 +5,7 @@ import { Avatar } from "@/components/brand/avatar";
 import { NameEffect } from "@/components/brand/name-effect";
 import { spring } from "@/lib/motion";
 import { useCountdown } from "@/lib/use-countdown";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { OpponentHand } from "./opponent-hand";
 
@@ -26,6 +27,7 @@ export function Seat({
   className?: string;
 }) {
   const left = useCountdown(deadline, offset, active);
+  const t = useT();
   const seconds = Math.ceil(left / 1000);
   const avatarSize = dense ? 34 : 42;
   const handSize = dense ? 22 : 27;
@@ -79,12 +81,12 @@ export function Seat({
             </svg>
           ) : null}
           {player.host && (
-            <span className="seat-crown" title="Host">
+            <span className="seat-crown" title={t("Host")}>
               <Crown className="size-3" />
             </span>
           )}
           {offline && (
-            <span className="seat-offline" title="Reconnecting">
+            <span className="seat-offline" title={t("Reconnecting")}>
               <WifiOff className="size-3" />
             </span>
           )}
@@ -95,13 +97,13 @@ export function Seat({
             {player.name}
           </NameEffect>
           <div className="seat-meta">
-            <span>Lv {player.level}</span>
+            <span>{t("Lv {n}", { n: player.level })}</span>
             {player.owner ? (
               <span className="seat-owner">
-                <Sparkles className="size-2.5" /> owner
+                <Sparkles className="size-2.5" /> {t("owner")}
               </span>
             ) : null}
-            {player.isBot ? <span className="seat-bot">bot</span> : null}
+            {player.isBot ? <span className="seat-bot">{t("bot")}</span> : null}
             {active ? <span className="seat-time">{seconds > 0 ? `${seconds}s` : "…"}</span> : null}
           </div>
         </div>
@@ -113,7 +115,7 @@ export function Seat({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={spring.bouncy}
           >
-            turn
+            {t("turn")}
           </motion.span>
         ) : null}
       </div>

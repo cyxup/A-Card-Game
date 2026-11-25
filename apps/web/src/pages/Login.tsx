@@ -8,10 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/toast";
+import { useT } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 
 export default function LoginPage() {
   const { login, session } = useSession();
+  const t = useT();
   const [, navigate] = useLocation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -33,7 +35,7 @@ export default function LoginPage() {
     loggingIn.current = true;
     try {
       const data = await login(username, password);
-      toast.success(`Welcome back, ${data.user?.displayName ?? "player"}.`);
+      toast.success(t("Welcome back, {name}.", { name: data.user?.displayName ?? "player" }));
       if (data.recoveryCode) setRecoveryCode(data.recoveryCode);
       else navigate("/play");
     } catch (caught) {
@@ -49,14 +51,14 @@ export default function LoginPage() {
   return (
     <div className="mx-auto grid w-full max-w-6xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:py-20">
       <div className="hidden flex-col items-start gap-6 lg:flex">
-        <p className="eyebrow">welcome back</p>
+        <p className="eyebrow">{t("welcome back")}</p>
         <h1 className="display text-[clamp(3rem,6.4vw,5.6rem)]">
-          <span className="hero-outline block">THE TABLE</span>
-          <span className="brand-text block">KEPT YOUR</span>
-          <span className="block">SEAT.</span>
+          <span className="hero-outline block">{t("THE TABLE")}</span>
+          <span className="brand-text block">{t("KEPT YOUR")}</span>
+          <span className="block">{t("SEAT.")}</span>
         </h1>
         <p className="max-w-[42ch] text-sm leading-relaxed text-muted-foreground">
-          Coins, levels, card backs and the unlocked chaos are exactly where you left them.
+          {t("Coins, levels, card backs and the unlocked chaos are exactly where you left them.")}
         </p>
         <div className="relative mt-4 flex gap-3">
           <div className="rotate-[-8deg]">
@@ -76,14 +78,16 @@ export default function LoginPage() {
 
       <div className="panel mx-auto w-full max-w-md rounded-2xl p-6 sm:p-8">
         <div className="mb-6">
-          <p className="eyebrow mb-2">sign in</p>
-          <h2 className="text-2xl font-semibold tracking-[-0.04em]">Back to the cards.</h2>
-          <p className="mt-1.5 text-sm text-muted-foreground">Use your username, not your display name.</p>
+          <p className="eyebrow mb-2">{t("sign in")}</p>
+          <h2 className="text-2xl font-semibold tracking-[-0.04em]">{t("Back to the cards.")}</h2>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            {t("Use your username, not your display name.")}
+          </p>
         </div>
 
         <form onSubmit={submit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="username">{t("Username")}</Label>
             <Input
               id="username"
               value={username}
@@ -96,7 +100,7 @@ export default function LoginPage() {
             />
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t("Password")}</Label>
             <PasswordInput
               id="password"
               value={password}
@@ -110,28 +114,28 @@ export default function LoginPage() {
               onClick={() => setRecoverOpen(true)}
               className="self-end text-[11px] text-muted-foreground underline decoration-border underline-offset-4 transition-colors hover:text-foreground"
             >
-              Lost your password?
+              {t("Lost your password?")}
             </button>
           </div>
           {error && <p className="text-xs text-destructive">{error}</p>}
           <Button type="submit" variant="brand" size="lg" className="w-full" loading={busy}>
-            <LogIn /> Sign in
+            <LogIn /> {t("Sign in")}
           </Button>
         </form>
 
         <div className="mt-6 flex flex-col gap-3 border-t border-white/8 pt-5 text-xs text-muted-foreground">
           <p>
-            No account?{" "}
+            {t("No account?")}{" "}
             <Link href="/signup" className="text-foreground underline decoration-border underline-offset-4">
-              Create one <ArrowRight className="inline size-3" />
+              {t("Create one")} <ArrowRight className="inline size-3" />
             </Link>
           </p>
           <p>
-            Or just{" "}
+            {t("Or just")}{" "}
             <Link href="/play" className="text-foreground underline decoration-border underline-offset-4">
-              play as a guest
+              {t("play as a guest")}
             </Link>{" "}
-            first.
+            {t("first.")}
           </p>
         </div>
       </div>

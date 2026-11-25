@@ -18,6 +18,14 @@ export function requireUser(request: FastifyRequest): UserPrincipal {
   return request.principal;
 }
 
+export function requireOwner(request: FastifyRequest): UserPrincipal {
+  const principal = requireUser(request);
+  if (!principal.user.isOwner) {
+    throw new ApiError(403, "owner_only", "Owner only.");
+  }
+  return principal;
+}
+
 export function badRequest(message: string, code = "bad_request"): never {
   throw new ApiError(400, code, message);
 }

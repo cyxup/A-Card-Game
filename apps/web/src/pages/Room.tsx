@@ -7,38 +7,43 @@ import { Lobby } from "@/components/room/lobby";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { game, useGame } from "@/lib/game";
+import { useT } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 
 function LoadingTable({ code }: { code: string }) {
+  const t = useT();
   return (
     <div className="grid min-h-[60vh] place-items-center px-4">
       <div className="flex flex-col items-center gap-3 text-center">
         <Loader2 className="size-5 animate-spin text-brand" />
-        <p className="text-sm font-medium">Opening table {code}</p>
-        <p className="text-xs text-muted-foreground">Shuffling. It takes a second.</p>
+        <p className="text-sm font-medium">{t("Opening table {code}", { code })}</p>
+        <p className="text-xs text-muted-foreground">{t("Shuffling. It takes a second.")}</p>
       </div>
     </div>
   );
 }
 
 function GuestGate({ code }: { code: string }) {
+  const t = useT();
   return (
     <div className="grid min-h-[70vh] place-items-center px-4">
       <div className="panel w-full max-w-md rounded-2xl p-7 text-center">
         <div className="mx-auto mb-4 grid size-12 place-items-center rounded-2xl bg-brand/12 text-brand">
           <UserRound className="size-6" />
         </div>
-        <h1 className="text-2xl font-semibold tracking-[-0.04em]">Sit at table {code}?</h1>
+        <h1 className="text-2xl font-semibold tracking-[-0.04em]">
+          {t("Sit at table {code}?", { code })}
+        </h1>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Pick a display name to join. You can create a proper account later and keep your unlocks.
+          {t("Pick a display name to join. You can create a proper account later and keep your unlocks.")}
         </p>
         <div className="mt-5 flex flex-col gap-2">
           <Button variant="brand" size="lg" onClick={() => askForName()}>
-            Choose a name
+            {t("Choose a name")}
           </Button>
           <Link href="/login">
             <Button variant="ghost" size="lg" className="w-full gap-2">
-              <LogIn /> Sign in instead
+              <LogIn /> {t("Sign in instead")}
             </Button>
           </Link>
         </div>
@@ -49,6 +54,7 @@ function GuestGate({ code }: { code: string }) {
 
 export default function RoomPage() {
   const params = useParams<{ code: string }>();
+  const t = useT();
   const code = (params.code ?? "").toUpperCase();
   const { session, loading } = useSession();
   const { room, status } = useGame();
@@ -63,7 +69,7 @@ export default function RoomPage() {
   useEffect(() => {
     if (hadRoom.current && !room) {
       hadRoom.current = false;
-      toast.info("You left the table.");
+      toast.info(t("You left the table."));
       navigate("/play");
     }
   }, [room, navigate]);
@@ -80,7 +86,7 @@ export default function RoomPage() {
     joined.current = code;
     game.join(code).catch((error: Error) => {
       joined.current = null;
-      toast.error(error.message || "Could not open that table.");
+      toast.error(error.message || t("Could not open that table."));
       navigate("/play");
     });
   }, [code, loading, session, room?.code, navigate]);
@@ -99,21 +105,21 @@ export default function RoomPage() {
       {status === "reconnecting" && (
         <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-2 border-b border-warning/25 bg-warning/[0.08] px-4 py-1.5 text-[11px] text-warning backdrop-blur">
           <WifiOff className="size-3.5" />
-          Connection lost — reconnecting. Your seat is still warm.
+          {t("Connection lost — reconnecting. Your seat is still warm.")}
         </div>
       )}
       {status === "closed" && (
         <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-3 border-b border-destructive/25 bg-destructive/[0.08] px-4 py-2 text-[11px] text-destructive">
-          Disconnected.
+          {t("Disconnected")}.
           <Button
             variant="outline"
             size="xs"
             onClick={() => {
               joined.current = null;
-              void game.connect().catch(() => toast.error("Still offline."));
+              void game.connect().catch(() => toast.error(t("Still offline.")));
             }}
           >
-            Retry
+            {t("Retry")}
           </Button>
         </div>
       )}

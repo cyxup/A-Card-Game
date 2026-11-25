@@ -80,6 +80,11 @@ export async function resolveSession(token: string | null): Promise<Principal | 
 
   if (!row) return null;
 
+  if (row.user?.banned) {
+    void db.delete(sessions).where(eq(sessions.id, sessionId)).catch(() => undefined);
+    return null;
+  }
+
   // Keep last-seen fresh without a write on every single request.
   const stale = Date.now() - row.session.lastSeenAt.getTime() > 60 * 60 * 1000;
   if (stale) {

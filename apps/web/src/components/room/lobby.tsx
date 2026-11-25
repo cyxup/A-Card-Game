@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/toast";
 import { game as client } from "@/lib/game";
+import { useT } from "@/lib/i18n";
 
 function RuleToggle({
   label,
@@ -34,6 +35,7 @@ function RuleToggle({
 }
 
 export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }) {
+  const t = useT();
   const me = room.players.find((player) => player.id === room.you.id);
   const isHost = room.you.isHost;
   const canStart = room.players.length >= 2;
@@ -43,9 +45,9 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
   async function copyInvite() {
     try {
       await navigator.clipboard.writeText(`${window.location.origin}/room/${room.code}`);
-      toast.success("Invite link copied.");
+      toast.success(t("Invite link copied."));
     } catch {
-      toast.error("Could not copy. Share the code instead.");
+      toast.error(t("Could not copy. Share the code instead."));
     }
   }
 
@@ -58,45 +60,47 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
     <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="eyebrow mb-2">{room.visibility === "public" ? "open table" : "private table"}</p>
+          <p className="eyebrow mb-2">
+            {room.visibility === "public" ? t("open table") : t("private table")}
+          </p>
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-3xl font-semibold tracking-[-0.05em] sm:text-5xl">{room.code}</h1>
             <Button variant="outline" size="sm" onClick={copyInvite} className="gap-1.5">
-              <Copy className="size-3.5" /> Invite
+              <Copy className="size-3.5" /> {t("Invite")}
             </Button>
           </div>
           <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1">
-              <Users className="size-3.5" /> {room.players.length}/{room.rules.maxPlayers} seated
+              <Users className="size-3.5" /> {t("{n}/{max} seated", { n: room.players.length, max: room.rules.maxPlayers })}
             </span>
             <span className="inline-flex items-center gap-1">
-              <Clock className="size-3.5" /> {room.rules.turnSeconds}s turns
+              <Clock className="size-3.5" /> {t("{n}s turns", { n: room.rules.turnSeconds })}
             </span>
             <span className="inline-flex items-center gap-1">
               <Layers className="size-3.5" />
               {room.rules.stacking === "off"
-                ? "no stacking"
+                ? t("no stacking")
                 : room.rules.stacking === "mixed"
-                  ? "mixed stacking"
-                  : "same-card stacking"}
+                  ? t("mixed stacking")
+                  : t("same-card stacking")}
             </span>
             <Badge variant={room.visibility === "public" ? "brand" : "outline"} className="ml-1">
-              {room.visibility}
+              {t(room.visibility)}
             </Badge>
           </p>
         </div>
         <Button variant="ghost" size="sm" onClick={onLeave} className="gap-1.5 text-muted-foreground">
-          <DoorOpen /> Leave
+          <DoorOpen /> {t("Leave")}
         </Button>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1.25fr_0.75fr]">
         <div className="panel rounded-2xl p-4 sm:p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold">The table</h2>
+            <h2 className="text-sm font-semibold">{t("The table")}</h2>
             {isHost && emptySeats > 0 && (
               <Button variant="outline" size="xs" onClick={() => client.addBot()} className="gap-1">
-                <Bot className="size-3.5" /> Add bot
+                <Bot className="size-3.5" /> {t("Add bot")}
               </Button>
             )}
           </div>
@@ -114,24 +118,26 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
                       {player.name}
                     </NameEffect>
                     {player.host && <Crown className="size-3.5 shrink-0 text-warning" />}
-                    {player.id === room.you.id && <span className="text-[10px] uppercase tracking-wider text-brand">you</span>}
+                    {player.id === room.you.id && (
+                      <span className="text-[10px] uppercase tracking-wider text-brand">{t("you")}</span>
+                    )}
                   </div>
                   <p className="text-[11px] text-muted-foreground">
-                    level {player.level}
-                    {player.isBot ? " · bot" : ""}
-                    {!player.connected && !player.isBot ? " · reconnecting" : ""}
+                    {t("level {n}", { n: player.level })}
+                    {player.isBot ? ` · ${t("bot")}` : ""}
+                    {!player.connected && !player.isBot ? ` · ${t("reconnecting")}` : ""}
                   </p>
                 </div>
-                {player.isBot && <Badge variant="outline">bot</Badge>}
+                {player.isBot && <Badge variant="outline">{t("bot")}</Badge>}
                 {player.ready || player.isBot || player.host ? (
                   <Badge variant="success" className="gap-1">
-                    <Check className="size-3" /> ready
+                    <Check className="size-3" /> {t("ready")}
                   </Badge>
                 ) : (
-                  <Badge variant="outline">waiting</Badge>
+                  <Badge variant="outline">{t("waiting")}</Badge>
                 )}
                 {isHost && player.isBot && (
-                  <Button variant="ghost" size="icon-xs" onClick={() => client.removeBot()} title="Remove bot">
+                  <Button variant="ghost" size="icon-xs" onClick={() => client.removeBot()} title={t("Remove bot")}>
                     <Trash2 />
                   </Button>
                 )}
@@ -140,7 +146,7 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
                     variant="ghost"
                     size="icon-xs"
                     onClick={() => client.kick(player.id)}
-                    title={`Remove ${player.name}`}
+                    title={t("Remove {name}", { name: player.name })}
                   >
                     <Trash2 />
                   </Button>
@@ -156,10 +162,10 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
                 <span className="grid size-[34px] place-items-center rounded-full border border-dashed border-white/15">
                   <Plus className="size-3.5" />
                 </span>
-                <span className="flex-1 text-xs">Open seat</span>
+                <span className="flex-1 text-xs">{t("Open seat")}</span>
                 {isHost && index === 0 && (
                   <Button variant="ghost" size="xs" onClick={() => client.addBot()}>
-                    fill with bot
+                    {t("fill with bot")}
                   </Button>
                 )}
               </li>
@@ -171,12 +177,12 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
           <div className="panel rounded-2xl p-4 sm:p-5">
             <div className="mb-3 flex items-center gap-2">
               <Settings2 className="size-4 text-brand" />
-              <h2 className="text-sm font-semibold">House rules</h2>
+              <h2 className="text-sm font-semibold">{t("House rules")}</h2>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div className="flex flex-col gap-1.5">
-                <span className="eyebrow">turn timer</span>
+                <span className="eyebrow">{t("turn timer")}</span>
                 <Select
                   value={String(room.rules.turnSeconds)}
                   disabled={locked}
@@ -195,7 +201,7 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
                 </Select>
               </div>
               <div className="flex flex-col gap-1.5">
-                <span className="eyebrow">seats</span>
+                <span className="eyebrow">{t("seats")}</span>
                 <Select
                   value={String(room.rules.maxPlayers)}
                   disabled={locked}
@@ -216,7 +222,7 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
             </div>
 
             <div className="mt-2 flex flex-col gap-1.5">
-              <span className="eyebrow">stacking</span>
+              <span className="eyebrow">{t("stacking")}</span>
               <Select
                 value={room.rules.stacking}
                 disabled={locked}
@@ -226,38 +232,38 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="same">Same card only</SelectItem>
-                  <SelectItem value="mixed">+2 / +4 anywhere</SelectItem>
-                  <SelectItem value="off">No stacking</SelectItem>
+                  <SelectItem value="same">{t("Same card only")}</SelectItem>
+                  <SelectItem value="mixed">{t("+2 / +4 anywhere")}</SelectItem>
+                  <SelectItem value="off">{t("No stacking")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="mt-3 flex flex-col gap-2">
               <RuleToggle
-                label="Jump in"
-                description="Exact duplicates can be played out of turn."
+                label={t("Jump in")}
+                description={t("Exact duplicates can be played out of turn.")}
                 checked={room.rules.jumpIn}
                 disabled={locked}
                 onChange={(value) => update({ jumpIn: value })}
               />
               <RuleToggle
-                label="Swap anytime"
-                description="Oscar's Swap can be played out of turn."
+                label={t("Swap anytime")}
+                description={t("Oscar's Swap can be played out of turn.")}
                 checked={room.rules.swapAnytime}
                 disabled={locked}
                 onChange={(value) => update({ swapAnytime: value })}
               />
               <RuleToggle
-                label="Seven-zero"
-                description="7 swaps with the next player. 0 rotates all hands."
+                label={t("Seven-zero")}
+                description={t("7 swaps with the next player. 0 rotates all hands.")}
                 checked={room.rules.sevenZero}
                 disabled={locked}
                 onChange={(value) => update({ sevenZero: value })}
               />
               <RuleToggle
-                label="Draw until playable"
-                description="Keep drawing until you can play. Nasty."
+                label={t("Draw until playable")}
+                description={t("Keep drawing until you can play. Nasty.")}
                 checked={room.rules.drawUntilPlayable}
                 disabled={locked}
                 onChange={(value) => update({ drawUntilPlayable: value })}
@@ -275,12 +281,12 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
                   disabled={!canStart}
                   onClick={() => client.start()}
                 >
-                  <Play /> {canStart ? "Deal the first hand" : "Need one more player"}
+                  <Play /> {canStart ? t("Deal the first hand") : t("Need one more player")}
                 </Button>
                 <p className="mt-2 text-center text-[11px] text-muted-foreground">
                   {canStart
-                    ? "Everyone in the lobby comes with you. Rules lock when the round starts."
-                    : "Add a friend with the code, or fill the table with a bot."}
+                    ? t("Everyone in the lobby comes with you. Rules lock when the round starts.")
+                    : t("Add a friend with the code, or fill the table with a bot.")}
                 </p>
               </>
             ) : (
@@ -291,17 +297,17 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
                   className="w-full"
                   onClick={() => client.setReady(!me?.ready)}
                 >
-                  {me?.ready ? "Not ready" : "I'm ready"}
+                  {me?.ready ? t("Not ready") : t("I'm ready")}
                 </Button>
                 <p className="mt-2 text-center text-[11px] text-muted-foreground">
-                  The host starts when the table is ready.
+                  {t("The host starts when the table is ready.")}
                 </p>
               </>
             )}
           </div>
 
           <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-4">
-            <p className="eyebrow mb-1.5">invite link</p>
+            <p className="eyebrow mb-1.5">{t("invite link")}</p>
             <button
               type="button"
               onClick={copyInvite}
