@@ -234,6 +234,7 @@ export interface RoomSummary {
   phase: "lobby" | "playing" | "ended";
   turnSeconds: number;
   stacking: GameRules["stacking"];
+  wager: number;
   createdAt: number;
 }
 

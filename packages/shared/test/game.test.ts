@@ -441,11 +441,12 @@ describe("rules normalisation", () => {
         { id: "a", name: "A" },
         { id: "b", name: "B" },
       ],
-      { turnSeconds: 9999, startingHand: 400, stacking: "same" } as Partial<GameRules>,
+      { turnSeconds: 9999, startingHand: 400, stacking: "same", wager: 99999 } as Partial<GameRules>,
       mulberry32(1),
       1_000,
     );
     expect(game.rules.turnSeconds).toBe(90);
     expect(game.rules.startingHand).toBe(10);
+    expect(game.rules.wager).toBe(5000);
   });
 });

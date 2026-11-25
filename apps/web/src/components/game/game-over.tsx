@@ -113,6 +113,12 @@ export function GameOverDialog({
 
         <Separator />
 
+        {room.rules.wager > 0 ? (
+          <p className="text-[11px] text-warning">
+            {t("Wager table — winner takes the pot ({n} coins each).", { n: room.rules.wager })}
+          </p>
+        ) : null}
+
         {rewards?.unranked ? (
           <div className="flex items-start gap-3 rounded-xl border border-info/25 bg-info/[0.06] px-4 py-3">
             <Bot className="mt-0.5 size-4 shrink-0 text-info" />
@@ -128,7 +134,14 @@ export function GameOverDialog({
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/8 bg-white/[0.02] px-4 py-3">
               <div className="flex items-center gap-2">
                 <Coins className="size-4 text-brand" />
-                <span className="font-mono text-lg tabular-nums text-foreground">+{rewards.coins}</span>
+                <span
+                  className={`font-mono text-lg tabular-nums ${
+                    rewards.coins < 0 ? "text-destructive" : "text-foreground"
+                  }`}
+                >
+                  {rewards.coins >= 0 ? "+" : "−"}
+                  {Math.abs(rewards.coins)}
+                </span>
                 <span className="text-xs text-muted-foreground">{t("coins")}</span>
               </div>
               <div className="flex items-center gap-2">

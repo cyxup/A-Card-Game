@@ -25,6 +25,8 @@ export interface GameRules {
   sevenZero: boolean;
   drawUntilPlayable: boolean;
   startingHand: number;
+  /** Wager per registered player in coins. 0 is a normal table. */
+  wager: number;
 }
 
 export const DEFAULT_RULES: GameRules = {
@@ -36,12 +38,14 @@ export const DEFAULT_RULES: GameRules = {
   sevenZero: false,
   drawUntilPlayable: false,
   startingHand: 7,
+  wager: 0,
 };
 
 export const RULE_BOUNDS = {
   maxPlayers: { min: 2, max: 8 },
   turnSeconds: { min: 10, max: 90 },
   startingHand: { min: 5, max: 10 },
+  wager: { min: 0, max: 5000 },
 } as const;
 
 export const JUMP_WINDOW_MS = 5000;
@@ -63,6 +67,7 @@ export function normaliseRules(input: Partial<GameRules> | undefined): GameRules
     swapAnytime: Boolean(rules.swapAnytime),
     sevenZero: Boolean(rules.sevenZero),
     drawUntilPlayable: Boolean(rules.drawUntilPlayable),
+    wager: clampInt(rules.wager, RULE_BOUNDS.wager.min, RULE_BOUNDS.wager.max, DEFAULT_RULES.wager),
   };
 }
 

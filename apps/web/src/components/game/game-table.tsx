@@ -14,6 +14,7 @@ import {
   ArrowRightLeft,
   ArrowUpDown,
   ChevronRight,
+  Coins,
   DoorOpen,
   Eye,
   EyeOff,
@@ -266,7 +267,6 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
   const [editValue, setEditValue] = useState(1);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatPackId, setChatPackId] = useState(DEFAULT_CHAT_PACK_ID);
-  const [lastSeenChatKey, setLastSeenChatKey] = useState(0);
 
   const stageRef = useRef<HTMLDivElement>(null);
   const deckRef = useRef<HTMLButtonElement>(null);
@@ -275,7 +275,6 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
   const lastLogRef = useRef<number | null>(null);
   const gameStartRef = useRef<number | null>(null);
   const ownerRoundRef = useRef<number | null>(null);
-  const chatLogRef = useRef<HTMLDivElement>(null);
   const flyerCounter = useRef(0);
   const bannerCounter = useRef(0);
   const flashCounter = useRef(0);
@@ -283,7 +282,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
 
   const meId = room.you.id;
   const me = room.players.find((player) => player.id === meId);
-  const ownerMode = Boolean(me?.owner && prefs.ownerCheats);
+  const ownerMode = Boolean(me?.owner && prefs.ownerCheats && room.rules.wager === 0);
   const canEditHand = Boolean(
     ownerMode &&
       gameView?.phase === "playing" &&
@@ -302,12 +301,12 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
     availableChatPacks.find((entry) => entry.id === chatPackId) ??
     availableChatPacks[0] ??
     CHAT_PACKS[0]!;
-  const unreadChats = chats.filter((entry) => entry.key > lastSeenChatKey).length;
   const latestChats = useMemo(() => {
     const map = new Map<string, ChatEvent>();
     for (const entry of chats) map.set(entry.playerId, entry);
     return map;
   }, [chats]);
+  const selfChat = chatFor(meId);
   const selfEmote = emotes.findLast((event) => event.playerId === meId);
   const isMyTurn = gameView?.turnId === meId;
   const current = room.players.find((player) => player.id === gameView?.turnId);
@@ -473,9 +472,11 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
 
   function sendChat(lineId: string) {
     client.chat(lineId);
+    setChatOpen(false);
   }
 
-  function closeOwnerPanel() {    setOwnerOpen(false);
+  function closeOwnerPanel() {
+    setOwnerOpen(false);
     if (xray) {
       setXray(false);
       client.ownerAction({ type: "peek", enabled: false });
@@ -759,14 +760,6 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
     }
   }, [availableChatPacks, chatPackId]);
 
-  useEffect(() => {
-    if (!chatOpen) return;
-    const last = chats[chats.length - 1];
-    setLastSeenChatKey(last?.key ?? 0);
-    const log = chatLogRef.current;
-    if (log) log.scrollTop = log.scrollHeight;
-  }, [chatOpen, chats]);
-
   if (!gameView) {
     return (
       <div className="grid min-h-[50vh] place-items-center text-sm text-muted-foreground">
@@ -833,6 +826,11 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
               <span className="live-chip">
                 <span className="live-dot" /> {t("live")}
               </span>
+              {room.rules.wager > 0 ? (
+                <Badge variant="warning" className="hidden items-center gap-1 sm:inline-flex">
+                  <Coins className="size-3" /> {t("{n} coin wager", { n: room.rules.wager })}
+                </Badge>
+              ) : null}
             </div>
             <div className="flex items-center gap-1.5">
               <Button
@@ -1100,6 +1098,11 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                     </motion.span>
                   ) : null}
                 </AnimatePresence>
+                {selfChat ? (
+                  <span key={selfChat.key} className="self-chat">
+                    {selfChat.text}
+                  </span>
+                ) : null}
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
@@ -1118,18 +1121,49 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
             </div>
 
             <div className="flex items-center gap-1.5">
-              <Button
-                variant={chatOpen ? "brand" : "ghost"}
-                size="sm"
-                onClick={toggleChat}
-                title={t("Quick chat")}
-                className="relative gap-1.5"
-              >
-                <MessageCircle /> <span className="hidden sm:inline">{t("Chat")}</span>
-                {unreadChats > 0 && !chatOpen ? (
-                  <span className="chat-unread">{unreadChats > 9 ? "9+" : unreadChats}</span>
+              <div className="relative">
+                <Button
+                  variant={chatOpen ? "brand" : "ghost"}
+                  size="sm"
+                  onClick={toggleChat}
+                  title={t("Quick chat")}
+                  className="gap-1.5"
+                >
+                  <MessageCircle /> <span className="hidden sm:inline">{t("Chat")}</span>
+                </Button>
+                {chatOpen ? (
+                  <div className="chat-popover" role="dialog" aria-label={t("Quick chat")}>
+                    <div className="chat-popover-head">
+                      <p className="eyebrow">{t("Quick chat")}</p>
+                      <Button size="icon-sm" variant="ghost" onClick={() => setChatOpen(false)} aria-label={t("Close")}>
+                        <X />
+                      </Button>
+                    </div>
+                    <label className="chat-pack-field">
+                      <span className="eyebrow">{t("Pack")}</span>
+                      <select value={activeChatPack.id} onChange={(event) => setChatPackId(event.target.value)}>
+                        {availableChatPacks.map((entry) => (
+                          <option key={entry.id} value={entry.id}>
+                            {t(entry.name)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <div className="chat-lines">
+                      {activeChatPack.lines.map((line) => (
+                        <button
+                          key={line.id}
+                          type="button"
+                          className="chat-line-button"
+                          onClick={() => sendChat(line.id)}
+                        >
+                          {t(line.text)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 ) : null}
-              </Button>
+              </div>
               {ownerMode ? (
                 <Button
                   variant={ownerOpen ? "brand" : "ghost"}
@@ -1245,63 +1279,6 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
             </div>
           </div>
         </div>
-
-        {chatOpen ? (
-          <div className="chat-panel" role="dialog" aria-label={t("Quick chat")}>
-            <div className="chat-head">
-              <div>
-                <p className="eyebrow">{t("Quick chat")}</p>
-                <p className="chat-sub">{t("Only preset lines. No free text.")}</p>
-              </div>
-              <Button size="icon-sm" variant="ghost" onClick={() => setChatOpen(false)} aria-label={t("Close")}>
-                <X />
-              </Button>
-            </div>
-
-            <div className="chat-log" ref={chatLogRef}>
-              {chats.length === 0 ? (
-                <p className="chat-empty">{t("No messages yet.")}</p>
-              ) : (
-                chats.slice(-30).map((event) => {
-                  const line = CHAT_LINES_BY_ID.get(event.lineId);
-                  if (!line) return null;
-                  const player = room.players.find((candidate) => candidate.id === event.playerId);
-                  return (
-                    <div key={event.key} className="chat-message">
-                      <span className="chat-author">{player?.name ?? "?"}</span>
-                      <span>{t(line.text)}</span>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-
-            <div className="chat-compose">
-              <label className="chat-pack-field">
-                <span className="eyebrow">{t("Pack")}</span>
-                <select value={activeChatPack.id} onChange={(event) => setChatPackId(event.target.value)}>
-                  {availableChatPacks.map((entry) => (
-                    <option key={entry.id} value={entry.id}>
-                      {t(entry.name)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="chat-lines">
-                {activeChatPack.lines.map((line) => (
-                  <button
-                    key={line.id}
-                    type="button"
-                    className="chat-line-button"
-                    onClick={() => sendChat(line.id)}
-                  >
-                    {t(line.text)}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        ) : null}
 
         {ownerMode && ownerOpen ? (
           <div className="owner-panel" role="dialog" aria-label={t("Owner tools")}>

@@ -1134,6 +1134,21 @@ const MESSAGE_FR: Record<string, string> = {
   "Guests can use the free pack. Create an account to buy more.":
     "Les invités ont le pack gratuit. Créez un compte pour en acheter d'autres.",
   "Easy on the quick chat.": "Doucement sur le chat rapide.",
+
+  // ── wager tables ────────────────────────────────────────────────────────
+  Wager: "Mise",
+  "No wager": "Sans mise",
+  "{n} coins each": "{n} pièces chacun",
+  "{n} coin wager": "Mise de {n} pièces",
+  "Registered players only. No bots or guests. Winner takes the pot.":
+    "Joueurs inscrits uniquement. Pas de bots ni d'invités. Le gagnant rafle la mise.",
+  "Wager tables need registered players only — no bots or guests. The winner takes the pot.":
+    "Les tables avec mise nécessitent des joueurs inscrits — pas de bots ni d'invités. Le gagnant rafle la mise.",
+  "Wager table — winner takes the pot ({n} coins each).":
+    "Table avec mise — le gagnant rafle la mise ({n} pièces chacun).",
+  "Remove bots to start": "Retirez les bots pour commencer",
+  "Wager tables need at least two registered players and no bots.":
+    "Les tables avec mise nécessitent au moins deux joueurs inscrits et aucun bot.",
 };
 
 export function translateMessage(message: string): string {

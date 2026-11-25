@@ -221,9 +221,12 @@ export class RoomManager {
 
   private createRoom(conn: ClientConn, input: Partial<GameRules> | undefined, visibility: "public" | "private" | undefined): void {
     if (this.rooms.size >= MAX_ROOMS) throw new RoomError("busy", "The server is full. Try again soon.");
+    const rules = normaliseRules(input);
+    if (rules.wager > 0 && conn.principal.kind !== "user") {
+      throw new RoomError("wager_account", "Wager tables need a signed-in account.");
+    }
     this.leaveRoom(conn, false);
 
-    const rules = normaliseRules(input);
     const room = new Room(this.generateCode(), visibility === "public" ? "public" : "private", rules);
     const seat = this.seatFor(conn, room);
     room.addSeat(seat);
@@ -242,6 +245,9 @@ export class RoomManager {
     if (!code) throw new RoomError("bad_code", "Enter a room code.");
     const room = this.rooms.get(code);
     if (!room) throw new RoomError("room_not_found", "No room with that code.");
+    if (room.rules.wager > 0 && conn.principal.kind !== "user") {
+      throw new RoomError("wager_account", "Wager tables need a signed-in account.");
+    }
 
     let seat = room.seat(conn.playerId);
     if (!seat) {
@@ -268,6 +274,7 @@ export class RoomManager {
           room.visibility === "public" &&
           room.phase === "lobby" &&
           !room.isFull() &&
+          room.rules.wager === 0 &&
           room.seats.some((seat) => !seat.isBot),
       )
       .sort((a, b) => b.humanSeats().length - a.humanSeats().length || a.createdAt - b.createdAt)[0];
@@ -392,22 +399,68 @@ export class RoomManager {
     if (merged.maxPlayers < room.seats.length) {
       throw new RoomError("too_many_seats", "Remove players before lowering the seat count.");
     }
+    if (merged.wager > 0 && room.seats.some((seat) => seat.isBot || !seat.userId)) {
+      throw new RoomError("wager_players", "Wager tables need registered players only.");
+    }
+    if (merged.wager > 0 && conn.principal.kind !== "user") {
+      throw new RoomError("wager_account", "Wager tables need a signed-in account.");
+    }
     room.rules = merged;
     room.touch();
     this.broadcast(room);
   }
 
   private startGame(conn: ClientConn): void {
+    void this.startGameAsync(conn).catch((error) => this.lobbyError(conn, error));
+  }
+
+  private async startGameAsync(conn: ClientConn): Promise<void> {
     const { room, seat } = this.mustSeat(conn);
     if (room.hostId !== seat.id) throw new RoomError("not_host", "Only the host can start.");
+    await this.validateWager(room);
+    if (!this.rooms.has(room.code) || room.phase !== "lobby") return;
     this.beginRound(room);
   }
 
   private rematch(conn: ClientConn): void {
+    void this.rematchAsync(conn).catch((error) => this.lobbyError(conn, error));
+  }
+
+  private async rematchAsync(conn: ClientConn): Promise<void> {
     const { room, seat } = this.mustSeat(conn);
     if (room.hostId !== seat.id) throw new RoomError("not_host", "Only the host can deal again.");
     if (room.phase !== "ended") throw new RoomError("not_ended", "The round is still going.");
+    await this.validateWager(room);
+    if (!this.rooms.has(room.code) || room.phase !== "ended") return;
     this.beginRound(room);
+  }
+
+  private lobbyError(conn: ClientConn, error: unknown): void {
+    if (error instanceof RoomError) {
+      this.error(conn, error.code, error.message);
+      return;
+    }
+    this.log.error({ err: error, playerId: conn.playerId }, "lobby action failed");
+    this.error(conn, "server_error", "Something went wrong. Try again.");
+  }
+
+  private async validateWager(room: Room): Promise<void> {
+    const wager = room.rules.wager;
+    if (wager <= 0) return;
+    if (room.seats.length < 2) {
+      throw new RoomError("not_enough_players", "A wager table needs at least two players.");
+    }
+    if (room.seats.some((seat) => seat.isBot || !seat.userId)) {
+      throw new RoomError("wager_players", "Wager tables need registered players only.");
+    }
+    const ids = room.seats.map((seat) => seat.userId as string);
+    const rows = await db
+      .select({ id: users.id, coins: users.coins })
+      .from(users)
+      .where(inArray(users.id, ids));
+    if (rows.length !== ids.length || rows.some((row) => row.coins < wager)) {
+      throw new RoomError("wager_funds", `Everyone needs ${wager} coins to start.`);
+    }
   }
 
   private beginRound(room: Room): void {
@@ -454,6 +507,7 @@ export class RoomManager {
     const { room, seat } = this.mustSeat(conn);
     if (room.hostId !== seat.id) throw new RoomError("not_host", "Only the host can manage bots.");
     if (room.phase !== "lobby") throw new RoomError("locked", "Bots join in the lobby.");
+    if (add && room.rules.wager > 0) throw new RoomError("wager_no_bots", "No bots at a wager table.");
 
     if (add) {
       if (room.isFull()) throw new RoomError("room_full", "No free seats.");
@@ -555,6 +609,9 @@ export class RoomManager {
     }
 
     const { room, seat } = this.mustSeat(conn);
+    if (room.rules.wager > 0) {
+      throw new OwnerToolError("wager_no_cheats", "Cheats are disabled at wager tables.", 403);
+    }
     const game = room.game;
     if (!game || room.phase !== "playing") {
       throw new OwnerToolError("not_playing", "Start a round first.", 400);
@@ -829,6 +886,9 @@ export class RoomManager {
     const humanCount = humanPlayers.length;
     const ranked = roundIsRanked(humanCount);
     const humanSeatIds = new Set(humanPlayers.map((seat) => seat.id));
+    const wager = room.rules.wager;
+    const wagerWinnerId = wager > 0 ? (winnerSeat?.userId ?? null) : null;
+    const wagerPot = wager > 0 && wagerWinnerId ? wager * Math.max(0, humanCount - 1) : 0;
 
     let oldUsers = new Map<string, (typeof users.$inferSelect)>();
     const beforeAchievements = new Map<string, string[]>();
@@ -865,8 +925,18 @@ export class RoomManager {
               cardsPlayed: seat.stats.cardsPlayed,
               jumps: seat.stats.jumps,
             });
+        // Wager tables pay the pot instead of the normal coin reward.
+        const coinDelta =
+          wager > 0
+            ? seat.userId && wagerWinnerId
+              ? seat.userId === wagerWinnerId
+                ? wagerPot
+                : -wager
+              : 0
+            : rewards.coins;
+        if (wager > 0) rewards.coins = 0;
         // A cheat-tainted seat is silently unranked, even in a ranked room.
-        return { seat, placement, rewards, ranked: ranked && !seat.cheated };
+        return { seat, placement, rewards, coinDelta, ranked: ranked && !seat.cheated };
       });
 
       const matchId = await db.transaction(async (tx) => {
@@ -909,7 +979,7 @@ export class RoomManager {
                 .update(users)
                 .set({
                   xp: sql`${users.xp} + ${entry.rewards.xp}`,
-                  coins: sql`${users.coins} + ${entry.rewards.coins}`,
+                  coins: sql`greatest(0, ${users.coins} + ${entry.ranked ? entry.coinDelta : 0})`,
                   games: sql`${users.games} + 1`,
                   wins: sql`${users.wins} + ${entry.placement === 1 ? 1 : 0}`,
                   jumps: sql`${users.jumps} + ${seat.stats.jumps}`,
@@ -921,7 +991,7 @@ export class RoomManager {
                 .returning();
               if (fresh) {
                 const grant: RewardGrant = {
-                  coins: entry.rewards.coins,
+                  coins: entry.ranked ? entry.coinDelta : 0,
                   xp: entry.rewards.xp,
                   level: levelForXp(fresh.xp),
                   levelUp: levelForXp(fresh.xp) > levelForXp(old?.xp ?? 0),
@@ -956,7 +1026,7 @@ export class RoomManager {
             isBot: seat.isBot,
             placement: entry.placement,
             cardsLeft: results.find((result) => result.id === seat.id)?.cardsLeft ?? 0,
-            coins: entry.rewards.coins,
+            coins: entry.ranked ? entry.coinDelta : 0,
             xp: entry.rewards.xp,
           });
         }
@@ -1066,6 +1136,7 @@ export class RoomManager {
         phase: room.phase,
         turnSeconds: room.rules.turnSeconds,
         stacking: room.rules.stacking,
+        wager: room.rules.wager,
         createdAt: room.createdAt,
       }));
   }

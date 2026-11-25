@@ -1,5 +1,5 @@
 import type { GameRules, RoomSummary } from "@stacked/shared";
-import { ArrowRight, DoorOpen, Hash, ListFilter, Loader2, Plus, RefreshCw, Settings2, Users, Zap } from "lucide-react";
+import { ArrowRight, Coins, DoorOpen, Hash, ListFilter, Loader2, Plus, RefreshCw, Settings2, Users, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useSearch } from "wouter";
 import { askForName } from "@/components/auth/guest-prompt";
@@ -26,6 +26,7 @@ const DEFAULT_RULES: Partial<GameRules> = {
   swapAnytime: true,
   sevenZero: false,
   drawUntilPlayable: false,
+  wager: 0,
 };
 
 function RuleRow({
@@ -336,7 +337,31 @@ export default function PlayPage() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="flex flex-col gap-2">
+                  <Label className="eyebrow">{t("Wager")}</Label>
+                  <Select
+                    value={String(rules.wager ?? 0)}
+                    onValueChange={(value) => setRules((prev) => ({ ...prev, wager: Number(value) }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[0, 25, 50, 100, 250, 500, 1000].map((amount) => (
+                        <SelectItem key={amount} value={String(amount)}>
+                          {amount === 0 ? t("No wager") : t("{n} coins each", { n: amount })}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
+
+              {(rules.wager ?? 0) > 0 ? (
+                <p className="mt-3 rounded-lg border border-warning/25 bg-warning/[0.06] px-3 py-2 text-[11px] leading-relaxed text-warning">
+                  {t("Wager tables need registered players only — no bots or guests. The winner takes the pot.")}
+                </p>
+              ) : null}
 
               <div className="mt-5 grid gap-2">
                 <RuleRow
@@ -489,6 +514,11 @@ export default function PlayPage() {
                         { n: item.maxPlayers - item.players },
                       )}
                     </Badge>
+                    {item.wager > 0 ? (
+                      <Badge variant="outline" className="gap-1 text-warning">
+                        <Coins className="size-3" /> {t("{n} coin wager", { n: item.wager })}
+                      </Badge>
+                    ) : null}
                     <Button
                       size="sm"
                       variant="outline"

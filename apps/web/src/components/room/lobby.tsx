@@ -1,5 +1,5 @@
 import type { GameRules, RoomView } from "@stacked/shared";
-import { Bot, Check, Clock, Copy, Crown, DoorOpen, Layers, Play, Plus, Settings2, Trash2, Users } from "lucide-react";
+import { Bot, Check, Clock, Coins, Copy, Crown, DoorOpen, Layers, Play, Plus, Settings2, Trash2, Users } from "lucide-react";
 import { Avatar } from "@/components/brand/avatar";
 import { NameEffect } from "@/components/brand/name-effect";
 import { Badge } from "@/components/ui/badge";
@@ -38,7 +38,9 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
   const t = useT();
   const me = room.players.find((player) => player.id === room.you.id);
   const isHost = room.you.isHost;
-  const canStart = room.players.length >= 2;
+  const wager = room.rules.wager;
+  const hasBot = room.players.some((player) => player.isBot);
+  const canStart = room.players.length >= 2 && (wager === 0 || !hasBot);
   const emptySeats = Math.max(0, room.rules.maxPlayers - room.players.length);
   const locked = !isHost;
 
@@ -84,6 +86,11 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
                   ? t("mixed stacking")
                   : t("same-card stacking")}
             </span>
+            {wager > 0 && (
+              <span className="inline-flex items-center gap-1 text-warning">
+                <Coins className="size-3.5" /> {t("{n} coin wager", { n: wager })}
+              </span>
+            )}
             <Badge variant={room.visibility === "public" ? "brand" : "outline"} className="ml-1">
               {t(room.visibility)}
             </Badge>
@@ -98,7 +105,7 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
         <div className="panel rounded-2xl p-4 sm:p-6">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-sm font-semibold">{t("The table")}</h2>
-            {isHost && emptySeats > 0 && (
+            {isHost && emptySeats > 0 && wager === 0 && (
               <Button variant="outline" size="xs" onClick={() => client.addBot()} className="gap-1">
                 <Bot className="size-3.5" /> {t("Add bot")}
               </Button>
@@ -163,7 +170,7 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
                   <Plus className="size-3.5" />
                 </span>
                 <span className="flex-1 text-xs">{t("Open seat")}</span>
-                {isHost && index === 0 && (
+                {isHost && index === 0 && wager === 0 && (
                   <Button variant="ghost" size="xs" onClick={() => client.addBot()}>
                     {t("fill with bot")}
                   </Button>
@@ -239,6 +246,31 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
               </Select>
             </div>
 
+            <div className="mt-2 flex flex-col gap-1.5">
+              <span className="eyebrow">{t("Wager")}</span>
+              <Select
+                value={String(wager)}
+                disabled={locked}
+                onValueChange={(value) => update({ wager: Number(value) })}
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[0, 25, 50, 100, 250, 500, 1000].map((amount) => (
+                    <SelectItem key={amount} value={String(amount)}>
+                      {amount === 0 ? t("No wager") : t("{n} coins each", { n: amount })}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {wager > 0 ? (
+                <p className="text-[10px] leading-snug text-warning">
+                  {t("Registered players only. No bots or guests. Winner takes the pot.")}
+                </p>
+              ) : null}
+            </div>
+
             <div className="mt-3 flex flex-col gap-2">
               <RuleToggle
                 label={t("Jump in")}
@@ -281,12 +313,14 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
                   disabled={!canStart}
                   onClick={() => client.start()}
                 >
-                  <Play /> {canStart ? t("Deal the first hand") : t("Need one more player")}
+                  <Play /> {canStart ? t("Deal the first hand") : wager > 0 && hasBot ? t("Remove bots to start") : t("Need one more player")}
                 </Button>
                 <p className="mt-2 text-center text-[11px] text-muted-foreground">
                   {canStart
                     ? t("Everyone in the lobby comes with you. Rules lock when the round starts.")
-                    : t("Add a friend with the code, or fill the table with a bot.")}
+                    : wager > 0
+                      ? t("Wager tables need at least two registered players and no bots.")
+                      : t("Add a friend with the code, or fill the table with a bot.")}
                 </p>
               </>
             ) : (
