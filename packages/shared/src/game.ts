@@ -46,6 +46,12 @@ export const RULE_BOUNDS = {
 
 export const JUMP_WINDOW_MS = 5000;
 
+/**
+ * Bump when the authoritative engine changes in a way the client can observe.
+ * `/api/health` exposes it so a stale server build is obvious.
+ */
+export const ENGINE_VERSION = 2;
+
 export function normaliseRules(input: Partial<GameRules> | undefined): GameRules {
   const rules = { ...DEFAULT_RULES, ...input };
   return {

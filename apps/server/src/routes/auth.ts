@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+import { ENGINE_VERSION } from "@stacked/shared";
 import { hashPassword, verifyPassword } from "../auth/password.js";
 import {
   generateRecoveryCode,
@@ -220,9 +221,9 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
   app.get("/api/health", async (_request, reply) => {
     try {
       await db.select({ id: sessions.id }).from(sessions).limit(1);
-      return { ok: true, db: "up", ts: Date.now() };
+      return { ok: true, db: "up", engine: ENGINE_VERSION, ts: Date.now() };
     } catch {
-      reply.code(503).send({ ok: false, db: "down" });
+      reply.code(503).send({ ok: false, db: "down", engine: ENGINE_VERSION });
       return;
     }
   });
