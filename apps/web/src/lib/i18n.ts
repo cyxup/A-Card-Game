@@ -77,7 +77,7 @@ const FR: Record<string, string> = {
   "A hybrid card game for people who talk trash.":
     "Un jeu de cartes hybride pour ceux qui chambrent.",
   // card chips / hero
-  "Wild Eight": "Joker +8",
+  "Colour Wild": "Joker de couleur",
   "Giddy Up": "Au galop",
   "Wrong Way": "Mauvais sens",
   "Quick Draw": "Dégainage",
@@ -648,7 +648,7 @@ const FR: Record<string, string> = {
   "You": "Vous",
   "Your new recovery code.": "Votre nouveau code de récupération.",
   "a Wild Draw Four": "un Joker +4",
-  "a Wild Eight": "un Joker +8",
+  "a colour wild": "un joker de couleur",
   "a card": "une carte",
   "a turn": "un tour",
   "coins": "pièces",

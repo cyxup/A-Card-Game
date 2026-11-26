@@ -32,7 +32,7 @@ function glyph(card: Card) {
     case "draw2":
       return "+2";
     case "wild":
-      return "8";
+      return "";
     case "wild4":
       return "+4";
     case "swap":
@@ -60,7 +60,7 @@ function corner(card: Card): ReactNode {
     case "draw2":
       return "+2";
     case "wild":
-      return "8";
+      return "";
     case "wild4":
       return "+4";
     case "swap":
@@ -85,13 +85,14 @@ export interface CardFaceProps {
 
 export function CardFace({ card, className, style, muted, playable, drawn, onClick, label }: CardFaceProps) {
   const wild = card.color === null;
+  const center = glyph(card);
   const content = (
     <>
       <div className="pcard-inner">
         <span className="pcard-corner tl">{corner(card)}</span>
         <span className="pcard-corner br">{corner(card)}</span>
         <div className="pcard-oval">
-          <span className="pcard-glyph">{glyph(card)}</span>
+          {center ? <span className="pcard-glyph">{center}</span> : null}
         </div>
       </div>
     </>

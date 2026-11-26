@@ -67,7 +67,7 @@ export const KIND_LABEL: Record<CardKind, string> = {
   skip: "Giddy Up",
   reverse: "Wrong Way",
   draw2: "Quick Draw",
-  wild: "Wild Eight",
+  wild: "Colour Wild",
   wild4: "Wild Draw Four",
   swap: "Oscar's Swap",
 };

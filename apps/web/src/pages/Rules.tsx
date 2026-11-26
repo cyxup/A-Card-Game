@@ -28,7 +28,7 @@ const CARDS: { card: Card; name: string; body: string }[] = [
   },
   {
     card: { id: "r5", color: null, kind: "wild", value: null },
-    name: "Wild Eight",
+    name: "Colour Wild",
     body: "Play it on anything and call the next colour. The wild card that started all of this.",
   },
   {
