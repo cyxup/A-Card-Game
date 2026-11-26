@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/toast";
 import { game as client } from "@/lib/game";
 import { useT } from "@/lib/i18n";
+import { useSession } from "@/lib/session";
 
 function RuleToggle({
   label,
@@ -36,9 +37,12 @@ function RuleToggle({
 
 export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }) {
   const t = useT();
+  const { session } = useSession();
   const me = room.players.find((player) => player.id === room.you.id);
   const isHost = room.you.isHost;
   const wager = room.rules.wager;
+  const coins = session?.kind === "user" ? (session.user?.coins ?? null) : null;
+  const shortOnCoins = coins !== null && wager > coins;
   const hasBot = room.players.some((player) => player.isBot);
   const canStart = room.players.length >= 2 && (wager === 0 || !hasBot);
   const emptySeats = Math.max(0, room.rules.maxPlayers - room.players.length);
@@ -86,6 +90,11 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
                   ? t("mixed stacking")
                   : t("same-card stacking")}
             </span>
+            {coins !== null && (
+              <span className={`inline-flex items-center gap-1 ${shortOnCoins ? "text-destructive" : "text-brand"}`}>
+                <Coins className="size-3.5" /> {t("{n} coins", { n: coins })}
+              </span>
+            )}
             {wager > 0 && (
               <span className="inline-flex items-center gap-1 text-warning">
                 <Coins className="size-3.5" /> {t("{n} coin wager", { n: wager })}
@@ -267,6 +276,12 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
               {wager > 0 ? (
                 <p className="text-[10px] leading-snug text-warning">
                   {t("Registered players only. No bots or guests. Winner takes the pot.")}
+                </p>
+              ) : null}
+              {coins !== null ? (
+                <p className={`text-[10px] leading-snug ${shortOnCoins ? "text-destructive" : "text-muted-foreground"}`}>
+                  {t("Your balance: {n} coins.", { n: coins })}
+                  {shortOnCoins ? ` ${t("Not enough coins for this wager.")}` : ""}
                 </p>
               ) : null}
             </div>

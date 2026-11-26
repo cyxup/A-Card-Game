@@ -1019,6 +1019,8 @@ const FR: Record<string, string> = {
   "Remove bots to start": "Retirez les bots pour commencer",
   "Wager tables need at least two registered players and no bots.":
     "Les tables avec mise nécessitent au moins deux joueurs inscrits et aucun bot.",
+  "Your balance: {n} coins.": "Votre solde : {n} pièces.",
+  "Not enough coins for this wager.": "Pas assez de pièces pour cette mise.",
 
   // ── match history ───────────────────────────────────────────────────────
   History: "Historique",
