@@ -356,7 +356,7 @@ export type ClientMessage =
   | { t: "create"; rules?: Partial<GameRules>; visibility?: "public" | "private" }
   | { t: "join"; code: string }
   | { t: "spectate"; userId: string }
-  | { t: "quick" }
+  | { t: "quick"; rules?: Partial<GameRules> }
   | { t: "leave" }
   | { t: "ready"; ready: boolean }
   | { t: "rules"; rules: Partial<GameRules> }

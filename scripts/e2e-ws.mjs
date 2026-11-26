@@ -63,6 +63,9 @@ assert.equal(joined.room.players.length, 2);
 a.socket.send(JSON.stringify({ t: "chat", lineId: "essentials-nice-one" }));
 await waitFor(b.messages, (message) => message.t === "chat" && message.lineId === "essentials-nice-one");
 
+b.socket.send(JSON.stringify({ t: "ready", ready: true }));
+await waitFor(a.messages, (message) => message.t === "room" && message.room.players.some((player) => player.id !== created.room.you.id && player.ready));
+
 a.socket.send(JSON.stringify({ t: "start" }));
 const playing = await waitFor(a.messages, (message) => message.t === "room" && message.room.phase === "playing");
 assert.equal(playing.room.game?.phase, "playing");

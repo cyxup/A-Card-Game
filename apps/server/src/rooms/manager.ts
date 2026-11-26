@@ -176,7 +176,7 @@ export class RoomManager {
         void this.spectateUser(conn, String(msg.userId ?? "")).catch((error) => this.lobbyError(conn, error));
         break;
       case "quick":
-        this.quickPlay(conn);
+        this.quickPlay(conn, msg.rules);
         break;
       case "leave":
         this.leaveRoom(conn, true);
@@ -295,15 +295,27 @@ export class RoomManager {
     this.broadcast(room);
   }
 
-  private quickPlay(conn: ClientConn): void {
+  private quickPlay(conn: ClientConn, input?: Partial<GameRules>): void {
     this.leaveRoom(conn, false);
+    const wanted = normaliseRules(input);
+    if (wanted.wager > 0 && conn.principal.kind !== "user") wanted.wager = 0;
+    const matches = (rules: GameRules): boolean =>
+      rules.maxPlayers === wanted.maxPlayers &&
+      rules.turnSeconds === wanted.turnSeconds &&
+      rules.stacking === wanted.stacking &&
+      rules.jumpIn === wanted.jumpIn &&
+      rules.swapAnytime === wanted.swapAnytime &&
+      rules.sevenZero === wanted.sevenZero &&
+      rules.drawUntilPlayable === wanted.drawUntilPlayable &&
+      rules.startingHand === wanted.startingHand &&
+      rules.wager === wanted.wager;
     const candidate = [...this.rooms.values()]
       .filter(
         (room) =>
           room.visibility === "public" &&
           room.phase === "lobby" &&
           !room.isFull() &&
-          room.rules.wager === 0 &&
+          matches(room.rules) &&
           room.seats.some((seat) => !seat.isBot),
       )
       .sort((a, b) => b.humanSeats().length - a.humanSeats().length || a.createdAt - b.createdAt)[0];
@@ -316,10 +328,9 @@ export class RoomManager {
     this.send(conn, {
       t: "toast",
       tone: "info",
-      message: "No open tables right now — we opened a fresh one for you.",
+      message: "No table matched those rules — we opened one for you.",
     });
-    const rules = normaliseRules(undefined);
-    const room = new Room(this.generateCode(), "public", rules);
+    const room = new Room(this.generateCode(), "public", wanted);
     const seat = this.seatFor(conn, room);
     room.addSeat(seat);
     room.hostId = seat.id;
@@ -449,6 +460,10 @@ export class RoomManager {
     const { room, seat } = this.mustSeat(conn);
     if (room.hostId !== seat.id) throw new RoomError("not_host", "Only the host can start.");
     if (room.starting || room.phase === "playing") throw new RoomError("already_playing", "A round is already in progress.");
+    const waiting = room.seats.filter((entry) => !entry.isBot && entry.id !== seat.id && !entry.ready);
+    if (waiting.length > 0) {
+      throw new RoomError("players_not_ready", "Everyone needs to be ready before the host can deal.");
+    }
     room.starting = true;
     const wagerSeatIds = room.seats.map((entry) => entry.id).join("|");
     try {

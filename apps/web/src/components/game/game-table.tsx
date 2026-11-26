@@ -5,6 +5,7 @@ import {
   COLORS,
   DEFAULT_CHAT_PACK_ID,
   EMOTES,
+  JUMP_WINDOW_MS,
   KIND_LABEL,
   canJumpInView,
   canPlayCard,
@@ -235,7 +236,7 @@ function JumpPrompt({ room, hand, offset }: { room: RoomView; hand: Card[]; offs
 
   useEffect(() => {
     if (!game?.lastCard) return;
-    const timer = window.setInterval(() => setNow(Date.now() + offset), 500);
+    const timer = window.setInterval(() => setNow(Date.now() + offset), 250);
     return () => window.clearInterval(timer);
   }, [game?.lastCard, game?.lastPlayAt, offset]);
 
@@ -249,26 +250,43 @@ function JumpPrompt({ room, hand, offset }: { room: RoomView; hand: Card[]; offs
   );
   const card = matches[0];
   if (!card) return null;
+  const remaining = Math.max(0, JUMP_WINDOW_MS - (now - game.lastPlayAt));
+  if (remaining <= 0) return null;
+  const seconds = Math.max(1, Math.ceil(remaining / 1000));
+  const percent = Math.max(0, Math.min(100, (remaining / JUMP_WINDOW_MS) * 100));
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10, scale: 0.94 }}
+      className="jump-banner"
+      initial={{ opacity: 0, y: 12, scale: 0.96 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 6, scale: 0.96 }}
+      exit={{ opacity: 0, y: 8, scale: 0.97 }}
       transition={spring.snappy}
     >
+      <span className="jump-banner-icon">
+        <Zap className="size-4" />
+      </span>
+      <div className="jump-banner-copy">
+        <p className="jump-banner-title">{t("Intervention available!")}</p>
+        <p className="jump-banner-text">
+          {t("Play your matching card now — the window closes in {n}s.", { n: seconds })}
+        </p>
+      </div>
+      <span className="jump-banner-card">
+        <CardFace card={card} style={{ "--cw": "32px" } as CSSProperties} />
+      </span>
       <Button
         variant="brand"
         size="sm"
-        className="jump-prompt gap-2"
+        className="jump-banner-button gap-1.5"
         onClick={() => client.action({ type: "jump", cardId: card.id })}
       >
         <Zap className="size-3.5" />
-        {t("Jump in with")}
-        <span className="jump-prompt-card">
-          <CardFace card={card} style={{ "--cw": "18px" } as CSSProperties} />
-        </span>
+        {t("Jump in now")}
       </Button>
+      <span className="jump-banner-progress" aria-hidden>
+        <span style={{ width: `${percent}%` }} />
+      </span>
     </motion.div>
   );
 }
@@ -1235,6 +1253,12 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
             </div>
           </div>
 
+          <AnimatePresence initial={false}>
+            {!isMyTurn && gameView.lastCard && jumpWindow > 0 ? (
+              <JumpPrompt key="jump" room={room} hand={hand} offset={offset} />
+            ) : null}
+          </AnimatePresence>
+
           <div className="my-hand-scroll">
             <div className="my-hand-row">
               {hand.map((card, index) => {
@@ -1249,6 +1273,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                     layoutId={`${layerId}-card-${card.id}`}
                     className="my-hand-slot"
                     data-playable={playable || jumpable}
+                    data-jumpable={jumpable}
                     style={{
                       marginLeft: index === 0 ? 0 : -overlap,
                       zIndex: index + 1,
@@ -1290,13 +1315,12 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                   : mustDraw
                     ? t("Nothing matches — the deck is waiting.")
                     : t("Pick a highlighted card.")
-                : t("{name} is choosing…", { name: current?.name ?? t("Someone") })}
+                : jumpableIds.size > 0 && jumpWindow > 0
+                  ? t("Intervention! Play your matching card now.")
+                  : t("{name} is choosing…", { name: current?.name ?? t("Someone") })}
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2">
               <AnimatePresence initial={false}>
-                {!isMyTurn && gameView.lastCard && jumpWindow > 0 ? (
-                  <JumpPrompt key="jump" room={room} hand={hand} offset={offset} />
-                ) : null}
                 {canSwapIn && swapInCard ? (
                   <motion.div
                     key="swap-in"

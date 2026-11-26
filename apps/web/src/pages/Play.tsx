@@ -51,6 +51,23 @@ function RuleRow({
   );
 }
 
+function QuickToggle({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (value: boolean) => void;
+}) {
+  return (
+    <label className="flex items-center justify-between gap-2 rounded-lg border border-white/7 bg-white/[0.015] px-2.5 py-2 text-[11px]">
+      <span>{label}</span>
+      <Switch checked={checked} onCheckedChange={onChange} size="sm" />
+    </label>
+  );
+}
+
 export default function PlayPage() {
   const { session } = useSession();
   const t = useT();
@@ -63,6 +80,7 @@ export default function PlayPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [rules, setRules] = useState<Partial<GameRules>>(DEFAULT_RULES);
+  const [quickRules, setQuickRules] = useState<Partial<GameRules>>({ ...DEFAULT_RULES });
   const [visibility, setVisibility] = useState<"public" | "private">("private");
   const [rooms, setRooms] = useState<RoomSummary[] | null>(null);
   const [roomsError, setRoomsError] = useState(false);
@@ -98,7 +116,7 @@ export default function PlayPage() {
     if (busy) return;
     setBusy("quick");
     try {
-      const joined = await game.quickPlay();
+      const joined = await game.quickPlay(quickRules);
       navigate(`/room/${joined.code}`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t("Could not find a table."));
@@ -207,6 +225,95 @@ export default function PlayPage() {
                   {t("We put you at the fullest public table that still has room. If the floor is empty, you get a fresh table and can invite people or add bots.")}
                 </p>
               </div>
+
+              <div className="w-full rounded-2xl border border-white/8 bg-white/[0.02] p-4">
+                <div className="flex items-center gap-2">
+                  <ListFilter className="size-4 text-brand" />
+                  <h3 className="text-sm font-semibold">{t("Quick play rules")}</h3>
+                </div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                  <label className="flex flex-col gap-1.5">
+                    <span className="eyebrow">{t("Players")}</span>
+                    <Select
+                      value={String(quickRules.maxPlayers ?? 8)}
+                      onValueChange={(value) => setQuickRules((prev) => ({ ...prev, maxPlayers: Number(value) }))}
+                    >
+                      <SelectTrigger className="h-9 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[2, 3, 4, 5, 6, 7, 8].map((count) => (
+                          <SelectItem key={count} value={String(count)}>
+                            {t("{n} players", { n: count })}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </label>
+                  <label className="flex flex-col gap-1.5">
+                    <span className="eyebrow">{t("Turn timer")}</span>
+                    <Select
+                      value={String(quickRules.turnSeconds ?? 30)}
+                      onValueChange={(value) => setQuickRules((prev) => ({ ...prev, turnSeconds: Number(value) }))}
+                    >
+                      <SelectTrigger className="h-9 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[15, 20, 30, 45, 60, 90].map((seconds) => (
+                          <SelectItem key={seconds} value={String(seconds)}>
+                            {seconds}s
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </label>
+                  <label className="flex flex-col gap-1.5">
+                    <span className="eyebrow">{t("Stacking")}</span>
+                    <Select
+                      value={quickRules.stacking ?? "same"}
+                      onValueChange={(value) =>
+                        setQuickRules((prev) => ({ ...prev, stacking: value as GameRules["stacking"] }))
+                      }
+                    >
+                      <SelectTrigger className="h-9 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="same">{t("Same card only")}</SelectItem>
+                        <SelectItem value="mixed">{t("+2 / +4 anywhere")}</SelectItem>
+                        <SelectItem value="off">{t("No stacking")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </label>
+                </div>
+                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                  <QuickToggle
+                    label={t("Jump in")}
+                    checked={Boolean(quickRules.jumpIn)}
+                    onChange={(value) => setQuickRules((prev) => ({ ...prev, jumpIn: value }))}
+                  />
+                  <QuickToggle
+                    label={t("Swap anytime")}
+                    checked={Boolean(quickRules.swapAnytime)}
+                    onChange={(value) => setQuickRules((prev) => ({ ...prev, swapAnytime: value }))}
+                  />
+                  <QuickToggle
+                    label={t("Seven-zero")}
+                    checked={Boolean(quickRules.sevenZero)}
+                    onChange={(value) => setQuickRules((prev) => ({ ...prev, sevenZero: value }))}
+                  />
+                  <QuickToggle
+                    label={t("Draw until playable")}
+                    checked={Boolean(quickRules.drawUntilPlayable)}
+                    onChange={(value) => setQuickRules((prev) => ({ ...prev, drawUntilPlayable: value }))}
+                  />
+                </div>
+                <p className="mt-3 text-[10px] leading-relaxed text-muted-foreground">
+                  {t("We look for a table with these rules first. If none matches, we open one for you.")}
+                </p>
+              </div>
+
               <Button variant="brand" size="xl" loading={busy === "quick"} disabled={Boolean(busy)} onClick={() => ensure(quick)}>
                 {t("Find me a table")} <ArrowRight />
               </Button>

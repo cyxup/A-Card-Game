@@ -100,6 +100,9 @@ const FR: Record<string, string> = {
   "We put you at the fullest public table that still has room. If the floor is empty, you get a fresh table and can invite people or add bots.":
     "On vous place à la table publique la plus remplie qui a encore de la place. Si la salle est vide, vous obtenez une nouvelle table et pouvez inviter des amis ou ajouter des bots.",
   "Find me a table": "Trouvez-moi une table",
+  "Quick play rules": "Règles de partie rapide",
+  "We look for a table with these rules first. If none matches, we open one for you.":
+    "Nous cherchons d'abord une table avec ces règles. Si aucune ne correspond, nous en ouvrons une pour vous.",
   "2–8 players": "2–8 joueurs",
   "30s turn timer": "30s par tour",
   "guests welcome": "invités bienvenus",
@@ -626,6 +629,11 @@ const FR: Record<string, string> = {
   "Invite": "Inviter",
   "JUMP IN!": "INTERVENEZ !",
   "Jump in.": "Intervention.",
+  "Intervention available!": "Intervention possible !",
+  "Play your matching card now — the window closes in {n}s.":
+    "Jouez votre carte identique maintenant — la fenêtre se ferme dans {n}s.",
+  "Jump in now": "Intervenir maintenant",
+  "Intervention! Play your matching card now.": "Intervention ! Jouez votre carte identique maintenant.",
   "Keep drawing until you can play. Hosts, please warn your friends.":
     "Continuez à piocher jusqu'à pouvoir jouer. Prévenez vos amis avant d'activer cette règle.",
   "Keep drawing until you find something you can play. Meaner games.":
@@ -693,6 +701,8 @@ const FR: Record<string, string> = {
     "Cette page a été pliée, cachée ou jamais distribuée. Les tables sont toujours ouvertes.",
   "The cards explain themselves faster.": "Les cartes s'expliquent plus vite.",
   "The host starts when the table is ready.": "L'hôte lance quand la table est prête.",
+  "Waiting for players to be ready": "En attente que les joueurs soient prêts",
+  "Everyone else needs to be ready before you deal.": "Tous les autres joueurs doivent être prêts avant de distribuer.",
   "The house toggles": "Les options de la maison",
   "The new password needs at least 8 characters.":
     "Le nouveau mot de passe doit faire au moins 8 caractères.",
@@ -1346,6 +1356,7 @@ const ERROR_FR: Record<string, string> = {
   in_progress: "Cette manche est déjà en cours.",
   not_host: "Seul l'hôte peut faire ça.",
   not_enough_players: "Ajoutez un joueur ou un bot d'abord.",
+  players_not_ready: "Tous les autres joueurs doivent être prêts.",
   bad_code: "Entrez un code de table.",
   no_room: "Rejoignez d'abord une table.",
   banned_player: "Ce joueur est banni.",

@@ -48,7 +48,8 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
   const coins = session?.kind === "user" ? (session.user?.coins ?? null) : null;
   const shortOnCoins = coins !== null && wager > coins;
   const hasBot = room.players.some((player) => player.isBot);
-  const canStart = room.players.length >= 2 && (wager === 0 || !hasBot);
+  const unreadyHumans = room.players.filter((player) => !player.isBot && !player.host && !player.ready);
+  const canStart = room.players.length >= 2 && (wager === 0 || !hasBot) && unreadyHumans.length === 0;
   const emptySeats = Math.max(0, room.rules.maxPlayers - room.players.length);
   const locked = !isHost;
   const myId = session?.kind === "user" ? session.user?.id ?? null : null;
@@ -431,14 +432,22 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
                   disabled={!canStart}
                   onClick={() => client.start()}
                 >
-                  <Play /> {canStart ? t("Deal the first hand") : wager > 0 && hasBot ? t("Remove bots to start") : t("Need one more player")}
+                  <Play /> {canStart
+                    ? t("Deal the first hand")
+                    : wager > 0 && hasBot
+                      ? t("Remove bots to start")
+                      : room.players.length < 2
+                        ? t("Need one more player")
+                        : t("Waiting for players to be ready")}
                 </Button>
                 <p className="mt-2 text-center text-[11px] text-muted-foreground">
                   {canStart
                     ? t("Everyone in the lobby comes with you. Rules lock when the round starts.")
-                    : wager > 0
+                    : wager > 0 && (hasBot || room.players.length < 2)
                       ? t("Wager tables need at least two registered players and no bots.")
-                      : t("Add a friend with the code, or fill the table with a bot.")}
+                      : room.players.length < 2
+                        ? t("Add a friend with the code, or fill the table with a bot.")
+                        : t("Everyone else needs to be ready before you deal.")}
                 </p>
               </>
             ) : (

@@ -315,11 +315,11 @@ class GameClient {
     return wait;
   }
 
-  async quickPlay(): Promise<RoomView> {
+  async quickPlay(rules?: Partial<GameRules>): Promise<RoomView> {
     this.currentRoomCode = null;
     const wait = this.waitForRoom();
     await this.connect();
-    this.sendRaw({ t: "quick" });
+    this.sendRaw({ t: "quick", rules });
     return wait;
   }
 
