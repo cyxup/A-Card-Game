@@ -21,7 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
-import { game as client } from "@/lib/game";
+import { game as client, useGame } from "@/lib/game";
 import { useT } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { cn } from "@/lib/utils";
@@ -50,6 +50,7 @@ function PresenceLine({ friend }: { friend: FriendUserView }) {
 
 export default function FriendsPage() {
   const { session, loading } = useSession();
+  const { room: liveRoom } = useGame();
   const t = useT();
   const [, navigate] = useLocation();
   const [data, setData] = useState<FriendsPayload | null>(null);
@@ -57,6 +58,7 @@ export default function FriendsPage() {
   const [results, setResults] = useState<FriendUserView[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [invited, setInvited] = useState<Set<string>>(new Set());
 
   const load = useCallback(async () => {
     try {
@@ -77,6 +79,10 @@ export default function FriendsPage() {
     const timer = window.setInterval(() => void load(), 10_000);
     return () => window.clearInterval(timer);
   }, [session?.kind, load]);
+
+  useEffect(() => {
+    setInvited(new Set());
+  }, [data?.you.roomCode]);
 
   async function act(key: string, run: () => Promise<unknown>, message?: string) {
     if (busy) return;
@@ -130,31 +136,16 @@ export default function FriendsPage() {
     void act(`unblock:${friend.id}`, () => api.post(`/api/friends/${friend.id}/unblock`, {}), t("Player unblocked."));
   }
 
-  function invite(friend: FriendUserView) {
-    void act(`invite:${friend.id}`, () => api.post("/api/friends/invite", { userId: friend.id }), t("Invite sent."));
-  }
-
-  async function inviteOnline() {
-    if (!data || busy) return;
-    const online = data.friends.filter((friend) => friend.presence?.status !== "offline");
-    if (online.length === 0) {
-      toast.info(t("No online friends to invite."));
-      return;
-    }
-    setBusy("invite-all");
-    let sent = 0;
+  async function invite(friend: FriendUserView) {
+    if (busy) return;
+    setBusy(`invite:${friend.id}`);
     try {
-      for (const friend of online) {
-        try {
-          await api.post("/api/friends/invite", { userId: friend.id });
-          sent++;
-        } catch {
-          // A full room or a friend who just went offline should not abort the rest.
-        }
-      }
-      if (sent > 0) toast.success(t("{n} invites sent.", { n: sent }));
-      else toast.error(t("No invites could be sent."));
+      await api.post("/api/friends/invite", { userId: friend.id });
+      setInvited((current) => new Set(current).add(friend.id));
+      toast.success(t("Invite sent to {name}.", { name: friend.displayName }));
       await load();
+    } catch (caught) {
+      toast.error(caught instanceof Error ? caught.message : t("Could not send that invite."));
     } finally {
       setBusy(null);
     }
@@ -165,17 +156,24 @@ export default function FriendsPage() {
     setBusy("group");
     try {
       const room = await client.createRoom({ maxPlayers: 8 }, "private");
-      const online = data?.friends.filter((friend) => friend.presence?.status !== "offline") ?? [];
-      for (const friend of online) {
-        await api.post("/api/friends/invite", { userId: friend.id }).catch(() => undefined);
-      }
-      navigate(`/room/${room.code}`);
+      setInvited(new Set());
+      await load();
+      toast.success(t("Group {code} is open. Invite your friends below.", { code: room.code }));
     } catch (caught) {
       toast.error(caught instanceof Error ? caught.message : t("Could not create the group."));
     } finally {
       setBusy(null);
     }
   }
+
+  const memberIds = new Set(liveRoom?.players.map((player) => player.id) ?? []);
+  const groupFriends =
+    data?.friends.filter(
+      (friend) =>
+        friend.presence?.status !== "offline" &&
+        friend.presence?.status !== "playing" &&
+        !memberIds.has(friend.id),
+    ) ?? [];
 
   if (loading) {
     return (
@@ -234,52 +232,92 @@ export default function FriendsPage() {
       ) : null}
 
       {data ? (
-        <section className="panel mb-4 flex flex-wrap items-center justify-between gap-4 rounded-2xl p-4 sm:p-5">
-          <div>
-            <p className="eyebrow">{t("group")}</p>
-            <h2 className="mt-1 text-lg font-semibold tracking-[-0.025em]">
-              {data.you.roomCode ? t("Your group is live") : t("Your group")}
-            </h2>
-            <p className="mt-1 max-w-[55ch] text-xs text-muted-foreground">
-              {data.you.roomCode
-                ? data.you.canInvite
-                  ? t("Invite your online friends and start when everyone is ready.")
-                  : t("The host can invite the rest of the group from the lobby.")
-                : t("Open a private lobby, invite all your online friends at once, then deal.")}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {data.you.roomCode ? (
-              <>
+        <section className="panel mb-4 rounded-2xl p-4 sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="eyebrow">{t("group")}</p>
+              <h2 className="mt-1 text-lg font-semibold tracking-[-0.025em]">
+                {data.you.roomCode ? t("Your group is live") : t("Your group")}
+              </h2>
+              <p className="mt-1 max-w-[55ch] text-xs text-muted-foreground">
+                {data.you.roomCode
+                  ? data.you.canInvite
+                    ? t("Pick friends from the list below and send them an invite.")
+                    : t("The host can invite the rest of the group from the lobby.")
+                  : t("Open a private lobby, then pick who you want to invite.")}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {data.you.roomCode ? (
                 <Link href={`/room/${data.you.roomCode}`}>
                   <Button variant="brand" className="gap-1.5">
                     <Play className="size-4" /> {t("Open lobby")}
                   </Button>
                 </Link>
-                {data.you.canInvite ? (
-                  <Button
-                    variant="outline"
-                    loading={busy === "invite-all"}
-                    disabled={Boolean(busy)}
-                    onClick={() => void inviteOnline()}
-                    className="gap-1.5"
-                  >
-                    <UserPlus className="size-4" /> {t("Invite online friends")}
-                  </Button>
-                ) : null}
-              </>
-            ) : (
-              <Button
-                variant="brand"
-                loading={busy === "group"}
-                disabled={Boolean(busy)}
-                onClick={() => void createGroup()}
-                className="gap-1.5"
-              >
-                <Users className="size-4" /> {t("Create a group")}
-              </Button>
-            )}
+              ) : (
+                <Button
+                  variant="brand"
+                  loading={busy === "group"}
+                  disabled={Boolean(busy)}
+                  onClick={() => void createGroup()}
+                  className="gap-1.5"
+                >
+                  <Users className="size-4" /> {t("Create a group")}
+                </Button>
+              )}
+            </div>
           </div>
+
+          {data.you.roomCode && data.you.canInvite ? (
+            <div className="mt-4 border-t border-white/8 pt-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold">{t("Invite friends")}</p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    {t("Online friends who are not already in your group.")}
+                  </p>
+                </div>
+                <Badge variant="outline">{groupFriends.length}</Badge>
+              </div>
+
+              {groupFriends.length > 0 ? (
+                <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {groupFriends.map((friend) => {
+                    const pending = invited.has(friend.id);
+                    return (
+                      <li
+                        key={friend.id}
+                        className="flex items-center gap-2.5 rounded-xl border border-white/7 bg-white/[0.015] px-3 py-2"
+                      >
+                        <Avatar id={friend.avatar} size={30} />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-xs font-medium">
+                            <NameEffect effect={friend.nameEffect}>{friend.displayName}</NameEffect>
+                          </p>
+                          <PresenceLine friend={friend} />
+                        </div>
+                        <Button
+                          size="xs"
+                          variant={pending ? "secondary" : "brand"}
+                          className="shrink-0 gap-1"
+                          disabled={pending || Boolean(busy)}
+                          loading={busy === `invite:${friend.id}`}
+                          onClick={() => void invite(friend)}
+                        >
+                          <UserPlus className="size-3" />
+                          {pending ? t("Invite sent") : t("Invite")}
+                        </Button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p className="mt-3 rounded-xl border border-dashed border-white/10 px-3 py-4 text-center text-xs text-muted-foreground">
+                  {t("No available friends right now. Invite them when they are online.")}
+                </p>
+              )}
+            </div>
+          ) : null}
         </section>
       ) : null}
 
@@ -417,17 +455,6 @@ export default function FriendsPage() {
                           <Play /> {t("Join")}
                         </Button>
                       ) : null}
-                      {data.you.canInvite && friend.presence?.status !== "offline" ? (
-                        <Button
-                          size="xs"
-                          variant="brand"
-                          loading={busy === `invite:${friend.id}`}
-                          onClick={() => invite(friend)}
-                          className="gap-1"
-                        >
-                          <UserPlus /> {t("Invite")}
-                        </Button>
-                      ) : null}
                       <Button size="xs" variant="ghost" onClick={() => remove(friend)} aria-label={t("Remove friend")}>
                         <Trash2 />
                       </Button>
@@ -441,7 +468,7 @@ export default function FriendsPage() {
             )}
             {!data.you.canInvite ? (
               <p className="mt-3 text-[11px] text-muted-foreground">
-                {t("Open a lobby as host to invite friends to your table.")}
+                {t("Create a group or open your lobby to send invites from the panel above.")}
               </p>
             ) : null}
           </section>

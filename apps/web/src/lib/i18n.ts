@@ -1067,6 +1067,22 @@ const FR: Record<string, string> = {
   "{n} invites sent.": "{n} invitations envoyées.",
   "No invites could be sent.": "Aucune invitation n'a pu être envoyée.",
   "Could not create the group.": "Impossible de créer le groupe.",
+  "Invite sent to {name}.": "Invitation envoyée à {name}.",
+  "Could not send that invite.": "Impossible d'envoyer cette invitation.",
+  "Group {code} is open. Invite your friends below.":
+    "Le groupe {code} est ouvert. Invitez vos amis ci-dessous.",
+  "Pick friends from the list below and send them an invite.":
+    "Choisissez des amis dans la liste ci-dessous et envoyez-leur une invitation.",
+  "Open a private lobby, then pick who you want to invite.":
+    "Ouvrez un salon privé, puis choisissez qui vous voulez inviter.",
+  "Invite friends": "Inviter des amis",
+  "Online friends who are not already in your group.":
+    "Amis en ligne qui ne sont pas déjà dans votre groupe.",
+  "Invite sent": "Invitation envoyée",
+  "No available friends right now. Invite them when they are online.":
+    "Aucun ami disponible pour le moment. Invitez-les quand ils sont en ligne.",
+  "Create a group or open your lobby to send invites from the panel above.":
+    "Créez un groupe ou ouvrez votre salon pour envoyer des invitations depuis le panneau ci-dessus.",
 
   // ── rules page ──────────────────────────────────────────────────────────
   "Number cards": "Cartes numérotées",
