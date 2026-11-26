@@ -287,7 +287,6 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
   const [wiggle, setWiggle] = useState<string | null>(null);
   const [flyers, setFlyers] = useState<Flyer[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
-  const [turnFlash, setTurnFlash] = useState(false);
   const [colorFlash, setColorFlash] = useState<{ id: number; hex: string } | null>(null);
   const [resultsVisible, setResultsVisible] = useState(false);
   const [ownerOpen, setOwnerOpen] = useState(false);
@@ -680,7 +679,6 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
       lastLogRef.current = gameView.log[gameView.log.length - 1]?.id ?? 0;
       setBanners([]);
       setFlyers([]);
-      setTurnFlash(false);
       return;
     }
     const previous = lastLogRef.current ?? 0;
@@ -741,10 +739,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
 
   useEffect(() => {
     if (!isMyTurn || gameView?.phase !== "playing") return;
-    setTurnFlash(true);
     playSound("turn");
-    const timer = window.setTimeout(() => setTurnFlash(false), 1500);
-    return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMyTurn, gameView?.turnId, gameView?.phase]);
 
@@ -908,22 +903,6 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
           </div>
 
           <div className="play-zone">
-            <AnimatePresence>
-              {turnFlash ? (
-                <motion.div
-                  key="turn-flash"
-                  className="turn-flash"
-                  aria-hidden
-                  initial={{ opacity: 0, scale: 0.94, filter: "blur(10px)" }}
-                  animate={{ opacity: 0.34, scale: 1, filter: "blur(0px)" }}
-                  exit={{ opacity: 0, scale: 1.04, filter: "blur(8px)" }}
-                  transition={spring.gentle}
-                >
-                  {t("YOUR TURN")}
-                </motion.div>
-              ) : null}
-            </AnimatePresence>
-
             <div className="action-banner-slot" role="status" aria-live="polite">
               <AnimatePresence mode="wait" initial={false}>
                 {banner ? (
@@ -954,16 +933,36 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
             </div>
 
             <motion.div
-              className="direction-orbit"
+              className={cn("direction-orbit", gameView.dir === -1 && "is-reverse")}
               aria-hidden
               animate={{ rotate: gameView.dir === 1 ? 360 : -360 }}
               transition={{ duration: 46, repeat: Infinity, ease: "linear" }}
             >
-              <span
-                className="direction-orbit-arrow"
-                style={{ transform: gameView.dir === 1 ? undefined : "scaleX(-1)" }}
-              >
-                ➜
+              <span className="direction-orbit-arrow is-top">
+                <svg
+                  className="direction-orbit-arrow-glyph"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2.2"
+                >
+                  <path d="M4 12h14M12 6l6 6-6 6" />
+                </svg>
+              </span>
+              <span className="direction-orbit-arrow is-bottom">
+                <svg
+                  className="direction-orbit-arrow-glyph"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2.2"
+                >
+                  <path d="M4 12h14M12 6l6 6-6 6" />
+                </svg>
               </span>
             </motion.div>
 

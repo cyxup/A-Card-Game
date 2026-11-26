@@ -501,24 +501,6 @@
   text-transform: uppercase;
 }
 
-.turn-flash {
-  position: absolute;
-  left: 50%;
-  top: 46%;
-  z-index: 0;
-  translate: -50% -50%;
-  pointer-events: none;
-  user-select: none;
-  white-space: nowrap;
-  font-family: var(--font-sans);
-  font-size: clamp(3.6rem, 10vw, 8rem);
-  font-weight: 600;
-  letter-spacing: -0.06em;
-  line-height: 0.85;
-  color: transparent;
-  -webkit-text-stroke: 1px color-mix(in oklch, var(--brand) 60%, transparent);
-}
-
 .play-piles {
   position: relative;
   z-index: 12;
@@ -1108,12 +1090,40 @@
 .direction-orbit-arrow {
   position: absolute;
   left: 50%;
-  top: -12px;
-  translate: -50% 0;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  translate: -50% -50%;
   color: var(--brand);
-  font-size: 18px;
-  line-height: 1;
-  text-shadow: 0 0 12px color-mix(in oklch, var(--brand) 70%, transparent);
+  filter: drop-shadow(0 0 10px color-mix(in oklch, var(--brand) 70%, transparent));
+}
+
+.direction-orbit-arrow.is-top {
+  top: 0;
+}
+
+.direction-orbit-arrow.is-bottom {
+  top: 100%;
+}
+
+.direction-orbit-arrow-glyph {
+  width: 19px;
+  height: 19px;
+  transform-origin: center;
+  transition: transform 0.3s ease;
+}
+
+.direction-orbit-arrow.is-bottom .direction-orbit-arrow-glyph {
+  transform: rotate(180deg);
+}
+
+.direction-orbit.is-reverse .direction-orbit-arrow-glyph {
+  transform: scaleX(-1);
+}
+
+.direction-orbit.is-reverse .direction-orbit-arrow.is-bottom .direction-orbit-arrow-glyph {
+  transform: scaleX(-1) rotate(180deg);
 }
 
 /* ── event ticker / emotes ─────────────────────────────────────────────── */
@@ -1242,10 +1252,6 @@
 
   .action-banner-slot {
     top: 2px;
-  }
-
-  .turn-flash {
-    font-size: clamp(2.4rem, 12vw, 5rem);
   }
 
   .event-ticker,
