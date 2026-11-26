@@ -550,7 +550,7 @@ const FR: Record<string, string> = {
   "JUMP IN!": "INTERVENEZ !",
   "Jump in.": "Intervention.",
   "Keep drawing until you can play. Hosts, please warn your friends.":
-    "Continuez à piocher jusqu'à pouvoir jouer. Hôtes, prévenez vos amis.",
+    "Continuez à piocher jusqu'à pouvoir jouer. Prévenez vos amis avant d'activer cette règle.",
   "Keep drawing until you find something you can play. Meaner games.":
     "Continuez à piocher jusqu'à trouver une carte jouable. Plus méchant.",
   "Keep this code safe.": "Gardez ce code en sécurité.",
@@ -657,7 +657,7 @@ const FR: Record<string, string> = {
   "fill with bot": "remplir avec un bot",
   "four colours + wilds": "quatre couleurs + jokers",
   "guest · {name}": "invité · {name}",
-  "host can change it": "l'hôte peut changer",
+  "host can change it": "modifiable par l'hôte",
   "house rules": "règles de la maison",
   "how to play": "comment jouer",
   "humans, bots, or both": "humains, bots, ou les deux",
@@ -1067,6 +1067,39 @@ const FR: Record<string, string> = {
   "{n} invites sent.": "{n} invitations envoyées.",
   "No invites could be sent.": "Aucune invitation n'a pu être envoyée.",
   "Could not create the group.": "Impossible de créer le groupe.",
+
+  // ── rules page ──────────────────────────────────────────────────────────
+  "Number cards": "Cartes numérotées",
+  "Match the colour on the table or the same number. Simple until someone stacks four cards on you.":
+    "Suivez la couleur de la table ou le même chiffre. Simple, jusqu'à ce que quelqu'un vous empile quatre cartes.",
+  "Giddy Up · Skip": "Au galop · Passer",
+  "The next player loses their turn. With two players left, it comes straight back to you.":
+    "Le joueur suivant perd son tour. À deux joueurs, le tour vous revient directement.",
+  "Wrong Way · Reverse": "Mauvais sens · Inverser",
+  "Flips the direction of play. In a two-player game it acts as a skip, so you go again.":
+    "Inverse le sens du jeu. À deux joueurs, il agit comme un saut de tour : vous rejouez.",
+  "Quick Draw · +2": "Dégainage · +2",
+  "The next player draws two — or stacks another +2 and passes the problem along.":
+    "Le joueur suivant pioche deux cartes — ou empile un autre +2 et refile le problème.",
+  "Play it on anything and call the next colour. The wild card that started all of this.":
+    "Jouez-la sur n'importe quoi et annoncez la couleur suivante. Le joker qui a lancé toute cette histoire.",
+  "Call a colour, add four to the stack. Only an honest +4 can answer it when stacking is on.":
+    "Annoncez une couleur, ajoutez quatre à la pile. Seul un vrai +4 peut répondre quand l'empilement est activé.",
+  "Pick a player and take their hand. Pick a colour too. Yes, it can be played out of turn in the jump window.":
+    "Choisissez un joueur et prenez sa main. Choisissez aussi une couleur. Oui, elle peut être jouée hors tour pendant la fenêtre d'intervention.",
+  "Match the card on the table": "Suivez la carte sur la table",
+  "Play a card with the same colour, the same number, or the same action. Wild cards ignore colour entirely.":
+    "Posez une carte de la même couleur, du même chiffre ou de la même action. Les jokers ignorent complètement la couleur.",
+  "Or draw one": "Ou piochez",
+  "No match? Draw a card. If it is playable you may play it immediately, or pass. If it is not, the turn moves on.":
+    "Aucune correspondance ? Piochez une carte. Si elle est jouable, jouez-la immédiatement ou passez. Sinon, le tour passe.",
+  "Stack the draw cards": "Empilez les cartes pioche",
+  "With stacking on, the player facing a +2 or +4 can answer with another draw card instead of taking the pile.":
+    "Avec l'empilement activé, le joueur qui reçoit un +2 ou +4 peut répondre avec une autre carte pioche au lieu de prendre la pile.",
+  "Jump in if you have the duplicate": "Intervenez si vous avez la copie exacte",
+  "For five seconds after a card lands, anyone holding the exact same card can slam it out of turn.":
+    "Pendant cinq secondes après une carte, quiconque a exactement la même carte peut la poser hors tour.",
+  "Empty your hand": "Videz votre main",
 
   // ── tutorial ────────────────────────────────────────────────────────────
   Tutorial: "Tutoriel",
