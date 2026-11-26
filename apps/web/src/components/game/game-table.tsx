@@ -719,7 +719,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
     setSwapCard(null);
     setSwapTargetId(null);
     setEditId(null);
-  }, [gameView?.seq]);
+  }, [gameView?.startedAt, gameView?.phase]);
 
   // An out-of-turn swap has to land inside the jump window.
   useEffect(() => {
