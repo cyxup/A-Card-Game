@@ -487,7 +487,7 @@ export default function AdminPage() {
         )}
       </section>
 
-      <div className="grid gap-4 lg:grid-cols-[0.92fr_0.08fr]">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex flex-col gap-4">
           <section className="panel rounded-2xl p-5">
             <div className="mb-4 flex items-center gap-2">
@@ -818,22 +818,30 @@ export default function AdminPage() {
           </section>
         </div>
 
-        <aside className="panel h-fit rounded-2xl p-5 lg:sticky lg:top-20">
-          <div className="mb-3 flex items-center gap-2">
-            <Gavel className="size-4 text-warning" />
-            <h2 className="text-sm font-semibold">{t("Recent actions")}</h2>
+        <aside className="panel h-fit rounded-2xl p-4 lg:sticky lg:top-20">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Gavel className="size-4 text-warning" />
+              <h2 className="text-sm font-semibold">{t("Recent actions")}</h2>
+            </div>
+            {audit.length > 0 ? <Badge variant="outline">{audit.length}</Badge> : null}
           </div>
           {audit.length === 0 ? (
             <p className="text-xs text-muted-foreground">{t("No actions yet.")}</p>
           ) : (
-            <ul className="flex flex-col gap-2">
+            <ul className="flex max-h-[45vh] flex-col divide-y divide-white/6 overflow-y-auto overscroll-contain pr-1">
               {audit.map((entry) => (
-                <li key={entry.id} className="rounded-lg border border-white/6 bg-white/[0.015] px-2.5 py-2">
-                  <p className="text-[11px] text-foreground/85">
-                    <span className="font-medium">{entry.actorName}</span> → {entry.targetName ?? "—"}{" "}
+                <li key={entry.id} className="flex items-start gap-2 py-1.5 leading-snug">
+                  <span className="mt-1 size-1.5 shrink-0 rounded-full bg-brand/60" />
+                  <p className="min-w-0 flex-1 break-words text-[10px] text-foreground/85">
+                    <span className="font-medium">{entry.actorName}</span>
+                    <span className="text-muted-foreground"> → </span>
+                    <span>{entry.targetName ?? "—"}</span>{" "}
                     <span className="text-brand">{t(entry.action)}</span>
                   </p>
-                  <p className="text-[10px] text-muted-foreground">{formatRelative(entry.createdAt)}</p>
+                  <time className="shrink-0 whitespace-nowrap text-[9px] text-muted-foreground">
+                    {formatRelative(entry.createdAt)}
+                  </time>
                 </li>
               ))}
             </ul>
