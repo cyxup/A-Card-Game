@@ -264,7 +264,7 @@ export function Footer() {
               <Trophy className="size-3" /> {t("Leaderboard")}
             </span>
           </Link>
-          <span className="font-mono text-[10px] uppercase tracking-[0.18em]">v0.1</span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em]">v{__APP_VERSION__}</span>
         </div>
       </div>
     </footer>

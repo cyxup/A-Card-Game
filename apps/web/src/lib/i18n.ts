@@ -24,7 +24,6 @@ const FR: Record<string, string> = {
   Rules: "Règles",
   "stacked — play your hand, stack the deck.": "stacked — jouez votre main, empilez le paquet.",
   "stacked": "stacked",
-  "v0.1": "v0.1",
 
   // ── home ─────────────────────────────────────────────────────────────────
   "live tables": "tables en direct",
