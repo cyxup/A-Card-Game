@@ -64,6 +64,13 @@
       "when": 1795649775668,
       "tag": "0008_match_seat_ids",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1795672877583,
+      "tag": "0009_daily_challenges",
+      "breakpoints": true
     }
   ]
 }

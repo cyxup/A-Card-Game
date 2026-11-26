@@ -279,6 +279,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
   const { session } = useSession();
   const t = useT();
   const prefs = usePrefs();
+  const reducedMotion = prefs.reducedMotion;
   const [colorCard, setColorCard] = useState<Card | null>(null);
   const [swapCard, setSwapCard] = useState<Card | null>(null);
   const [swapTargetId, setSwapTargetId] = useState<string | null>(null);
@@ -341,7 +342,8 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
   const isMyTurn = gameView?.turnId === meId;
   const current = room.players.find((player) => player.id === gameView?.turnId);
   const tableId = room.players.find((player) => player.host)?.table ?? me?.table ?? "noir";
-  const winnerEffect = room.players.find((player) => player.id === gameView?.winner)?.winEffect ?? "none";
+  const winnerPlayer = room.players.find((player) => player.id === gameView?.winner);
+  const winnerEffect = winnerPlayer?.winEffect ?? "none";
   const deckBack = room.players.find((player) => player.host)?.cardBack ?? "midnight";
 
   const hand = useMemo(() => (sorted ? sortHand(room.you.hand) : room.you.hand), [room.you.hand, sorted]);
@@ -396,6 +398,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
   );
   const opponents = useMemo(() => {
     const myIndex = room.players.findIndex((player) => player.id === meId);
+    if (myIndex < 0) return [...room.players];
     return [...room.players.slice(myIndex + 1), ...room.players.slice(0, myIndex)];
   }, [room.players, meId]);
   const onlyOpponent = opponents.length === 1 ? opponents[0] : null;
@@ -809,7 +812,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
     <LayoutGroup id={layerId}>
       <motion.div
         ref={stageRef}
-        className="game-stage"
+        className={cn("game-stage", room.spectator && "is-spectator")}
         initial={{ opacity: 0, scale: 0.985 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.7, ease: easeOutExpo }}
@@ -852,6 +855,11 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
               <span className="live-chip">
                 <span className="live-dot" /> {t("live")}
               </span>
+              {room.spectator ? (
+                <Badge variant="info" className="hidden items-center gap-1 sm:inline-flex">
+                  <Eye className="size-3" /> {t("Spectator")}
+                </Badge>
+              ) : null}
               {room.rules.wager > 0 ? (
                 <Badge variant="warning" className="hidden items-center gap-1 sm:inline-flex">
                   <Coins className="size-3" /> {t("{n} coin wager", { n: room.rules.wager })}
@@ -976,8 +984,8 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                     onClick={draw}
                     disabled={!canDraw}
                     className={cn("deck-button", canDraw && "deck-ready", gameView.pending > 0 && "deck-stacked")}
-                    animate={gameView.pending > 0 ? { rotate: [0, -1.4, 1.4, 0] } : { rotate: 0 }}
-                    transition={gameView.pending > 0 ? { duration: 1.9, repeat: Infinity, ease: "easeInOut" } : { duration: 0.25 }}
+                    animate={!reducedMotion && gameView.pending > 0 ? { rotate: [0, -1.4, 1.4, 0] } : { rotate: 0 }}
+                    transition={!reducedMotion && gameView.pending > 0 ? { duration: 1.9, repeat: Infinity, ease: "easeInOut" } : { duration: 0.25 }}
                     aria-label={gameView.pending > 0 ? t("Take {n} cards", { n: gameView.pending }) : t("Draw a card")}
                     title={gameView.pending > 0 ? t("Take {n} cards", { n: gameView.pending }) : t("Draw a card")}
                   >
@@ -1001,8 +1009,8 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                       <motion.span
                         className="deck-ready-ring"
                         initial={{ opacity: 0.7, scale: 0.9 }}
-                        animate={{ opacity: [0.65, 0.15, 0.65], scale: [1, 1.12, 1] }}
-                        transition={{ duration: 2.1, repeat: Infinity, ease: "easeInOut" }}
+                        animate={reducedMotion ? { opacity: 0.35, scale: 1 } : { opacity: [0.65, 0.15, 0.65], scale: [1, 1.12, 1] }}
+                        transition={reducedMotion ? { duration: 0 } : { duration: 2.1, repeat: Infinity, ease: "easeInOut" }}
                         aria-hidden
                       />
                     ) : null}
@@ -1029,8 +1037,12 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                 <div className="discard-wrap">
                   <motion.span
                     className="discard-aura"
-                    animate={{ backgroundColor: currentColor.hex, opacity: [0.16, 0.28, 0.16] }}
-                    transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+                    animate={
+                      reducedMotion
+                        ? { backgroundColor: currentColor.hex, opacity: 0.2 }
+                        : { backgroundColor: currentColor.hex, opacity: [0.16, 0.28, 0.16] }
+                    }
+                    transition={reducedMotion ? { duration: 0 } : { duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
                     aria-hidden
                   />
                   <AnimatePresence>
@@ -1469,12 +1481,26 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
       </motion.div>
 
       {gameView.phase === "ended" && resultsVisible ? (
-        <GameOverDialog
-          room={room}
-          onLeave={onLeave}
-          onRematch={() => client.rematch()}
-          onLobby={() => client.toLobby()}
-        />
+        room.spectator ? (
+          <div className="spectator-overlay" role="dialog" aria-label={t("Game over")}>
+            <div className="panel rounded-2xl p-6 text-center">
+              <p className="eyebrow">{t("Game over")}</p>
+              <p className="mt-2 text-xl font-semibold">
+                {winnerPlayer ? t("{name} won", { name: winnerPlayer.name }) : t("No winner")}
+              </p>
+              <Button variant="outline" className="mt-4" onClick={onLeave}>
+                {t("Leave table")}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <GameOverDialog
+            room={room}
+            onLeave={onLeave}
+            onRematch={() => client.rematch()}
+            onLobby={() => client.toLobby()}
+          />
+        )
       ) : null}
     </LayoutGroup>
   );

@@ -197,3 +197,16 @@
   animation-iteration-count: 1 !important;
   transition-duration: 0.01ms !important;
 }
+
+/* Chat bubbles still need their fade-out timer to disappear. */
+.reduce-motion .seat-chat,
+.reduce-motion .self-chat {
+  animation-duration: 6s !important;
+  animation-iteration-count: 1 !important;
+}
+
+/* Keep the turn bar readable instead of snapping to empty immediately. */
+.reduce-motion .turn-timer {
+  animation: none !important;
+  width: 100% !important;
+}

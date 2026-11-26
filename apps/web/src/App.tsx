@@ -8,6 +8,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Toaster } from "@/components/ui/toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { usePrefs } from "@/lib/prefs";
+import { useGame } from "@/lib/game";
 import { SessionProvider } from "@/lib/session";
 import { playSound, primeAudio } from "@/lib/sound";
 import HomePage from "@/pages/Home";
@@ -45,7 +46,9 @@ function Ambient() {
 export default function App() {
   const [location] = useLocation();
   const prefs = usePrefs();
+  const { room } = useGame();
   const inRoom = location.startsWith("/room/");
+  const showNav = !inRoom || room?.phase === "lobby";
 
   useEffect(() => {
     const onPointerDown = (event: PointerEvent) => {
@@ -73,7 +76,7 @@ export default function App() {
               Skip to content
             </a>
             <Ambient />
-            {!inRoom && <Nav />}
+            {showNav && <Nav />}
             <main id="main" className="relative z-10 flex-1">
               <Suspense fallback={<PageLoader />}>
                 <div key={location} className="min-h-full">

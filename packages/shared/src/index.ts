@@ -4,4 +4,5 @@ export * from "./game.js";
 export * from "./progression.js";
 export * from "./cosmetics.js";
 export * from "./chat.js";
+export * from "./challenges.js";
 export * from "./protocol.js";

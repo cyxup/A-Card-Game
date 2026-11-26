@@ -1048,6 +1048,30 @@ const FR: Record<string, string> = {
   "Replay the round action by action.": "Rejouez la manche action par action.",
   "Show all": "Tout afficher",
   "No timeline for this match.": "Aucun déroulé pour cette partie.",
+  "Review your previous games, rewards and the full round timeline.":
+    "Retrouvez vos parties précédentes, vos récompenses et le déroulé complet.",
+  "View match history": "Voir l'historique des parties",
+  Watch: "Regarder",
+  Spectator: "Spectateur",
+  "Could not watch that game.": "Impossible de regarder cette partie.",
+  "Game over": "Partie terminée",
+
+  // ── daily challenges ────────────────────────────────────────────────────
+  "Daily challenges": "Défis du jour",
+  "Play three rounds": "Jouer trois manches",
+  "Finish three games today.": "Terminez trois parties aujourd'hui.",
+  "Win a round": "Gagner une manche",
+  "Take first place in any game today.": "Terminez premier d'une partie aujourd'hui.",
+  "Reach the top two": "Atteindre le top 2",
+  "Finish in the top two twice today.": "Terminez dans les deux premiers deux fois aujourd'hui.",
+  Claimed: "Réclamé",
+  "Claimed today": "Réclamé aujourd'hui",
+  "Claim {n} coins": "Réclamer {n} pièces",
+  "In progress": "En cours",
+  "Challenge claimed: +{n} coins.": "Défi réclamé : +{n} pièces.",
+  "Could not claim that challenge.": "Impossible de réclamer ce défi.",
+  challenge_not_complete: "Terminez d'abord ce défi.",
+  already_claimed: "Vous avez déjà réclamé ce défi.",
   forbidden: "Vous n'avez pas accès à cette partie.",
 
   // ── groups ──────────────────────────────────────────────────────────────

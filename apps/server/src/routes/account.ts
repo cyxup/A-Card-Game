@@ -1,11 +1,12 @@
-import type { MatchHistoryDetail, MatchHistoryItem, PublicStats } from "@stacked/shared";
-import { and, count, desc, eq } from "drizzle-orm";
+import type { DailyChallengeView, MatchHistoryDetail, MatchHistoryItem, PublicStats } from "@stacked/shared";
+import { DAILY_CHALLENGES } from "@stacked/shared";
+import { and, count, desc, eq, gte, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { verifyPassword } from "../auth/password.js";
 import { generateRecoveryCode, hashRecoveryCode } from "../auth/recovery.js";
 import { db } from "../db/index.js";
-import { matches, matchPlayers, users } from "../db/schema.js";
+import { dailyClaims, matches, matchPlayers, users } from "../db/schema.js";
 import { ApiError, badRequest, requireUser } from "../lib/http.js";
 import { rateLimit } from "../lib/rate-limit.js";
 import { refreshUserConnections } from "../realtime.js";
@@ -35,6 +36,46 @@ async function totals(): Promise<{ players: number; matches: number }> {
   ]);
   totalsCache = { at: Date.now(), players: Number(playerRow?.value ?? 0), matches: Number(matchRow?.value ?? 0) };
   return totalsCache;
+}
+
+function utcDay(): { key: string; start: Date } {
+  const now = new Date();
+  const key = now.toISOString().slice(0, 10);
+  return { key, start: new Date(`${key}T00:00:00.000Z`) };
+}
+
+function challengeProgress(id: string, rows: { placement: number }[]): number {
+  switch (id) {
+    case "play-3":
+      return rows.length;
+    case "win-1":
+      return rows.filter((row) => row.placement === 1).length;
+    case "top2-2":
+      return rows.filter((row) => row.placement <= 2).length;
+    default:
+      return 0;
+  }
+}
+
+async function dailyChallengeViews(userId: string): Promise<DailyChallengeView[]> {
+  const { key, start } = utcDay();
+  const [results, claims] = await Promise.all([
+    db
+      .select({ placement: matchPlayers.placement })
+      .from(matchPlayers)
+      .innerJoin(matches, eq(matchPlayers.matchId, matches.id))
+      .where(and(eq(matchPlayers.userId, userId), gte(matches.endedAt, start))),
+    db
+      .select({ challengeId: dailyClaims.challengeId })
+      .from(dailyClaims)
+      .where(and(eq(dailyClaims.userId, userId), eq(dailyClaims.day, key))),
+  ]);
+  const claimed = new Set(claims.map((claim) => claim.challengeId));
+  return DAILY_CHALLENGES.map((challenge) => ({
+    ...challenge,
+    progress: Math.min(challenge.target, challengeProgress(challenge.id, results)),
+    claimed: claimed.has(challenge.id),
+  }));
 }
 
 export async function accountRoutes(app: FastifyInstance): Promise<void> {
@@ -86,6 +127,46 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
   });
 
   app.get("/api/leaderboard", async () => leaderboard(50));
+
+  app.get("/api/me/challenges", async (request) => {
+    const principal = requireUser(request);
+    return dailyChallengeViews(principal.user.id);
+  });
+
+  app.post("/api/me/challenges/:id/claim", async (request) => {
+    const principal = requireUser(request);
+    if (!rateLimit(`challenge-claim:${request.ip}`, 30, 60_000).ok) {
+      throw new ApiError(429, "rate_limited", "Slow down a little.");
+    }
+    const id = String((request.params as { id?: string }).id ?? "");
+    const challenge = DAILY_CHALLENGES.find((entry) => entry.id === id);
+    if (!challenge) throw new ApiError(404, "not_found", "That challenge does not exist.");
+    const views = await dailyChallengeViews(principal.user.id);
+    const view = views.find((entry) => entry.id === id);
+    if (!view || view.progress < challenge.target) {
+      throw new ApiError(400, "challenge_not_complete", "Finish this challenge first.");
+    }
+    if (view.claimed) throw new ApiError(409, "already_claimed", "You already claimed this one.");
+    const { key } = utcDay();
+    await db.transaction(async (tx) => {
+      const [claim] = await tx
+        .insert(dailyClaims)
+        .values({
+          userId: principal.user.id,
+          day: key,
+          challengeId: challenge.id,
+          reward: challenge.reward,
+        })
+        .onConflictDoNothing()
+        .returning({ id: dailyClaims.id });
+      if (!claim) throw new ApiError(409, "already_claimed", "You already claimed this one.");
+      await tx
+        .update(users)
+        .set({ coins: sql`${users.coins} + ${challenge.reward}` })
+        .where(eq(users.id, principal.user.id));
+    });
+    return { reward: challenge.reward, challenges: await dailyChallengeViews(principal.user.id) };
+  });
 
   app.get("/api/me/matches", async (request) => {
     const principal = requireUser(request);

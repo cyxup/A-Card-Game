@@ -192,6 +192,24 @@ export const wagerEscrows = pgTable(
   ],
 );
 
+export const dailyClaims = pgTable(
+  "daily_claims",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    day: varchar("day", { length: 10 }).notNull(),
+    challengeId: varchar("challenge_id", { length: 32 }).notNull(),
+    reward: integer("reward").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("daily_claims_user_day_challenge_idx").on(table.userId, table.day, table.challengeId),
+    index("daily_claims_day_idx").on(table.day),
+  ],
+);
+
 export const adminAudit = pgTable(
   "admin_audit",
   {

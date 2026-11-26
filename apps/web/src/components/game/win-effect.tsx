@@ -19,7 +19,7 @@ export function WinEffect({
   /** Owner previews should play even when low-power mode is on. */
   force?: boolean;
 }) {
-  const { lowPower } = usePrefs();
+  const { lowPower, reducedMotion } = usePrefs();
   const particles = useMemo<Particle[]>(() => {
     const count = 26;
     const colors = ["#ff5a2b", "#ffd166", "#ff2d55", "#7fdcff", "#9fe6b8", "#f4eee2"];
@@ -35,6 +35,7 @@ export function WinEffect({
   }, [effect]);
 
   if (!effect || effect === "none") return null;
+  if (reducedMotion && !force) return null;
 
   if (effect === "shockwave") {
     return (

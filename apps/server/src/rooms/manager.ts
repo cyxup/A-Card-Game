@@ -45,6 +45,7 @@ import {
   makeOwnerCard,
 } from "../services/owner-tools.js";
 import { hasChatPack } from "../services/chat.js";
+import { isFriends } from "../services/friends.js";
 import { WagerError, holdWager, refundPendingWagers, refundWager } from "../services/wager.js";
 import {
   Room,
@@ -170,6 +171,9 @@ export class RoomManager {
       case "join":
         this.joinRoom(conn, String(msg.code ?? ""));
         break;
+      case "spectate":
+        void this.spectateUser(conn, String(msg.userId ?? "")).catch((error) => this.lobbyError(conn, error));
+        break;
       case "quick":
         this.quickPlay(conn);
         break;
@@ -270,6 +274,23 @@ export class RoomManager {
 
     this.enter(conn, room);
     room.touch();
+    this.broadcast(room);
+  }
+
+  private async spectateUser(conn: ClientConn, targetUserId: string): Promise<void> {
+    if (conn.principal.kind !== "user") throw new RoomError("sign_in_required", "Sign in to watch a friend.");
+    if (!targetUserId || targetUserId === conn.principal.user.id) {
+      throw new RoomError("invalid_target", "Pick a friend who is in a game.");
+    }
+    if (!(await isFriends(conn.principal.user.id, targetUserId))) {
+      throw new RoomError("not_friends", "You can only watch friends.");
+    }
+    const room = this.activeRoomForUser(targetUserId);
+    if (!room || room.phase !== "playing") {
+      throw new RoomError("not_playing", "That friend is not in a game right now.");
+    }
+    if (conn.roomCode) this.leaveRoom(conn, false);
+    this.enter(conn, room);
     this.broadcast(room);
   }
 

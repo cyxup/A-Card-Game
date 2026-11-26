@@ -299,6 +299,14 @@ class GameClient {
     return wait;
   }
 
+  async spectate(userId: string): Promise<RoomView> {
+    this.currentRoomCode = null;
+    const wait = this.waitForRoom();
+    await this.connect();
+    this.sendRaw({ t: "spectate", userId });
+    return wait;
+  }
+
   async createRoom(rules: Partial<GameRules> = {}, visibility: "public" | "private" = "private"): Promise<RoomView> {
     this.currentRoomCode = null;
     const wait = this.waitForRoom();

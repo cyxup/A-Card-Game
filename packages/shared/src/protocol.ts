@@ -251,6 +251,8 @@ export interface RoomView {
     rewards: RewardGrant | null;
   };
   game: GameView | null;
+  /** True when this connection is watching without a seat. */
+  spectator?: boolean;
   /** Owner-only x-ray. Never sent to non-owner connections. */
   ownerHands?: Record<string, Card[]>;
 }
@@ -276,6 +278,7 @@ export type OwnerAction =
 export type ClientMessage =
   | { t: "create"; rules?: Partial<GameRules>; visibility?: "public" | "private" }
   | { t: "join"; code: string }
+  | { t: "spectate"; userId: string }
   | { t: "quick" }
   | { t: "leave" }
   | { t: "ready"; ready: boolean }

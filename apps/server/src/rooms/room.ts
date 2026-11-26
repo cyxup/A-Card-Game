@@ -286,5 +286,6 @@ export function buildRoomView(room: Room, viewerId: string, ownerPeek = false): 
         })()
       : null,
     ...(ownerHands ? { ownerHands } : {}),
+    ...(!viewer ? { spectator: true } : {}),
   };
 }

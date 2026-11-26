@@ -833,6 +833,29 @@
 
 /* ── live hand ─────────────────────────────────────────────────────────── */
 
+.game-stage.is-spectator .hand-panel {
+  display: none;
+}
+
+.spectator-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  background: rgb(0 0 0 / 0.62);
+  backdrop-filter: blur(8px);
+  padding: 16px;
+}
+
+.game-stage.is-spectator .play-zone {
+  padding-bottom: 32px;
+}
+
+.game-stage.is-spectator .table-rail {
+  padding-bottom: 16px;
+}
+
 .hand-panel {
   position: relative;
   z-index: 20;

@@ -1,4 +1,4 @@
-import type { ChatPackView, CosmeticItem, CosmeticSlot, ProfilePayload } from "@stacked/shared";
+import type { ChatPackView, CosmeticItem, CosmeticSlot, DailyChallengeView, ProfilePayload } from "@stacked/shared";
 import { SLOT_LABEL, SLOT_FALLBACK, COSMETICS_BY_ID } from "@stacked/shared";
 import {
   ArrowRight,
@@ -6,12 +6,14 @@ import {
   Coins,
   FlaskConical,
   Gauge,
+  History,
   KeyRound,
   Lock,
   LogOut,
   MessageCircle,
   Pencil,
   Sparkles,
+  Target,
   Trophy,
   UserRound,
   Volume2,
@@ -115,6 +117,7 @@ export default function ProfilePage() {
   const t = useT();
   const prefs = usePrefs();
   const [profile, setProfile] = useState<ProfilePayload | null>(null);
+  const [challenges, setChallenges] = useState<DailyChallengeView[] | null>(null);
   const [tab, setTab] = useState<CosmeticSlot>("cardBack");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -144,6 +147,40 @@ export default function ProfilePage() {
       alive = false;
     };
   }, [userId]);
+
+  useEffect(() => {
+    if (!userId) return;
+    let alive = true;
+    api
+      .get<DailyChallengeView[]>("/api/me/challenges")
+      .then((data) => {
+        if (alive) setChallenges(data);
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [userId]);
+
+  async function claimChallenge(challenge: DailyChallengeView) {
+    if (busy) return;
+    setBusy(`challenge:${challenge.id}`);
+    try {
+      const result = await api.post<{ reward: number; challenges: DailyChallengeView[] }>(
+        `/api/me/challenges/${challenge.id}/claim`,
+      );
+      setChallenges(result.challenges);
+      const fresh = await api.get<ProfilePayload>("/api/me/profile");
+      setProfile(fresh);
+      void refresh();
+      playSound("reward");
+      toast.success(t("Challenge claimed: +{n} coins.", { n: result.reward }));
+    } catch (caught) {
+      toast.error(caught instanceof Error ? caught.message : t("Could not claim that challenge."));
+    } finally {
+      setBusy(null);
+    }
+  }
 
   async function equip(item: CosmeticItem) {
     if (busy) return;
@@ -566,6 +603,65 @@ export default function ProfilePage() {
         <div className="flex flex-col gap-4">
           <div className="panel rounded-2xl p-5">
             <div className="mb-3 flex items-center gap-2">
+              <Target className="size-4 text-brand" />
+              <h2 className="text-sm font-semibold">{t("Daily challenges")}</h2>
+            </div>
+            {challenges ? (
+              <div className="flex flex-col gap-3">
+                {challenges.map((challenge) => {
+                  const complete = challenge.progress >= challenge.target;
+                  return (
+                    <div key={challenge.id} className="rounded-xl border border-white/7 bg-white/[0.015] px-3 py-2.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium">{t(challenge.title)}</p>
+                          <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
+                            {t(challenge.description)}
+                          </p>
+                        </div>
+                        <Badge variant={challenge.claimed ? "success" : complete ? "brand" : "outline"}>
+                          {challenge.claimed ? t("Claimed") : `+${challenge.reward}`}
+                        </Badge>
+                      </div>
+                      <Progress
+                        className="mt-2"
+                        size="sm"
+                        value={challenge.progress}
+                        max={challenge.target}
+                        variant={challenge.claimed ? "success" : complete ? "brand" : "default"}
+                      />
+                      <div className="mt-2 flex items-center justify-between gap-2">
+                        <span className="font-mono text-[10px] text-muted-foreground">
+                          {challenge.progress}/{challenge.target}
+                        </span>
+                        {challenge.claimed ? (
+                          <span className="text-[10px] text-success">{t("Claimed today")}</span>
+                        ) : (
+                          <Button
+                            size="xs"
+                            variant={complete ? "brand" : "outline"}
+                            disabled={!complete || Boolean(busy)}
+                            loading={busy === `challenge:${challenge.id}`}
+                            onClick={() => void claimChallenge(challenge)}
+                          >
+                            {complete ? t("Claim {n} coins", { n: challenge.reward }) : t("In progress")}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <Skeleton className="h-16 rounded-xl" />
+                <Skeleton className="h-16 rounded-xl" />
+              </div>
+            )}
+          </div>
+
+          <div className="panel rounded-2xl p-5">
+            <div className="mb-3 flex items-center gap-2">
               <Gauge className="size-4 text-brand" />
               <h2 className="text-sm font-semibold">{t("Performance")}</h2>
             </div>
@@ -629,6 +725,20 @@ export default function ProfilePage() {
               </label>
             </div>
           ) : null}
+
+          <div className="panel rounded-2xl p-5">
+            <h2 className="flex items-center gap-2 text-sm font-semibold">
+              <History className="size-4 text-brand" /> {t("Match history")}
+            </h2>
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+              {t("Review your previous games, rewards and the full round timeline.")}
+            </p>
+            <Link href="/history">
+              <Button variant="outline" className="mt-4 w-full justify-start gap-2">
+                <History /> {t("View match history")}
+              </Button>
+            </Link>
+          </div>
 
           <div className="panel rounded-2xl p-5">
             <h2 className="text-sm font-semibold">{t("Account")}</h2>

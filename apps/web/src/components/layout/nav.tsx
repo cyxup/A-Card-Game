@@ -1,4 +1,4 @@
-import { Coins, History as HistoryIcon, LogOut, Menu, Play, Shield, Trophy, UserRound, Users } from "lucide-react";
+import { Coins, LogOut, Menu, Play, Shield, UserRound, Users } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation, useRoute } from "wouter";
 import { Avatar } from "@/components/brand/avatar";
@@ -83,7 +83,6 @@ export function Nav() {
           )}
           {user?.owner && <NavLink href="/admin" label="Admin" />}
           {user && <NavLink href="/friends" label="Friends" />}
-          {user && <NavLink href="/history" label="History" />}
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
@@ -184,11 +183,6 @@ export function Nav() {
                         <Users /> {t("Friends")}
                       </Button>
                     </Link>
-                    <Link href="/history" onClick={() => setMenuOpen(false)}>
-                      <Button variant="ghost" className="w-full justify-start gap-2">
-                        <HistoryIcon /> {t("History")}
-                      </Button>
-                    </Link>
                     {user.owner && (
                       <Link href="/admin" onClick={() => setMenuOpen(false)}>
                         <Button variant="ghost" className="w-full justify-start gap-2">
@@ -256,14 +250,6 @@ export function Footer() {
           <span>{t("stacked — play your hand, stack the deck.")}</span>
         </div>
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
-          <Link href="/rules" className="hover:text-foreground">
-            {t("Rules")}
-          </Link>
-          <Link href="/leaderboard" className="hover:text-foreground">
-            <span className="inline-flex items-center gap-1">
-              <Trophy className="size-3" /> {t("Leaderboard")}
-            </span>
-          </Link>
           <span className="font-mono text-[10px] uppercase tracking-[0.18em]">v{__APP_VERSION__}</span>
         </div>
       </div>

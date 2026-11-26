@@ -2,6 +2,7 @@ import type { FriendUserView, FriendsPayload } from "@stacked/shared";
 import {
   Ban,
   Check,
+  Eye,
   Globe,
   Lock,
   Play,
@@ -146,6 +147,19 @@ export default function FriendsPage() {
       await load();
     } catch (caught) {
       toast.error(caught instanceof Error ? caught.message : t("Could not send that invite."));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function watch(friend: FriendUserView) {
+    if (busy) return;
+    setBusy(`watch:${friend.id}`);
+    try {
+      const room = await client.spectate(friend.id);
+      navigate(`/room/${room.code}`);
+    } catch (caught) {
+      toast.error(caught instanceof Error ? caught.message : t("Could not watch that game."));
     } finally {
       setBusy(null);
     }
@@ -445,6 +459,18 @@ export default function FriendsPage() {
                       <PresenceLine friend={friend} />
                     </div>
                     <div className="flex flex-wrap items-center gap-1.5">
+                      {friend.presence?.status === "playing" ? (
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          loading={busy === `watch:${friend.id}`}
+                          disabled={Boolean(busy)}
+                          onClick={() => void watch(friend)}
+                          className="gap-1"
+                        >
+                          <Eye /> {t("Watch")}
+                        </Button>
+                      ) : null}
                       {friend.presence?.room?.code && friend.presence.room.phase === "lobby" ? (
                         <Button
                           size="xs"
