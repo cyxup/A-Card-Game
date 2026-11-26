@@ -346,10 +346,6 @@ class GameClient {
     this.send({ t: "rematch" });
   }
 
-  kingOfTable(): void {
-    this.send({ t: "king" });
-  }
-
   toLobby(): void {
     this.send({ t: "lobby" });
   }

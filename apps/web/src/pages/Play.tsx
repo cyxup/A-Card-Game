@@ -27,7 +27,7 @@ const DEFAULT_RULES: Partial<GameRules> = {
   sevenZero: false,
   drawUntilPlayable: false,
   wager: 0,
-  kingOfTable: false,
+  finishAll: false,
   teamMode: "off" as const,
 };
 
@@ -311,9 +311,15 @@ export default function PlayPage() {
                     onChange={(value) => setQuickRules((prev) => ({ ...prev, drawUntilPlayable: value }))}
                   />
                   <QuickToggle
-                    label={t("King of the table")}
-                    checked={Boolean(quickRules.kingOfTable)}
-                    onChange={(value) => setQuickRules((prev) => ({ ...prev, kingOfTable: value }))}
+                    label={t("Finish all")}
+                    checked={Boolean(quickRules.finishAll)}
+                    onChange={(value) =>
+                      setQuickRules((prev) => ({
+                        ...prev,
+                        finishAll: value,
+                        teamMode: value ? "off" : prev.teamMode,
+                      }))
+                    }
                   />
                   <QuickToggle
                     label={t("2v2 teams")}
@@ -323,6 +329,7 @@ export default function PlayPage() {
                         ...prev,
                         teamMode: value ? "2v2" : "off",
                         maxPlayers: value ? 4 : prev.maxPlayers,
+                        finishAll: value ? false : prev.finishAll,
                       }))
                     }
                   />
@@ -514,10 +521,16 @@ export default function PlayPage() {
                   onChange={(value) => setRules((prev) => ({ ...prev, drawUntilPlayable: value }))}
                 />
                 <RuleRow
-                  title={t("King of the table")}
-                  description={t("The winner keeps the crown, the table resets to the lobby, and everyone else heads back to the floor.")}
-                  checked={Boolean(rules.kingOfTable)}
-                  onChange={(value) => setRules((prev) => ({ ...prev, kingOfTable: value }))}
+                  title={t("Finish all")}
+                  description={t("The first player out wins, but the round continues until every hand is empty.")}
+                  checked={Boolean(rules.finishAll)}
+                  onChange={(value) =>
+                    setRules((prev) => ({
+                      ...prev,
+                      finishAll: value,
+                      teamMode: value ? "off" : prev.teamMode,
+                    }))
+                  }
                 />
                 <RuleRow
                   title={t("2v2 teams")}
@@ -528,6 +541,7 @@ export default function PlayPage() {
                       ...prev,
                       teamMode: value ? "2v2" : "off",
                       maxPlayers: value ? 4 : prev.maxPlayers,
+                      finishAll: value ? false : prev.finishAll,
                     }))
                   }
                 />

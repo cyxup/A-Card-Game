@@ -202,6 +202,15 @@ export function botName(taken: string[]): string {
 export function placementMap(game: GameState): Map<string, number> {
   const map = new Map<string, number>();
   if (!game.results) return map;
+  if (game.rules.finishAll && game.finishOrder.length > 0) {
+    for (const [index, id] of game.finishOrder.entries()) map.set(id, index + 1);
+    const remaining = game.results
+      .filter((result) => !map.has(result.id))
+      .sort((a, b) => a.cardsLeft - b.cardsLeft || a.points - b.points);
+    let next = map.size + 1;
+    for (const result of remaining) map.set(result.id, next++);
+    return map;
+  }
   if (game.winningTeam !== null) {
     for (const player of game.players) {
       map.set(player.id, player.team === game.winningTeam ? 1 : 2);
@@ -288,6 +297,7 @@ export function buildRoomView(room: Room, viewerId: string, ownerPeek = false): 
             drawnCardId: currentId === viewerId ? game.drawnCard : null,
             winner: game.winner,
             winningTeam: game.winningTeam,
+            finishOrder: game.finishOrder,
             results: game.results,
             log: game.log.slice(-24),
             lastCard: game.lastCard,

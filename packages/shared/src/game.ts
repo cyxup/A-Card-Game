@@ -28,8 +28,8 @@ export interface GameRules {
   startingHand: number;
   /** Wager per registered player in coins. 0 is a normal table. */
   wager: number;
-  /** Winner keeps the table after the round; everyone else is sent back to the floor. */
-  kingOfTable: boolean;
+  /** The first player out wins, but the round continues until every hand is empty. */
+  finishAll: boolean;
   /** Off is free-for-all. 2v2 forces four seats and alternating teams. */
   teamMode: TeamMode;
 }
@@ -44,7 +44,7 @@ export const DEFAULT_RULES: GameRules = {
   drawUntilPlayable: false,
   startingHand: 7,
   wager: 0,
-  kingOfTable: false,
+  finishAll: false,
   teamMode: "off",
 };
 
@@ -78,7 +78,7 @@ export function normaliseRules(input: Partial<GameRules> | undefined): GameRules
     sevenZero: Boolean(rules.sevenZero),
     drawUntilPlayable: Boolean(rules.drawUntilPlayable),
     wager: clampInt(rules.wager, RULE_BOUNDS.wager.min, RULE_BOUNDS.wager.max, DEFAULT_RULES.wager),
-    kingOfTable: Boolean(rules.kingOfTable),
+    finishAll: rules.teamMode === "2v2" ? false : Boolean(rules.finishAll),
     teamMode: rules.teamMode === "2v2" ? "2v2" : "off",
   };
 }
@@ -148,6 +148,8 @@ export interface GameState {
   drawnCard: string | null;
   winner: string | null;
   winningTeam: number | null;
+  /** Player ids in the order they emptied their hands, used by finish-all. */
+  finishOrder: string[];
   deadline: number;
   turnStartedAt: number;
   startedAt: number;
@@ -207,7 +209,7 @@ export function nextActiveIndex(state: GameState, from: number, steps = 1): numb
     index = nextIndex(state, index, 1);
     let guard = 0;
     while (
-      state.rules.teamMode === "2v2" &&
+      (state.rules.teamMode === "2v2" || state.rules.finishAll) &&
       state.players[index]?.hand.length === 0 &&
       guard++ < state.players.length
     ) {
@@ -356,6 +358,7 @@ export function createGame(
     drawnCard: null,
     winner: null,
     winningTeam: null,
+    finishOrder: [],
     deadline: now + rules.turnSeconds * 1000,
     turnStartedAt: now,
     startedAt: now,
@@ -450,7 +453,7 @@ function applyPlay(
     }
     target = state.players.find((candidate) => candidate.id === targetId);
     if (!target) throw new GameError("invalid_target", "That player is not at this table.");
-    if (state.rules.teamMode === "2v2" && target.hand.length === 0) {
+    if ((state.rules.teamMode === "2v2" || state.rules.finishAll) && target.hand.length === 0) {
       throw new GameError("invalid_target", "That player has already finished their hand.");
     }
   }
@@ -476,6 +479,17 @@ function applyPlay(
 
   // Team mode: one player can finish, but the team only wins when both
   // partners are empty. Free-for-all still ends on the first empty hand.
+  // Finish-all mode: the first player out owns first place, but the round
+  // keeps going until every player has emptied their hand.
+  if (state.rules.finishAll && player.hand.length === 0) {
+    if (!state.finishOrder.includes(player.id)) state.finishOrder.push(player.id);
+    if (state.finishOrder.length >= state.players.length) {
+      finish(state, state.finishOrder[0] ?? null, ctx.now);
+      return state;
+    }
+    advance(state, ctx.now, 1);
+    return state;
+  }
   if (state.rules.teamMode === "2v2" && player.team !== null) {
     if (state.players.filter((candidate) => candidate.team === player.team).every((candidate) => candidate.hand.length === 0)) {
       finish(state, player.id, ctx.now, player.team);
@@ -593,7 +607,7 @@ function applyDraw(state: GameState, index: number, ctx: ReduceContext): GameSta
   state.lastCard = null;
   if (!last) {
     pushLog(state, { at: ctx.now, kind: "draw", actor: player.id, count: 0 });
-    finish(state, null, ctx.now);
+    finish(state, state.rules.finishAll ? state.finishOrder[0] ?? null : null, ctx.now);
     return state;
   }
 
@@ -696,7 +710,7 @@ function finish(state: GameState, winner: string | null, now: number, winningTea
 
 function rotateHands(state: GameState, now: number): void {
   const players =
-    state.rules.teamMode === "2v2"
+    state.rules.teamMode === "2v2" || state.rules.finishAll
       ? state.players.filter((player) => player.hand.length > 0)
       : state.players;
   const n = players.length;

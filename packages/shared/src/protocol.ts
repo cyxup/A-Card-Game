@@ -301,6 +301,7 @@ export interface GameView {
   drawnCardId: string | null;
   winner: string | null;
   winningTeam: number | null;
+  finishOrder: string[];
   results: GameResult[] | null;
   log: LogEntry[];
   lastCard: Card | null;
@@ -365,7 +366,6 @@ export type ClientMessage =
   | { t: "rules"; rules: Partial<GameRules> }
   | { t: "start" }
   | { t: "rematch" }
-  | { t: "king" }
   | { t: "lobby" }
   | { t: "bot"; add: boolean }
   | { t: "kick"; playerId: string }

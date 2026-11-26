@@ -1,5 +1,5 @@
 import type { FriendRelationship, FriendsPayload, GameRules, RoomView } from "@stacked/shared";
-import { Bot, Check, Clock, Coins, Copy, Crown, DoorOpen, Layers, Play, Plus, Settings2, Trash2, UserPlus, Users } from "lucide-react";
+import { Bot, Check, Clock, Coins, Copy, Crown, DoorOpen, Layers, Play, Plus, Settings2, Trash2, Trophy, UserPlus, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/brand/avatar";
 import { NameEffect } from "@/components/brand/name-effect";
@@ -158,9 +158,9 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
                   ? t("mixed stacking")
                   : t("same-card stacking")}
             </span>
-            {room.rules.kingOfTable ? (
+            {room.rules.finishAll ? (
               <span className="inline-flex items-center gap-1 text-warning">
-                <Crown className="size-3.5" /> {t("King of the table")}
+                <Trophy className="size-3.5" /> {t("Finish all")}
               </span>
             ) : null}
             {coins !== null && (
@@ -438,11 +438,16 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
                 onChange={(value) => update({ drawUntilPlayable: value })}
               />
               <RuleToggle
-                label={t("King of the table")}
-                description={t("The winner keeps the crown; everyone else returns to the floor.")}
-                checked={room.rules.kingOfTable}
+                label={t("Finish all")}
+                description={t("The first player out wins, but the round continues until every hand is empty.")}
+                checked={room.rules.finishAll}
                 disabled={locked}
-                onChange={(value) => update({ kingOfTable: value })}
+                onChange={(value) =>
+                  update({
+                    finishAll: value,
+                    teamMode: value ? "off" : room.rules.teamMode,
+                  })
+                }
               />
               <RuleToggle
                 label={t("2v2 teams")}
@@ -453,6 +458,7 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
                   update({
                     teamMode: value ? "2v2" : "off",
                     maxPlayers: value ? 4 : room.rules.maxPlayers,
+                    finishAll: value ? false : room.rules.finishAll,
                   })
                 }
               />

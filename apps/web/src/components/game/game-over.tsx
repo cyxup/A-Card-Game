@@ -20,13 +20,11 @@ export function GameOverDialog({
   onLeave,
   onRematch,
   onLobby,
-  onKing,
 }: {
   room: RoomView;
   onLeave: () => void;
   onRematch: () => void;
   onLobby: () => void;
-  onKing: () => void;
 }) {
   const { session } = useSession();
   const t = useT();
@@ -34,6 +32,13 @@ export function GameOverDialog({
   const me = room.players.find((player) => player.id === room.you.id);
   const rewards = room.you.rewards;
   const results = [...(game?.results ?? [])].sort((a, b) => {
+    if (game?.finishOrder?.length) {
+      const aIndex = game.finishOrder.indexOf(a.id);
+      const bIndex = game.finishOrder.indexOf(b.id);
+      if (aIndex >= 0 && bIndex >= 0) return aIndex - bIndex;
+      if (aIndex >= 0) return -1;
+      if (bIndex >= 0) return 1;
+    }
     if (game?.winningTeam !== null && game?.winningTeam !== undefined) {
       const aTeam = room.players.find((player) => player.id === a.id)?.team;
       const bTeam = room.players.find((player) => player.id === b.id)?.team;
@@ -47,9 +52,6 @@ export function GameOverDialog({
   const winner = room.players.find((player) => player.id === game?.winner);
   const winningTeam = game?.winningTeam ?? null;
   const teamWinners = winningTeam === null ? [] : room.players.filter((player) => player.team === winningTeam);
-  const humanTeamWinner = teamWinners.some((player) => !player.isBot);
-  const kingMode = Boolean(room.rules.kingOfTable && (winningTeam !== null ? humanTeamWinner : winner && !winner.isBot));
-  const isWinner = winningTeam !== null ? me?.team === winningTeam : Boolean(game?.winner && game.winner === room.you.id);
   const teamLabel = winningTeam === null ? null : winningTeam === 0 ? t("Team A") : t("Team B");
 
   useEffect(() => {
@@ -224,25 +226,15 @@ export function GameOverDialog({
           <p className="text-xs text-muted-foreground">{t("No rewards this round.")}</p>
         )}
 
-        {kingMode ? (
-          <p className="flex items-center gap-2 rounded-xl border border-warning/25 bg-warning/[0.06] px-3 py-2.5 text-[11px] text-warning">
-            <Crown className="size-4 shrink-0" />
-            {t("The winner keeps the table. Everyone else returns to the floor.")}
+        {room.rules.finishAll ? (
+          <p className="flex items-center gap-2 rounded-xl border border-brand/25 bg-brand/[0.06] px-3 py-2.5 text-[11px] text-brand">
+            <Trophy className="size-4 shrink-0" />
+            {t("Finish all: the round runs until every hand is empty.")}
           </p>
         ) : null}
 
         <div className="flex flex-col gap-2 sm:flex-row">
-          {kingMode ? (
-            isWinner ? (
-              <Button variant="brand" size="lg" className="flex-1 gap-1.5" onClick={onKing}>
-                <Crown className="size-4" /> {t("Defend the crown")}
-              </Button>
-            ) : (
-              <Button variant="secondary" size="lg" className="flex-1" disabled>
-                {t("Waiting for the king")}
-              </Button>
-            )
-          ) : room.you.isHost ? (
+          {room.you.isHost ? (
             <Button variant="brand" size="lg" className="flex-1" onClick={onRematch}>
               {t("Deal again")}
             </Button>
@@ -251,7 +243,7 @@ export function GameOverDialog({
               {t("Waiting for the host")}
             </Button>
           )}
-          {!kingMode && room.you.isHost ? (
+          {room.you.isHost ? (
             <Button variant="secondary" size="lg" className="flex-1" onClick={onLobby}>
               {t("Back to lobby")}
             </Button>

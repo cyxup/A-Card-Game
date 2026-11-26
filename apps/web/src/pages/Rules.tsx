@@ -158,8 +158,8 @@ export default function RulesPage() {
               {t("Keep drawing until you can play. Hosts, please warn your friends.")}
             </li>
             <li>
-              <span className="font-medium text-foreground">{t("King of the table.")}</span>{" "}
-              {t("The winner keeps the table. Everyone else returns to the floor and new challengers can join.")}
+              <span className="font-medium text-foreground">{t("Finish all.")}</span>{" "}
+              {t("The first player out wins, but the round continues until every hand is empty and placements are locked in.")}
             </li>
             <li>
               <span className="font-medium text-foreground">{t("2v2 teams.")}</span>{" "}

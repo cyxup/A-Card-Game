@@ -48,6 +48,7 @@ function state(overrides: Partial<GameState> = {}): GameState {
     drawnCard: null,
     winner: null,
     winningTeam: null,
+    finishOrder: [],
     deadline: 60_000,
     turnStartedAt: 0,
     startedAt: 0,
@@ -516,5 +517,37 @@ describe("2v2 teams", () => {
     expect(next.phase).toBe("ended");
     expect(next.winningTeam).toBe(0);
     expect(next.winner).toBe("a");
+  });
+});
+
+describe("finish all", () => {
+  function finishAllState() {
+    return state({
+      players: players([
+        [card("a1", "red", "number", 5)],
+        [card("b1", "red", "number", 5)],
+        [card("c1", "red", "number", 5)],
+        [card("d1", "red", "number", 5)],
+      ]),
+      rules: { ...DEFAULT_RULES, finishAll: true },
+      turn: 0,
+      discard: [card("t1", "red", "number", 5)],
+    });
+  }
+
+  it("keeps playing after the first player finishes", () => {
+    let s = finishAllState();
+    s = reduce(s, "a", { type: "play", cardId: "a1" }, ctx);
+    expect(s.phase).toBe("playing");
+    expect(s.finishOrder).toEqual(["a"]);
+    expect(s.turn).toBe(1);
+    s = reduce(s, "b", { type: "play", cardId: "b1" }, ctx);
+    s = reduce(s, "c", { type: "play", cardId: "c1" }, ctx);
+    expect(s.phase).toBe("playing");
+    expect(s.finishOrder).toEqual(["a", "b", "c"]);
+    s = reduce(s, "d", { type: "play", cardId: "d1" }, ctx);
+    expect(s.phase).toBe("ended");
+    expect(s.winner).toBe("a");
+    expect(s.finishOrder).toEqual(["a", "b", "c", "d"]);
   });
 });

@@ -193,9 +193,6 @@ export class RoomManager {
       case "rematch":
         this.rematch(conn);
         break;
-      case "king":
-        this.kingOfTable(conn);
-        break;
       case "lobby":
         this.toLobby(conn);
         break;
@@ -312,7 +309,7 @@ export class RoomManager {
       rules.drawUntilPlayable === wanted.drawUntilPlayable &&
       rules.startingHand === wanted.startingHand &&
       rules.wager === wanted.wager &&
-      rules.kingOfTable === wanted.kingOfTable &&
+      rules.finishAll === wanted.finishAll &&
       rules.teamMode === wanted.teamMode;
     const candidate = [...this.rooms.values()]
       .filter(
@@ -540,64 +537,6 @@ export class RoomManager {
     } finally {
       room.starting = false;
     }
-  }
-
-  private kingOfTable(conn: ClientConn): void {
-    const { room, seat } = this.mustSeat(conn);
-    if (!room.rules.kingOfTable) {
-      throw new RoomError("not_king_mode", "This table is not playing King of the table.");
-    }
-    if (room.phase !== "ended" || !room.game) {
-      throw new RoomError("not_ended", "The round is still going.");
-    }
-    const winningTeam = room.game.winningTeam;
-    const keepIds =
-      winningTeam !== null
-        ? new Set(
-            room.seats
-              .filter(
-                (entry) =>
-                  room.game?.players.find((player) => player.id === entry.id)?.team === winningTeam,
-              )
-              .map((entry) => entry.id),
-          )
-        : new Set([room.game.winner ?? ""]);
-    if (!keepIds.has(seat.id) || keepIds.size === 0) {
-      throw new RoomError("not_winner", "Only the winner can keep the table.");
-    }
-
-    for (const other of [...room.seats]) {
-      if (keepIds.has(other.id)) continue;
-      for (const otherConn of [...room.connections]) {
-        if (otherConn.playerId !== other.id) continue;
-        otherConn.roomCode = null;
-        room.connections.delete(otherConn);
-        this.send(otherConn, {
-          t: "toast",
-          tone: "info",
-          message: "The winner keeps the crown. You are back on the floor.",
-        });
-        this.send(otherConn, { t: "left" });
-      }
-      room.removeSeat(other.id);
-    }
-
-    room.hostId = seat.id;
-    room.clearTimers();
-    room.phase = "lobby";
-    room.game = null;
-    room.endedAt = 0;
-    room.startedAt = 0;
-    room.persisted = false;
-    room.frozen = false;
-    for (const winnerSeat of room.seats) {
-      winnerSeat.rewards = null;
-      winnerSeat.stats = { cardsPlayed: 0, jumps: 0, stacks: 0 };
-      winnerSeat.ready = false;
-      winnerSeat.cheated = false;
-    }
-    room.touch();
-    this.broadcast(room);
   }
 
   private async refundRoomWager(room: Room): Promise<void> {
