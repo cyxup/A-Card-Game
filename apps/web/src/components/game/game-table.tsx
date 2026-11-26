@@ -198,9 +198,11 @@ function TurnStatus({
     <div className="turn-status">
       <div className="turn-status-row">
         <span className="turn-status-live" data-active={isMyTurn} />
-        <span className={cn("turn-status-name", isMyTurn && "text-brand")} aria-live="polite">
-          {isMyTurn ? t("Your turn") : t("{name}'s turn", { name: currentName })}
-        </span>
+        {isMyTurn ? null : (
+          <span className="turn-status-name" aria-live="polite">
+            {t("{name}'s turn", { name: currentName })}
+          </span>
+        )}
         <span className="turn-status-seconds">{seconds > 0 ? `${seconds}s` : "…"}</span>
       </div>
       <div className="turn-status-bar">
@@ -218,7 +220,7 @@ function TurnStatus({
         <span className="turn-status-meta">
           <ColorLabel color={game.color} />
           <span className="text-white/15">·</span>
-          <RefreshCw className={cn("size-3", game.dir === -1 && "rotate-180")} />
+          <RefreshCw className={cn("size-4", game.dir === -1 && "rotate-180")} />
           {game.dir === 1 ? t("clockwise") : t("counter-clockwise")}
         </span>
       </div>
@@ -955,9 +957,14 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
               className="direction-orbit"
               aria-hidden
               animate={{ rotate: gameView.dir === 1 ? 360 : -360 }}
-              transition={{ duration: 64, repeat: Infinity, ease: "linear" }}
+              transition={{ duration: 46, repeat: Infinity, ease: "linear" }}
             >
-              <span className="direction-orbit-tick" />
+              <span
+                className="direction-orbit-arrow"
+                style={{ transform: gameView.dir === 1 ? undefined : "scaleX(-1)" }}
+              >
+                ➜
+              </span>
             </motion.div>
 
             <div className="play-piles">
