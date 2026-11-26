@@ -1,4 +1,11 @@
-import type { AdminAuditView, AdminReportView, AdminRoomView, AdminUserDetail, AdminUserView } from "@stacked/shared";
+import type {
+  AdminAuditView,
+  AdminReportView,
+  AdminRoomView,
+  AdminTagView,
+  AdminUserDetail,
+  AdminUserView,
+} from "@stacked/shared";
 import {
   Ban,
   Check,
@@ -9,12 +16,14 @@ import {
   Flag,
   Gavel,
   HandCoins,
+  Plus,
   RefreshCw,
   Search,
   Shield,
   ShieldOff,
   Snowflake,
   Sparkles,
+  Tag,
   Trash2,
   UserRound,
   Users,
@@ -36,6 +45,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
@@ -43,6 +59,24 @@ import { compactNumber, formatRelative } from "@/lib/format";
 import { useT } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { playSound } from "@/lib/sound";
+
+const TAG_COLORS = ["#f87171", "#fb923c", "#fbbf24", "#4ade80", "#38bdf8", "#a78bfa", "#f472b6"];
+
+function TagChip({ tag }: { tag: AdminTagView }) {
+  return (
+    <Badge
+      variant="outline"
+      className="rounded-full px-1.5 py-0 text-[9px] font-medium"
+      style={{
+        borderColor: `${tag.color}66`,
+        backgroundColor: `${tag.color}14`,
+        color: tag.color,
+      }}
+    >
+      {tag.name}
+    </Badge>
+  );
+}
 
 export default function AdminPage() {
   const { session, refresh } = useSession();
@@ -58,6 +92,14 @@ export default function AdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [banTarget, setBanTarget] = useState<AdminUserView | null>(null);
   const [banReason, setBanReason] = useState("");
+  const [cheatTarget, setCheatTarget] = useState<AdminUserView | null>(null);
+  const [cheatAmount, setCheatAmount] = useState("1000");
+  const [tagTarget, setTagTarget] = useState<AdminUserView | null>(null);
+  const [tagOpen, setTagOpen] = useState(false);
+  const [allTags, setAllTags] = useState<AdminTagView[]>([]);
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [newTagName, setNewTagName] = useState("");
+  const [newTagColor, setNewTagColor] = useState(TAG_COLORS[5]);
 
   const me = session?.kind === "user" ? session.user : null;
   const isOwner = Boolean(me?.owner);
@@ -87,6 +129,14 @@ export default function AdminPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOwner]);
 
+  useEffect(() => {
+    if (!users?.length) return;
+    setCheatTarget((current) => {
+      const wanted = current?.id ?? me?.id;
+      return users.find((user) => user.id === wanted) ?? current ?? users[0] ?? null;
+    });
+  }, [users, me?.id]);
+
   async function act(key: string, run: () => Promise<unknown>, sound: Parameters<typeof playSound>[0] = "success") {
     if (busy) return;
     setBusy(key);
@@ -101,8 +151,18 @@ export default function AdminPage() {
     }
   }
 
-  function cheat(patch: { coins?: number; xp?: number; unlockAll?: boolean }, sound: Parameters<typeof playSound>[0] = "coin") {
-    return act(`cheat:${JSON.stringify(patch)}`, () => api.post<AdminUserView>("/api/admin/cheat", patch), sound);
+  async function cheat(patch: { coins?: number; xp?: number; unlockAll?: boolean }, sound: Parameters<typeof playSound>[0] = "coin") {
+    if (!cheatTarget) return;
+    const targetId = cheatTarget.id;
+    await act(
+      `cheat:${targetId}:${JSON.stringify(patch)}`,
+      async () => {
+        const updated = await api.post<AdminUserView>(`/api/admin/users/${targetId}/grant`, patch);
+        setCheatTarget(updated);
+        return updated;
+      },
+      sound,
+    );
   }
 
   function reportAction(report: AdminReportView, status: "resolved" | "dismissed") {
@@ -173,12 +233,85 @@ export default function AdminPage() {
     setBanTarget(null);
   }
 
-  function toggleBeta(user: AdminUserView) {
-    void act(
-      `beta:${user.id}`,
-      () => api.post<AdminUserView>(`/api/admin/users/${user.id}/beta`, { beta: !user.beta }),
-      "equip",
+  async function openTags(user: AdminUserView) {
+    if (busy) return;
+    setTagTarget(user);
+    setTagOpen(true);
+    setSelectedTagIds(user.tags.map((tag) => tag.id));
+    setNewTagName("");
+    setBusy(`tags:open:${user.id}`);
+    try {
+      setAllTags(await api.get<AdminTagView[]>("/api/admin/tags"));
+    } catch (caught) {
+      toast.error(caught instanceof Error ? caught.message : t("Could not load tags."));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  function toggleTag(id: string) {
+    setSelectedTagIds((current) =>
+      current.includes(id) ? current.filter((tagId) => tagId !== id) : [...current, id],
     );
+  }
+
+  async function createTag(event: FormEvent) {
+    event.preventDefault();
+    if (busy || !tagTarget) return;
+    const name = newTagName.trim();
+    if (!name) return;
+    setBusy("tag:create");
+    try {
+      const created = await api.post<AdminTagView>("/api/admin/tags", { name, color: newTagColor });
+      setAllTags((current) => [...current, created].sort((a, b) => a.name.localeCompare(b.name)));
+      setSelectedTagIds((current) => [...current, created.id]);
+      setNewTagName("");
+      playSound("success");
+    } catch (caught) {
+      toast.error(caught instanceof Error ? caught.message : t("Could not create that tag."));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function deleteTag(tag: AdminTagView) {
+    if (busy) return;
+    if (!window.confirm(t("Delete tag {name}? It will be removed from every player.", { name: tag.name }))) {
+      return;
+    }
+    setBusy(`tag:delete:${tag.id}`);
+    try {
+      await api.post(`/api/admin/tags/${tag.id}/delete`, {});
+      setAllTags((current) => current.filter((item) => item.id !== tag.id));
+      setSelectedTagIds((current) => current.filter((id) => id !== tag.id));
+      playSound("success");
+      await load();
+    } catch (caught) {
+      toast.error(caught instanceof Error ? caught.message : t("Could not delete that tag."));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function saveTags() {
+    if (!tagTarget || busy) return;
+    const targetId = tagTarget.id;
+    setBusy(`tags:save:${targetId}`);
+    try {
+      await api.post<AdminUserView>(`/api/admin/users/${targetId}/tags`, { tagIds: selectedTagIds });
+      playSound("success");
+      setTagOpen(false);
+      await Promise.all([load(), refresh()]);
+    } catch (caught) {
+      toast.error(caught instanceof Error ? caught.message : t("Could not save those tags."));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  const cheatValue = Math.max(0, Math.min(1_000_000, Math.floor(Number(cheatAmount) || 0)));
+  function cheatBusy(patch: { coins?: number; xp?: number; unlockAll?: boolean }) {
+    return cheatTarget ? busy === `cheat:${cheatTarget.id}:${JSON.stringify(patch)}` : false;
   }
 
   if (!isOwner) {
@@ -353,44 +486,185 @@ export default function AdminPage() {
               <Zap className="size-4 text-warning" />
               <h2 className="text-sm font-semibold">{t("Cheats")}</h2>
             </div>
-            <div className="flex flex-wrap items-center gap-3 rounded-xl border border-white/8 bg-white/[0.02] px-4 py-3">
-              <Avatar id={me?.avatar ?? "rook"} size={36} />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold">
-                  <NameEffect effect={me?.nameEffect}>{me?.displayName}</NameEffect>
-                </p>
-                <p className="font-mono text-[10px] text-muted-foreground">
-                  {t("level {n}", { n: me?.level ?? 1 })} · {compactNumber(me?.coins ?? 0)} {t("coins")} ·{" "}
-                  {compactNumber(me?.xp ?? 0)} xp
-                </p>
+
+            <div className="flex flex-wrap items-end gap-2">
+              <div className="min-w-[220px] flex-1">
+                <Label
+                  htmlFor="cheat-target"
+                  className="mb-1.5 block text-[10px] uppercase tracking-wider text-muted-foreground"
+                >
+                  {t("Apply cheats to")}
+                </Label>
+                <Select
+                  value={cheatTarget?.id ?? ""}
+                  onValueChange={(id) => {
+                    const next = users?.find((user) => user.id === id);
+                    if (next) setCheatTarget(next);
+                  }}
+                  disabled={!users?.length}
+                >
+                  <SelectTrigger id="cheat-target" className="h-9 w-full">
+                    <SelectValue placeholder={t("Pick a player")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cheatTarget && !(users ?? []).some((user) => user.id === cheatTarget.id) ? (
+                      <SelectItem value={cheatTarget.id}>
+                        {cheatTarget.displayName} @{cheatTarget.username}
+                      </SelectItem>
+                    ) : null}
+                    {(users ?? []).map((user) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.displayName} <span className="text-muted-foreground">@{user.username}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <Badge variant="warning" className="gap-1">
-                <Crown className="size-3" /> {t("owner")}
-              </Badge>
+              {cheatTarget && cheatTarget.id !== me?.id ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5"
+                  onClick={() => {
+                    const self = users?.find((user) => user.id === me?.id);
+                    if (self) setCheatTarget(self);
+                  }}
+                >
+                  <UserRound /> {t("Me")}
+                </Button>
+              ) : null}
             </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Button size="sm" variant="outline" className="gap-1.5" loading={busy === 'cheat:{"coins":1000}'} onClick={() => void cheat({ coins: 1000 })}>
-                <Coins /> {t("+1 000 coins")}
-              </Button>
-              <Button size="sm" variant="outline" className="gap-1.5" loading={busy === 'cheat:{"coins":10000}'} onClick={() => void cheat({ coins: 10000 })}>
-                <Coins /> {t("+10 000 coins")}
-              </Button>
-              <Button size="sm" variant="outline" className="gap-1.5" loading={busy === 'cheat:{"xp":1000}'} onClick={() => void cheat({ xp: 1000 })}>
-                <Sparkles /> {t("+1 000 XP")}
-              </Button>
-              <Button size="sm" variant="outline" className="gap-1.5" loading={busy === 'cheat:{"xp":10000}'} onClick={() => void cheat({ xp: 10000 })}>
-                <Sparkles /> {t("+10 000 XP")}
-              </Button>
-              <Button
-                size="sm"
-                variant="brand"
-                className="gap-1.5"
-                loading={busy === 'cheat:{"unlockAll":true}'}
-                onClick={() => void cheat({ unlockAll: true }, "reward")}
-              >
-                <HandCoins /> {t("Unlock every cosmetic")}
-              </Button>
-            </div>
+
+            {cheatTarget ? (
+              <>
+                <div className="mt-3 flex flex-wrap items-center gap-3 rounded-xl border border-white/8 bg-white/[0.02] px-4 py-3">
+                  <Avatar
+                    id={cheatTarget.id === me?.id ? me?.avatar ?? "rook" : cheatTarget.owner ? "ace" : "rook"}
+                    size={36}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="flex flex-wrap items-center gap-1.5 truncate text-sm font-semibold">
+                      <NameEffect
+                        effect={cheatTarget.id === me?.id ? me?.nameEffect : cheatTarget.owner ? "spectrum" : undefined}
+                      >
+                        {cheatTarget.displayName}
+                      </NameEffect>
+                      {cheatTarget.id === me?.id ? (
+                        <span className="text-[10px] font-normal text-muted-foreground">({t("you")})</span>
+                      ) : null}
+                    </p>
+                    <p className="font-mono text-[10px] text-muted-foreground">
+                      {t("level {n}", { n: cheatTarget.level })} · {compactNumber(cheatTarget.coins)} {t("coins")} ·{" "}
+                      {compactNumber(cheatTarget.xp)} xp
+                    </p>
+                  </div>
+                  {cheatTarget.owner ? (
+                    <Badge variant="warning" className="gap-1">
+                      <Crown className="size-3" /> {t("owner")}
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline">{t("Target")}</Badge>
+                  )}
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5"
+                    disabled={busy !== null}
+                    loading={cheatBusy({ coins: 1000 })}
+                    onClick={() => void cheat({ coins: 1000 })}
+                  >
+                    <Coins /> {t("+1 000 coins")}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5"
+                    disabled={busy !== null}
+                    loading={cheatBusy({ coins: 10000 })}
+                    onClick={() => void cheat({ coins: 10000 })}
+                  >
+                    <Coins /> {t("+10 000 coins")}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5"
+                    disabled={busy !== null}
+                    loading={cheatBusy({ xp: 1000 })}
+                    onClick={() => void cheat({ xp: 1000 })}
+                  >
+                    <Sparkles /> {t("+1 000 XP")}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5"
+                    disabled={busy !== null}
+                    loading={cheatBusy({ xp: 10000 })}
+                    onClick={() => void cheat({ xp: 10000 })}
+                  >
+                    <Sparkles /> {t("+10 000 XP")}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="brand"
+                    className="gap-1.5"
+                    disabled={busy !== null}
+                    loading={cheatBusy({ unlockAll: true })}
+                    onClick={() => void cheat({ unlockAll: true }, "reward")}
+                  >
+                    <HandCoins /> {t("Unlock every cosmetic")}
+                  </Button>
+                </div>
+
+                <div className="mt-3 flex flex-wrap items-end gap-2 rounded-xl border border-white/7 bg-white/[0.015] p-3">
+                  <div>
+                    <Label
+                      htmlFor="cheat-amount"
+                      className="mb-1 block text-[10px] uppercase tracking-wider text-muted-foreground"
+                    >
+                      {t("Custom amount")}
+                    </Label>
+                    <Input
+                      id="cheat-amount"
+                      type="number"
+                      min={1}
+                      max={1_000_000}
+                      value={cheatAmount}
+                      onChange={(event) => setCheatAmount(event.target.value)}
+                      className="h-9 w-32 font-mono text-xs"
+                    />
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5"
+                    disabled={busy !== null || cheatValue <= 0}
+                    loading={cheatBusy({ coins: cheatValue })}
+                    onClick={() => void cheat({ coins: cheatValue })}
+                  >
+                    <Coins /> {t("Add coins")}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5"
+                    disabled={busy !== null || cheatValue <= 0}
+                    loading={cheatBusy({ xp: cheatValue })}
+                    onClick={() => void cheat({ xp: cheatValue })}
+                  >
+                    <Sparkles /> {t("Add XP")}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <p className="mt-3 rounded-xl border border-dashed border-white/10 px-4 py-6 text-center text-xs text-muted-foreground">
+                {t("Pick a player to apply cheats.")}
+              </p>
+            )}
           </section>
 
           <section className="panel rounded-2xl p-5">
@@ -446,6 +720,9 @@ export default function AdminPage() {
                           <NameEffect effect={user.owner ? "spectrum" : undefined}>{user.displayName}</NameEffect>
                         </span>
                         <span className="font-mono text-[10px] text-muted-foreground">@{user.username}</span>
+                        {user.tags.map((tag) => (
+                          <TagChip key={tag.id} tag={tag} />
+                        ))}
                         {user.owner && (
                           <Badge variant="warning" className="gap-1">
                             <Crown className="size-3" /> {t("Owner")}
@@ -489,17 +766,15 @@ export default function AdminPage() {
                         {user.banned ? <ShieldOff /> : <Gavel />}
                         {user.banned ? t("Unban") : t("Ban")}
                       </Button>
-                      {user.id !== me?.id && (
-                        <Button
-                          size="xs"
-                          variant="outline"
-                          loading={busy === `beta:${user.id}`}
-                          onClick={() => toggleBeta(user)}
-                          className="gap-1"
-                        >
-                          <FlaskConical /> {user.beta ? t("Remove beta") : t("Make beta")}
-                        </Button>
-                      )}
+                      <Button
+                        size="xs"
+                        variant="outline"
+                        loading={busy === `tags:open:${user.id}`}
+                        onClick={() => void openTags(user)}
+                        className="gap-1"
+                      >
+                        <Tag /> {user.tags.length > 0 ? t("Tags") : t("Add tag")}
+                      </Button>
                       <Button
                         size="xs"
                         variant="ghost"
@@ -515,36 +790,6 @@ export default function AdminPage() {
                         className="gap-1"
                       >
                         <Trash2 /> {t("Kick")}
-                      </Button>
-                      <Button
-                        size="xs"
-                        variant="ghost"
-                        loading={busy === `grant:${user.id}:coins`}
-                        onClick={() =>
-                          void act(
-                            `grant:${user.id}:coins`,
-                            () => api.post<AdminUserView>(`/api/admin/users/${user.id}/grant`, { coins: 1000 }),
-                            "coin",
-                          )
-                        }
-                        className="gap-1"
-                      >
-                        <Coins /> {t("+1k")}
-                      </Button>
-                      <Button
-                        size="xs"
-                        variant="ghost"
-                        loading={busy === `grant:${user.id}:xp`}
-                        onClick={() =>
-                          void act(
-                            `grant:${user.id}:xp`,
-                            () => api.post<AdminUserView>(`/api/admin/users/${user.id}/grant`, { xp: 1000 }),
-                            "reward",
-                          )
-                        }
-                        className="gap-1"
-                      >
-                        <Sparkles /> {t("+1k XP")}
                       </Button>
                     </div>
                   </li>
@@ -607,6 +852,10 @@ export default function AdminPage() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                {detail.tags.map((tag) => (
+                  <TagChip key={tag.id} tag={tag} />
+                ))}
+                {detail.tags.length > 0 ? <span className="h-3 w-px bg-white/10" /> : null}
                 <Badge variant="outline">{detail.sessions} {t("sessions")}</Badge>
                 <Badge variant="outline">{detail.ownedCosmetics.length} {t("cosmetics")}</Badge>
                 <Badge variant="outline">{detail.chatPacks.length} {t("chat packs")}</Badge>
@@ -640,6 +889,145 @@ export default function AdminPage() {
               </div>
             </div>
           ) : null}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={tagOpen} onOpenChange={setTagOpen}>
+        <DialogContent size="lg" className="max-h-[85dvh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{t("Tags for {name}", { name: tagTarget?.displayName ?? "" })}</DialogTitle>
+            <DialogDescription>
+              {t("Tags are visible in the owner console. They do not affect gameplay.")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-4">
+            <div>
+              <p className="eyebrow mb-2">{t("Applied tags")}</p>
+              {selectedTagIds.length === 0 ? (
+                <p className="text-xs text-muted-foreground">{t("No tags applied.")}</p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {allTags
+                    .filter((tag) => selectedTagIds.includes(tag.id))
+                    .map((tag) => (
+                      <TagChip key={tag.id} tag={tag} />
+                    ))}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <p className="eyebrow mb-2">{t("Available tags")}</p>
+              {allTags.length === 0 ? (
+                <p className="text-xs text-muted-foreground">{t("No tags yet. Create one below.")}</p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {allTags.map((tag) => {
+                    const active = selectedTagIds.includes(tag.id);
+                    return (
+                      <div key={tag.id} className="inline-flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => toggleTag(tag.id)}
+                          className="inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] transition-[background-color,opacity] disabled:opacity-50"
+                          style={{
+                            borderColor: `${tag.color}66`,
+                            color: tag.color,
+                            backgroundColor: active ? `${tag.color}22` : "transparent",
+                            opacity: active ? 1 : 0.62,
+                          }}
+                          disabled={busy !== null}
+                        >
+                          <span className="size-1.5 rounded-full" style={{ backgroundColor: tag.color }} />
+                          {tag.name}
+                          {active ? <Check className="size-3" /> : null}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void deleteTag(tag)}
+                          className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-40"
+                          aria-label={t("Delete tag")}
+                          disabled={busy !== null}
+                        >
+                          <Trash2 className="size-3" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <form onSubmit={createTag} className="flex flex-wrap items-end gap-2 rounded-xl border border-white/7 bg-white/[0.015] p-3">
+              <div className="min-w-[180px] flex-1">
+                <Label
+                  htmlFor="new-tag-name"
+                  className="mb-1 block text-[10px] uppercase tracking-wider text-muted-foreground"
+                >
+                  {t("New tag")}
+                </Label>
+                <Input
+                  id="new-tag-name"
+                  value={newTagName}
+                  onChange={(event) => setNewTagName(event.target.value)}
+                  placeholder={t("Tag name")}
+                  maxLength={20}
+                  className="h-9 text-xs"
+                />
+              </div>
+              <div>
+                <span className="mb-1 block text-[10px] uppercase tracking-wider text-muted-foreground">
+                  {t("Colour")}
+                </span>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {TAG_COLORS.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => setNewTagColor(color)}
+                      className={
+                        newTagColor === color
+                          ? "size-6 rounded-full border-2 border-white"
+                          : "size-6 rounded-full border-2 border-transparent"
+                      }
+                      style={{ backgroundColor: color }}
+                      aria-label={color}
+                    />
+                  ))}
+                  <input
+                    type="color"
+                    value={newTagColor}
+                    onChange={(event) => setNewTagColor(event.target.value)}
+                    aria-label={t("Custom colour")}
+                    className="size-7 cursor-pointer rounded-md border border-input bg-transparent p-0.5"
+                  />
+                </div>
+              </div>
+              <Button
+                type="submit"
+                size="sm"
+                variant="outline"
+                className="gap-1"
+                disabled={busy !== null || !newTagName.trim()}
+                loading={busy === "tag:create"}
+              >
+                <Plus className="size-3.5" /> {t("Create tag")}
+              </Button>
+            </form>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setTagOpen(false)}>
+                {t("Cancel")}
+              </Button>
+              <Button
+                variant="brand"
+                onClick={() => void saveTags()}
+                loading={busy === `tags:save:${tagTarget?.id}`}
+              >
+                {t("Apply tags")}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 

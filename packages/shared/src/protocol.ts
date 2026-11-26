@@ -105,6 +105,13 @@ export interface AdminUserView {
   banned: boolean;
   banReason: string | null;
   createdAt: number;
+  tags: AdminTagView[];
+}
+
+export interface AdminTagView {
+  id: string;
+  name: string;
+  color: string;
 }
 
 export interface AdminAuditView {

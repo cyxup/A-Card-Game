@@ -1,7 +1,13 @@
 import type { FastifyInstance } from "fastify";
 import { desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
-import type { AdminReportView, AdminRoomView, AdminUserDetail, MatchHistoryItem } from "@stacked/shared";
+import type {
+  AdminReportView,
+  AdminRoomView,
+  AdminTagView,
+  AdminUserDetail,
+  MatchHistoryItem,
+} from "@stacked/shared";
 import { db } from "../db/index.js";
 import { matches, matchPlayers, reports, sessions, userChatPacks, userCosmetics, users } from "../db/schema.js";
 import { badRequest, requireOwner } from "../lib/http.js";
@@ -10,12 +16,16 @@ import { rooms } from "../rooms/manager.js";
 import {
   AdminError,
   banUser,
+  createTag,
+  deleteTag,
   grantUser,
   listAudit,
+  listTags,
   listUsers,
   recordAdminAudit,
   setBeta,
-  toAdminUser,
+  setUserTags,
+  toAdminUserWithTags,
   unbanUser,
 } from "../services/admin.js";
 
@@ -30,6 +40,11 @@ const kickSchema = z.object({ reason: z.string().max(240).optional() });
 const freezeSchema = z.object({ frozen: z.boolean() });
 const broadcastSchema = z.object({ message: z.string().trim().min(1).max(240) });
 const reportStatusSchema = z.object({ status: z.enum(["resolved", "dismissed"]) });
+const tagSchema = z.object({
+  name: z.string().trim().min(1).max(20),
+  color: z.string().trim().regex(/^#[0-9a-fA-F]{6}$/),
+});
+const setTagsSchema = z.object({ tagIds: z.array(z.string().uuid()).max(20) });
 
 function targetId(request: { params: unknown }): string {
   return String((request.params as { id?: string }).id ?? "");
@@ -80,6 +95,32 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
     rooms.adminBroadcast(parsed.data.message);
     await recordAdminAudit(actor.user, "broadcast", { message: parsed.data.message });
     return { ok: true };
+  });
+
+  app.get("/api/admin/tags", async (request): Promise<AdminTagView[]> => {
+    requireOwner(request);
+    return listTags();
+  });
+
+  app.post("/api/admin/tags", async (request) => {
+    const actor = requireOwner(request);
+    const parsed = tagSchema.safeParse(request.body ?? {});
+    if (!parsed.success) badRequest("Give the tag a name and a hex colour.");
+    return createTag(actor.user, parsed.data);
+  });
+
+  app.post("/api/admin/tags/:id/delete", async (request) => {
+    const actor = requireOwner(request);
+    const id = String((request.params as { id?: string }).id ?? "");
+    await deleteTag(actor.user, id);
+    return { ok: true };
+  });
+
+  app.post("/api/admin/users/:id/tags", async (request) => {
+    const actor = requireOwner(request);
+    const parsed = setTagsSchema.safeParse(request.body ?? {});
+    if (!parsed.success) badRequest("Pick the tags to apply.");
+    return setUserTags(actor.user, targetId(request), parsed.data.tagIds);
   });
 
   app.get("/api/admin/reports", async (request): Promise<AdminReportView[]> => {
@@ -145,8 +186,9 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
       ...match,
       endedAt: match.endedAt.getTime(),
     }));
+    const base = await toAdminUserWithTags(row);
     return {
-      ...toAdminUser(row),
+      ...base,
       sessions: sessionRows.length,
       recentMatches,
       ownedCosmetics: cosmetics.map((item) => item.itemId),

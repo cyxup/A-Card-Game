@@ -228,6 +228,35 @@ export const reports = pgTable(
   (table) => [index("reports_status_idx").on(table.status), index("reports_target_idx").on(table.targetId)],
 );
 
+export const tags = pgTable(
+  "tags",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: varchar("name", { length: 20 }).notNull(),
+    color: varchar("color", { length: 7 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("tags_name_idx").on(table.name)],
+);
+
+export const userTags = pgTable(
+  "user_tags",
+  {
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tagId: uuid("tag_id")
+      .notNull()
+      .references(() => tags.id, { onDelete: "cascade" }),
+    assignedAt: timestamp("assigned_at", { withTimezone: true }).notNull().defaultNow(),
+    assignedBy: varchar("assigned_by", { length: 24 }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.tagId] }),
+    index("user_tags_tag_idx").on(table.tagId),
+  ],
+);
+
 export const adminAudit = pgTable(
   "admin_audit",
   {
