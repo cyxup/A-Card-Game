@@ -89,6 +89,14 @@ export default function FriendsPage() {
     setInvited(new Set());
   }, [data?.you.roomCode]);
 
+  useEffect(() => {
+    const refresh = () => {
+      if (session?.kind === "user") void load();
+    };
+    window.addEventListener("stacked:friends-changed", refresh);
+    return () => window.removeEventListener("stacked:friends-changed", refresh);
+  }, [session?.kind, load]);
+
   async function act(key: string, run: () => Promise<unknown>, message?: string) {
     if (busy) return;
     setBusy(key);

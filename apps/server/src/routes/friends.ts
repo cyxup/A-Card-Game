@@ -27,6 +27,12 @@ function gate(key: string, limit: number, windowMs: number): void {
   }
 }
 
+function notifyFriendsChanged(...userIds: string[]): void {
+  for (const userId of new Set(userIds.filter(Boolean))) {
+    rooms.sendToUser(userId, { t: "friends_changed" });
+  }
+}
+
 function presenceFor(userId: string): FriendPresence {
   const entry = rooms.presenceFor([userId]).get(userId);
   if (!entry?.online) return { status: "offline", room: null };
@@ -108,6 +114,7 @@ export async function friendsRoutes(app: FastifyInstance): Promise<void> {
         message: "Friend request accepted.",
       });
     }
+    notifyFriendsChanged(principal.user.id, parsed.data.userId);
     return { ok: true, relationship };
   });
 
@@ -117,6 +124,7 @@ export async function friendsRoutes(app: FastifyInstance): Promise<void> {
     const target = idSchema.safeParse((request.params as { id?: string })?.id);
     if (!target.success) badRequest("Pick a request.");
     await acceptRequest(principal.user, target.data);
+    notifyFriendsChanged(principal.user.id, target.data);
     return { ok: true };
   });
 
@@ -126,6 +134,7 @@ export async function friendsRoutes(app: FastifyInstance): Promise<void> {
     const target = idSchema.safeParse((request.params as { id?: string })?.id);
     if (!target.success) badRequest("Pick a request.");
     await declineRequest(principal.user, target.data);
+    notifyFriendsChanged(principal.user.id, target.data);
     return { ok: true };
   });
 
@@ -135,6 +144,7 @@ export async function friendsRoutes(app: FastifyInstance): Promise<void> {
     const target = idSchema.safeParse((request.params as { id?: string })?.id);
     if (!target.success) badRequest("Pick a friend.");
     await removeFriend(principal.user, target.data);
+    notifyFriendsChanged(principal.user.id, target.data);
     return { ok: true };
   });
 
@@ -144,6 +154,7 @@ export async function friendsRoutes(app: FastifyInstance): Promise<void> {
     const target = idSchema.safeParse((request.params as { id?: string })?.id);
     if (!target.success) badRequest("Pick a player.");
     await blockUser(principal.user, target.data);
+    notifyFriendsChanged(principal.user.id, target.data);
     return { ok: true };
   });
 
@@ -153,6 +164,7 @@ export async function friendsRoutes(app: FastifyInstance): Promise<void> {
     const target = idSchema.safeParse((request.params as { id?: string })?.id);
     if (!target.success) badRequest("Pick a player.");
     await unblockUser(principal.user, target.data);
+    notifyFriendsChanged(principal.user.id, target.data);
     return { ok: true };
   });
 

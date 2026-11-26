@@ -1563,6 +1563,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
             onLeave={onLeave}
             onRematch={() => client.rematch()}
             onLobby={() => client.toLobby()}
+            onKing={() => client.kingOfTable()}
           />
         )
       ) : null}

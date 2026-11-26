@@ -27,6 +27,8 @@ export interface GameRules {
   startingHand: number;
   /** Wager per registered player in coins. 0 is a normal table. */
   wager: number;
+  /** Winner keeps the table after the round; everyone else is sent back to the floor. */
+  kingOfTable: boolean;
 }
 
 export const DEFAULT_RULES: GameRules = {
@@ -39,6 +41,7 @@ export const DEFAULT_RULES: GameRules = {
   drawUntilPlayable: false,
   startingHand: 7,
   wager: 0,
+  kingOfTable: false,
 };
 
 export const RULE_BOUNDS = {
@@ -68,6 +71,7 @@ export function normaliseRules(input: Partial<GameRules> | undefined): GameRules
     sevenZero: Boolean(rules.sevenZero),
     drawUntilPlayable: Boolean(rules.drawUntilPlayable),
     wager: clampInt(rules.wager, RULE_BOUNDS.wager.min, RULE_BOUNDS.wager.max, DEFAULT_RULES.wager),
+    kingOfTable: Boolean(rules.kingOfTable),
   };
 }
 

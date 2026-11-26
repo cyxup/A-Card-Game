@@ -20,11 +20,13 @@ export function GameOverDialog({
   onLeave,
   onRematch,
   onLobby,
+  onKing,
 }: {
   room: RoomView;
   onLeave: () => void;
   onRematch: () => void;
   onLobby: () => void;
+  onKing: () => void;
 }) {
   const { session } = useSession();
   const t = useT();
@@ -37,6 +39,8 @@ export function GameOverDialog({
     return a.cardsLeft - b.cardsLeft || a.points - b.points;
   });
   const winner = room.players.find((player) => player.id === game?.winner);
+  const kingMode = Boolean(room.rules.kingOfTable && winner && !winner.isBot);
+  const isWinner = Boolean(game?.winner && game.winner === room.you.id);
 
   useEffect(() => {
     playSound(rewards?.placement === 1 ? "win" : "lose");
@@ -195,8 +199,25 @@ export function GameOverDialog({
           <p className="text-xs text-muted-foreground">{t("No rewards this round.")}</p>
         )}
 
+        {kingMode ? (
+          <p className="flex items-center gap-2 rounded-xl border border-warning/25 bg-warning/[0.06] px-3 py-2.5 text-[11px] text-warning">
+            <Crown className="size-4 shrink-0" />
+            {t("The winner keeps the table. Everyone else returns to the floor.")}
+          </p>
+        ) : null}
+
         <div className="flex flex-col gap-2 sm:flex-row">
-          {room.you.isHost ? (
+          {kingMode ? (
+            isWinner ? (
+              <Button variant="brand" size="lg" className="flex-1 gap-1.5" onClick={onKing}>
+                <Crown className="size-4" /> {t("Defend the crown")}
+              </Button>
+            ) : (
+              <Button variant="secondary" size="lg" className="flex-1" disabled>
+                {t("Waiting for the king")}
+              </Button>
+            )
+          ) : room.you.isHost ? (
             <Button variant="brand" size="lg" className="flex-1" onClick={onRematch}>
               {t("Deal again")}
             </Button>
@@ -205,7 +226,7 @@ export function GameOverDialog({
               {t("Waiting for the host")}
             </Button>
           )}
-          {room.you.isHost ? (
+          {!kingMode && room.you.isHost ? (
             <Button variant="secondary" size="lg" className="flex-1" onClick={onLobby}>
               {t("Back to lobby")}
             </Button>

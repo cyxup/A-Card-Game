@@ -157,6 +157,10 @@ export default function RulesPage() {
               <span className="font-medium text-foreground">{t("Draw until playable.")}</span>{" "}
               {t("Keep drawing until you can play. Hosts, please warn your friends.")}
             </li>
+            <li>
+              <span className="font-medium text-foreground">{t("King of the table.")}</span>{" "}
+              {t("The winner keeps the table. Everyone else returns to the floor and new challengers can join.")}
+            </li>
           </ul>
         </div>
 

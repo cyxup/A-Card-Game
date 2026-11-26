@@ -211,6 +211,9 @@ class GameClient {
         else if (message.tone === "success") toast.success(translateMessage(message.message));
         else toast.info(translateMessage(message.message));
         break;
+      case "friends_changed":
+        window.dispatchEvent(new Event("stacked:friends-changed"));
+        break;
       case "emote": {
         const key = ++this.emoteKey;
         this.setState({ emotes: [...this.state.emotes.slice(-8), { key, playerId: message.playerId, emote: message.emote }] });
@@ -341,6 +344,10 @@ class GameClient {
 
   rematch(): void {
     this.send({ t: "rematch" });
+  }
+
+  kingOfTable(): void {
+    this.send({ t: "king" });
   }
 
   toLobby(): void {

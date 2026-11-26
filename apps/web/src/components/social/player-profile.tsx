@@ -52,22 +52,33 @@ export function PlayerProfileDialog({
       return;
     }
     let alive = true;
-    setLoading(true);
-    setError(null);
-    setProfile(null);
-    api
-      .get<PlayerCardView>(`/api/players/${userId}`)
-      .then((data) => {
-        if (alive) setProfile(data);
-      })
-      .catch((caught) => {
-        if (alive) setError(caught instanceof Error ? caught.message : t("Could not load that player."));
-      })
-      .finally(() => {
-        if (alive) setLoading(false);
-      });
+    const load = (showLoading: boolean) => {
+      if (showLoading) {
+        setLoading(true);
+        setError(null);
+        setProfile(null);
+      }
+      api
+        .get<PlayerCardView>(`/api/players/${userId}`)
+        .then((data) => {
+          if (alive) {
+            setProfile(data);
+            setError(null);
+          }
+        })
+        .catch((caught) => {
+          if (alive) setError(caught instanceof Error ? caught.message : t("Could not load that player."));
+        })
+        .finally(() => {
+          if (alive) setLoading(false);
+        });
+    };
+    load(true);
+    const refresh = () => load(false);
+    window.addEventListener("stacked:friends-changed", refresh);
     return () => {
       alive = false;
+      window.removeEventListener("stacked:friends-changed", refresh);
     };
   }, [userId]);
 

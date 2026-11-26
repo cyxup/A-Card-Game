@@ -131,6 +131,18 @@ const FR: Record<string, string> = {
   "7 swaps with the next player. 0 rotates all hands.":
     "Un 7 échange avec le joueur suivant. Un 0 fait tourner toutes les mains.",
   "Draw until playable": "Piocher jusqu'à une carte jouable",
+  "King of the table": "Roi de la table",
+  "King of the table.": "Roi de la table.",
+  "The winner keeps the table. Everyone else returns to the floor and new challengers can join.":
+    "Le gagnant garde la table. Les autres retournent au sol et de nouveaux challengers peuvent arriver.",
+  "The winner keeps the crown, the table resets to the lobby, and everyone else heads back to the floor.":
+    "Le gagnant garde la couronne, la table retourne au salon et les autres reviennent au sol.",
+  "The winner keeps the table. Everyone else returns to the floor.":
+    "Le gagnant garde la table. Tous les autres retournent au sol.",
+  "Defend the crown": "Défendre la couronne",
+  "Waiting for the king": "En attente du roi",
+  "The winner keeps the crown. You are back on the floor.":
+    "Le gagnant garde la couronne. Vous retournez au sol.",
   "Keep drawing until you can play. Nasty.": "Continuez à piocher jusqu'à pouvoir jouer. Méchant.",
   "Who can join?": "Qui peut rejoindre ?",
   Private: "Privée",
@@ -1357,6 +1369,8 @@ const ERROR_FR: Record<string, string> = {
   not_host: "Seul l'hôte peut faire ça.",
   not_enough_players: "Ajoutez un joueur ou un bot d'abord.",
   players_not_ready: "Tous les autres joueurs doivent être prêts.",
+  not_king_mode: "Cette table ne joue pas au Roi de la table.",
+  not_winner: "Seul le gagnant peut garder la table.",
   bad_code: "Entrez un code de table.",
   no_room: "Rejoignez d'abord une table.",
   banned_player: "Ce joueur est banni.",
@@ -1400,6 +1414,10 @@ export function translateError(code: string | undefined, fallback: string): stri
 const MESSAGE_FR: Record<string, string> = {
   "No open tables right now — we opened a fresh one for you.":
     "Aucune table ouverte — on vous en a ouvert une nouvelle.",
+  "No table matched those rules — we opened one for you.":
+    "Aucune table ne correspondait à ces règles — on vous en a ouvert une.",
+  "The winner keeps the crown. You are back on the floor.":
+    "Le gagnant garde la couronne. Vous retournez au sol.",
   "You were removed by the owner.": "Vous avez été retiré par le propriétaire.",
   "This account has been banned by the owner.": "Ce compte a été banni par le propriétaire.",
   "This account is banned.": "Ce compte est banni.",

@@ -362,6 +362,7 @@ export type ClientMessage =
   | { t: "rules"; rules: Partial<GameRules> }
   | { t: "start" }
   | { t: "rematch" }
+  | { t: "king" }
   | { t: "lobby" }
   | { t: "bot"; add: boolean }
   | { t: "kick"; playerId: string }
@@ -388,6 +389,7 @@ export type ServerMessage =
       expiresAt: number;
     }
   | { t: "toast"; message: string; tone?: "info" | "success" | "error" }
+  | { t: "friends_changed" }
   | { t: "pong"; at: number };
 
 export const EMOTES = [

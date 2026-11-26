@@ -63,20 +63,27 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
       return;
     }
     let alive = true;
-    api
-      .get<FriendsPayload>("/api/friends")
-      .then((payload) => {
-        if (!alive) return;
-        const next: Record<string, FriendRelationship> = {};
-        for (const friend of payload.friends) next[friend.id] = "friends";
-        for (const friend of payload.outgoing) next[friend.id] = "pending_out";
-        for (const friend of payload.incoming) next[friend.id] = "pending_in";
-        for (const friend of payload.blocked) next[friend.id] = "blocked";
-        setRelationships(next);
-      })
-      .catch(() => undefined);
+    const refresh = () => {
+      api
+        .get<FriendsPayload>("/api/friends")
+        .then((payload) => {
+          if (!alive) return;
+          const next: Record<string, FriendRelationship> = {};
+          for (const friend of payload.friends) next[friend.id] = "friends";
+          for (const friend of payload.outgoing) next[friend.id] = "pending_out";
+          for (const friend of payload.incoming) next[friend.id] = "pending_in";
+          for (const friend of payload.blocked) next[friend.id] = "blocked";
+          setRelationships(next);
+        })
+        .catch(() => undefined);
+    };
+    refresh();
+    window.addEventListener("stacked:friends-changed", refresh);
+    const timer = window.setInterval(refresh, 15_000);
     return () => {
       alive = false;
+      window.removeEventListener("stacked:friends-changed", refresh);
+      window.clearInterval(timer);
     };
   }, [myId]);
 
@@ -150,6 +157,11 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
                   ? t("mixed stacking")
                   : t("same-card stacking")}
             </span>
+            {room.rules.kingOfTable ? (
+              <span className="inline-flex items-center gap-1 text-warning">
+                <Crown className="size-3.5" /> {t("King of the table")}
+              </span>
+            ) : null}
             {coins !== null && (
               <span className={`inline-flex items-center gap-1 ${shortOnCoins ? "text-destructive" : "text-brand"}`}>
                 <Coins className="size-3.5" /> {t("{n} coins", { n: coins })}

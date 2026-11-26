@@ -27,6 +27,7 @@ const DEFAULT_RULES: Partial<GameRules> = {
   sevenZero: false,
   drawUntilPlayable: false,
   wager: 0,
+  kingOfTable: false,
 };
 
 function RuleRow({
@@ -308,6 +309,11 @@ export default function PlayPage() {
                     checked={Boolean(quickRules.drawUntilPlayable)}
                     onChange={(value) => setQuickRules((prev) => ({ ...prev, drawUntilPlayable: value }))}
                   />
+                  <QuickToggle
+                    label={t("King of the table")}
+                    checked={Boolean(quickRules.kingOfTable)}
+                    onChange={(value) => setQuickRules((prev) => ({ ...prev, kingOfTable: value }))}
+                  />
                 </div>
                 <p className="mt-3 text-[10px] leading-relaxed text-muted-foreground">
                   {t("We look for a table with these rules first. If none matches, we open one for you.")}
@@ -494,6 +500,12 @@ export default function PlayPage() {
                   description={t("Keep drawing until you find something you can play. Meaner games.")}
                   checked={Boolean(rules.drawUntilPlayable)}
                   onChange={(value) => setRules((prev) => ({ ...prev, drawUntilPlayable: value }))}
+                />
+                <RuleRow
+                  title={t("King of the table")}
+                  description={t("The winner keeps the crown, the table resets to the lobby, and everyone else heads back to the floor.")}
+                  checked={Boolean(rules.kingOfTable)}
+                  onChange={(value) => setRules((prev) => ({ ...prev, kingOfTable: value }))}
                 />
               </div>
             </div>
