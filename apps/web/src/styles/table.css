@@ -358,6 +358,23 @@
   color: rgb(255 255 255 / 0.38);
 }
 
+.seat-team {
+  padding: 0 4px;
+  border-radius: 999px;
+  font-size: 7px;
+  letter-spacing: 0.08em;
+}
+
+.seat-team-a {
+  background: color-mix(in oklch, var(--brand) 18%, transparent);
+  color: var(--brand);
+}
+
+.seat-team-b {
+  background: color-mix(in oklch, var(--info) 18%, transparent);
+  color: var(--info);
+}
+
 .seat-bot {
   border: 1px solid rgb(255 255 255 / 0.1);
   border-radius: 999px;

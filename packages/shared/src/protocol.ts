@@ -269,6 +269,8 @@ export interface RoomPlayerView {
   owner?: boolean;
   beta?: boolean;
   tags: UserTagView[];
+  /** 0 or 1 in 2v2, null otherwise. */
+  team: number | null;
   /** False for guests and bots. */
   registered: boolean;
 }
@@ -298,6 +300,7 @@ export interface GameView {
   seq: number;
   drawnCardId: string | null;
   winner: string | null;
+  winningTeam: number | null;
   results: GameResult[] | null;
   log: LogEntry[];
   lastCard: Card | null;

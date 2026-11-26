@@ -202,6 +202,12 @@ export function botName(taken: string[]): string {
 export function placementMap(game: GameState): Map<string, number> {
   const map = new Map<string, number>();
   if (!game.results) return map;
+  if (game.winningTeam !== null) {
+    for (const player of game.players) {
+      map.set(player.id, player.team === game.winningTeam ? 1 : 2);
+    }
+    return map;
+  }
   const ordered = [...game.results].sort((a, b) => {
     if (a.id === game.winner) return -1;
     if (b.id === game.winner) return 1;
@@ -234,6 +240,7 @@ export function buildRoomView(room: Room, viewerId: string, ownerPeek = false): 
       owner: seat.owner,
       beta: seat.beta,
       tags: tagsForUserSync(seat.userId),
+      team: gamePlayer?.team ?? (room.rules.teamMode === "2v2" ? room.seats.indexOf(seat) % 2 : null),
       registered: Boolean(seat.userId) && !seat.isBot,
     };
   });
@@ -280,6 +287,7 @@ export function buildRoomView(room: Room, viewerId: string, ownerPeek = false): 
             seq: game.seq,
             drawnCardId: currentId === viewerId ? game.drawnCard : null,
             winner: game.winner,
+            winningTeam: game.winningTeam,
             results: game.results,
             log: game.log.slice(-24),
             lastCard: game.lastCard,

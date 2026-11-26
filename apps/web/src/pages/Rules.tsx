@@ -161,6 +161,10 @@ export default function RulesPage() {
               <span className="font-medium text-foreground">{t("King of the table.")}</span>{" "}
               {t("The winner keeps the table. Everyone else returns to the floor and new challengers can join.")}
             </li>
+            <li>
+              <span className="font-medium text-foreground">{t("2v2 teams.")}</span>{" "}
+              {t("Four seats, alternating teams. The first team with both hands empty wins.")}
+            </li>
           </ul>
         </div>
 

@@ -12,6 +12,7 @@ import { shuffle, type Rng } from "./rng.js";
 /* ────────────────────────────── Rules ────────────────────────────── */
 
 export type Stacking = "off" | "same" | "mixed";
+export type TeamMode = "off" | "2v2";
 
 export interface GameRules {
   maxPlayers: number;
@@ -29,6 +30,8 @@ export interface GameRules {
   wager: number;
   /** Winner keeps the table after the round; everyone else is sent back to the floor. */
   kingOfTable: boolean;
+  /** Off is free-for-all. 2v2 forces four seats and alternating teams. */
+  teamMode: TeamMode;
 }
 
 export const DEFAULT_RULES: GameRules = {
@@ -42,6 +45,7 @@ export const DEFAULT_RULES: GameRules = {
   startingHand: 7,
   wager: 0,
   kingOfTable: false,
+  teamMode: "off",
 };
 
 export const RULE_BOUNDS = {
@@ -62,7 +66,10 @@ export const ENGINE_VERSION = 3;
 export function normaliseRules(input: Partial<GameRules> | undefined): GameRules {
   const rules = { ...DEFAULT_RULES, ...input };
   return {
-    maxPlayers: clampInt(rules.maxPlayers, RULE_BOUNDS.maxPlayers.min, RULE_BOUNDS.maxPlayers.max, DEFAULT_RULES.maxPlayers),
+    maxPlayers:
+      rules.teamMode === "2v2"
+        ? 4
+        : clampInt(rules.maxPlayers, RULE_BOUNDS.maxPlayers.min, RULE_BOUNDS.maxPlayers.max, DEFAULT_RULES.maxPlayers),
     turnSeconds: clampInt(rules.turnSeconds, RULE_BOUNDS.turnSeconds.min, RULE_BOUNDS.turnSeconds.max, DEFAULT_RULES.turnSeconds),
     startingHand: clampInt(rules.startingHand, RULE_BOUNDS.startingHand.min, RULE_BOUNDS.startingHand.max, DEFAULT_RULES.startingHand),
     stacking: rules.stacking === "mixed" || rules.stacking === "off" ? rules.stacking : "same",
@@ -72,6 +79,7 @@ export function normaliseRules(input: Partial<GameRules> | undefined): GameRules
     drawUntilPlayable: Boolean(rules.drawUntilPlayable),
     wager: clampInt(rules.wager, RULE_BOUNDS.wager.min, RULE_BOUNDS.wager.max, DEFAULT_RULES.wager),
     kingOfTable: Boolean(rules.kingOfTable),
+    teamMode: rules.teamMode === "2v2" ? "2v2" : "off",
   };
 }
 
@@ -88,6 +96,8 @@ export interface GamePlayer {
   hand: Card[];
   isBot: boolean;
   connected: boolean;
+  /** 0 or 1 in 2v2, null in free-for-all. */
+  team: number | null;
 }
 
 export type LogKind =
@@ -137,6 +147,7 @@ export interface GameState {
   /** Card drawn this turn that the player may still play. */
   drawnCard: string | null;
   winner: string | null;
+  winningTeam: number | null;
   deadline: number;
   turnStartedAt: number;
   startedAt: number;
@@ -187,6 +198,23 @@ export function currentPlayer(state: GameState): GamePlayer {
 export function nextIndex(state: GameState, from: number, steps = 1): number {
   const n = state.players.length;
   return (((from + state.dir * steps) % n) + n) % n;
+}
+
+/** In 2v2, players who emptied their hand are skipped until their team wins. */
+export function nextActiveIndex(state: GameState, from: number, steps = 1): number {
+  let index = from;
+  for (let step = 0; step < steps; step++) {
+    index = nextIndex(state, index, 1);
+    let guard = 0;
+    while (
+      state.rules.teamMode === "2v2" &&
+      state.players[index]?.hand.length === 0 &&
+      guard++ < state.players.length
+    ) {
+      index = nextIndex(state, index, 1);
+    }
+  }
+  return index;
 }
 
 export function canStack(state: GameState, card: Card): boolean {
@@ -278,14 +306,18 @@ export function createGame(
   const rules = normaliseRules(rulesInput);
   if (seated.length < 2) throw new GameError("not_enough_players", "You need at least two players.");
   if (seated.length > rules.maxPlayers) throw new GameError("room_full", "That is too many players.");
+  if (rules.teamMode === "2v2" && seated.length !== 4) {
+    throw new GameError("team_size", "2v2 needs exactly four players.");
+  }
 
   const deck = shuffle(buildDeck(), rng);
-  const players: GamePlayer[] = seated.map((seat) => ({
+  const players: GamePlayer[] = seated.map((seat, index) => ({
     id: seat.id,
     name: seat.name,
     hand: [],
     isBot: Boolean(seat.isBot),
     connected: seat.connected ?? true,
+    team: rules.teamMode === "2v2" ? index % 2 : null,
   }));
 
   for (let round = 0; round < rules.startingHand; round++) {
@@ -323,6 +355,7 @@ export function createGame(
     pendingKind: null,
     drawnCard: null,
     winner: null,
+    winningTeam: null,
     deadline: now + rules.turnSeconds * 1000,
     turnStartedAt: now,
     startedAt: now,
@@ -417,6 +450,9 @@ function applyPlay(
     }
     target = state.players.find((candidate) => candidate.id === targetId);
     if (!target) throw new GameError("invalid_target", "That player is not at this table.");
+    if (state.rules.teamMode === "2v2" && target.hand.length === 0) {
+      throw new GameError("invalid_target", "That player has already finished their hand.");
+    }
   }
 
   player.hand = player.hand.filter((candidate) => candidate.id !== card.id);
@@ -438,8 +474,20 @@ function applyPlay(
     target: target?.id,
   });
 
-  // Winning with your last card ends the round before penalties resolve.
-  if (player.hand.length === 0) {
+  // Team mode: one player can finish, but the team only wins when both
+  // partners are empty. Free-for-all still ends on the first empty hand.
+  if (state.rules.teamMode === "2v2" && player.team !== null) {
+    if (state.players.filter((candidate) => candidate.team === player.team).every((candidate) => candidate.hand.length === 0)) {
+      finish(state, player.id, ctx.now, player.team);
+      return state;
+    }
+    if (player.hand.length === 0) {
+      // The player is done but their partner still needs to finish. Skip the
+      // rest of the card effect so an empty hand can never swap back in.
+      advance(state, ctx.now, 1);
+      return state;
+    }
+  } else if (player.hand.length === 0) {
     finish(state, player.id, ctx.now);
     return state;
   }
@@ -459,7 +507,7 @@ function applyPlay(
     if (card.value === 0) {
       rotateHands(state, ctx.now);
     } else {
-      const partner = state.players[nextIndex(state, index, 1)] as GamePlayer;
+      const partner = state.players[nextActiveIndex(state, index, 1)] as GamePlayer;
       const mine = player.hand;
       player.hand = partner.hand;
       partner.hand = mine;
@@ -469,7 +517,7 @@ function applyPlay(
 
   switch (card.kind) {
     case "skip":
-      pushLog(state, { at: ctx.now, kind: "skip", actor: player.id, target: state.players[nextIndex(state, index, 1)]?.id });
+      pushLog(state, { at: ctx.now, kind: "skip", actor: player.id, target: state.players[nextActiveIndex(state, index, 1)]?.id });
       advance(state, ctx.now, 2);
       return state;
 
@@ -485,7 +533,7 @@ function applyPlay(
     case "wild4": {
       const amount = card.kind === "draw2" ? 2 : 4;
       if (state.rules.stacking === "off") {
-        const victim = state.players[nextIndex(state, index, 1)] as GamePlayer;
+        const victim = state.players[nextActiveIndex(state, index, 1)] as GamePlayer;
         const drawn = drawCards(state, victim, amount, ctx);
         pushLog(state, { at: ctx.now, kind: "draw_penalty", actor: victim.id, count: drawn });
         advance(state, ctx.now, 2);
@@ -623,17 +671,17 @@ function ensureJumpWindow(state: GameState, now: number): void {
 }
 
 function advance(state: GameState, now: number, steps = 1): void {
-  const n = state.players.length;
-  state.turn = (((state.turn + state.dir * steps) % n) + n) % n;
+  state.turn = nextActiveIndex(state, state.turn, steps);
   state.drawnCard = null;
   state.turnStartedAt = now;
   state.deadline = now + state.rules.turnSeconds * 1000;
   state.seq++;
 }
 
-function finish(state: GameState, winner: string | null, now: number): void {
+function finish(state: GameState, winner: string | null, now: number, winningTeam: number | null = null): void {
   state.phase = "ended";
   state.winner = winner;
+  state.winningTeam = winningTeam;
   state.deadline = 0;
   state.pending = 0;
   state.pendingKind = null;
@@ -647,11 +695,16 @@ function finish(state: GameState, winner: string | null, now: number): void {
 }
 
 function rotateHands(state: GameState, now: number): void {
-  const n = state.players.length;
-  const hands = state.players.map((player) => player.hand);
+  const players =
+    state.rules.teamMode === "2v2"
+      ? state.players.filter((player) => player.hand.length > 0)
+      : state.players;
+  const n = players.length;
+  if (n < 2) return;
+  const hands = players.map((player) => player.hand);
   for (let i = 0; i < n; i++) {
     const next = (((i + state.dir) % n) + n) % n;
-    (state.players[next] as GamePlayer).hand = hands[i] as Card[];
+    (players[next] as GamePlayer).hand = hands[i] as Card[];
   }
   pushLog(state, { at: now, kind: "rotate" });
 }
@@ -701,7 +754,11 @@ export function botAction(state: GameState, playerId: string, rng: Rng): GameAct
   if (!player || state.phase !== "playing") return null;
   if (state.players[state.turn]?.id !== playerId) return null;
 
-  const opponents = state.players.filter((candidate) => candidate.id !== playerId);
+  const opponents = state.players.filter(
+    (candidate) =>
+      candidate.id !== playerId &&
+      (state.rules.teamMode !== "2v2" || candidate.team !== player.team),
+  );
   const nearestWin = Math.min(...opponents.map((candidate) => candidate.hand.length));
   const color = favouriteColor(player.hand, rng);
 
@@ -773,7 +830,12 @@ function strongestDraw(cards: Card[]): Card | undefined {
 }
 
 function pickSwapTarget(state: GameState, player: GamePlayer, rng: Rng): string | undefined {
-  const others = state.players.filter((candidate) => candidate.id !== player.id);
+  const others = state.players.filter(
+    (candidate) =>
+      candidate.id !== player.id &&
+      candidate.hand.length > 0 &&
+      (state.rules.teamMode !== "2v2" || candidate.team !== player.team),
+  );
   if (others.length === 0) return undefined;
   const sorted = [...others].sort((a, b) => a.hand.length - b.hand.length);
   // Mostly take the smallest hand, sometimes keep it unpredictable.

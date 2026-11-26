@@ -188,6 +188,11 @@ export function Seat({
           <UserTags tags={player.tags} max={2} className="mt-0.5" />
           <div className="seat-meta">
             <span>{t("Lv {n}", { n: player.level })}</span>
+            {player.team !== null && player.team !== undefined ? (
+              <span className={cn("seat-team", player.team === 0 ? "seat-team-a" : "seat-team-b")}>
+                {t(player.team === 0 ? "Team A" : "Team B")}
+              </span>
+            ) : null}
             {player.owner ? (
               <span className="seat-owner">
                 <Sparkles className="size-2.5" /> {t("owner")}

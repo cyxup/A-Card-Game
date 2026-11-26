@@ -133,10 +133,22 @@ const FR: Record<string, string> = {
   "Draw until playable": "Piocher jusqu'à une carte jouable",
   "King of the table": "Roi de la table",
   "King of the table.": "Roi de la table.",
+  "2v2 teams": "Équipes 2v2",
+  "2v2 teams.": "Équipes 2v2.",
+  "Four seats, alternating teams. The first team with both hands empty wins.":
+    "Quatre places, équipes alternées. La première équipe dont les deux joueurs ont vidé leur main gagne.",
+  "Team A": "Équipe A",
+  "Team B": "Équipe B",
+  "Team {team} wins.": "L'équipe {team} gagne.",
+  "2v2 needs four players": "Le 2v2 demande quatre joueurs",
+  "2v2 needs exactly four players. Add friends or bots until the table is full.":
+    "Le 2v2 demande exactement quatre joueurs. Ajoutez des amis ou des bots jusqu'à ce que la table soit pleine.",
   "The winner keeps the table. Everyone else returns to the floor and new challengers can join.":
     "Le gagnant garde la table. Les autres retournent au sol et de nouveaux challengers peuvent arriver.",
   "The winner keeps the crown, the table resets to the lobby, and everyone else heads back to the floor.":
     "Le gagnant garde la couronne, la table retourne au salon et les autres reviennent au sol.",
+  "The winner keeps the crown; everyone else returns to the floor.":
+    "Le gagnant garde la couronne ; les autres retournent au sol.",
   "The winner keeps the table. Everyone else returns to the floor.":
     "Le gagnant garde la table. Tous les autres retournent au sol.",
   "Defend the crown": "Défendre la couronne",

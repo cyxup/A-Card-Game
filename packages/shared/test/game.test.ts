@@ -26,6 +26,7 @@ function players(hands: Card[][], overrides: Partial<GamePlayer>[] = []): GamePl
     hand,
     isBot: false,
     connected: true,
+    team: null,
     ...overrides[index],
   }));
 }
@@ -46,6 +47,7 @@ function state(overrides: Partial<GameState> = {}): GameState {
     pendingKind: null,
     drawnCard: null,
     winner: null,
+    winningTeam: null,
     deadline: 60_000,
     turnStartedAt: 0,
     startedAt: 0,
@@ -448,5 +450,71 @@ describe("rules normalisation", () => {
     expect(game.rules.turnSeconds).toBe(90);
     expect(game.rules.startingHand).toBe(10);
     expect(game.rules.wager).toBe(5000);
+  });
+});
+
+describe("2v2 teams", () => {
+  function teamPlayers() {
+    return players(
+      [
+        [card("a1", "red", "number", 5)],
+        [card("b1", "green", "number", 5)],
+        [card("c1", "yellow", "number", 5)],
+        [card("d1", "blue", "number", 5)],
+      ],
+      [{ team: 0 }, { team: 1 }, { team: 0 }, { team: 1 }],
+    );
+  }
+
+  function teamState() {
+    return state({
+      players: teamPlayers(),
+      rules: { ...DEFAULT_RULES, teamMode: "2v2" },
+      turn: 0,
+      discard: [card("t1", "red", "number", 5)],
+    });
+  }
+
+  it("assigns alternating teams and forces four seats", () => {
+    const game = createGame(
+      [
+        { id: "a", name: "A" },
+        { id: "b", name: "B" },
+        { id: "c", name: "C" },
+        { id: "d", name: "D" },
+      ],
+      { teamMode: "2v2", startingHand: 5 },
+      mulberry32(9),
+      1_000,
+    );
+    expect(game.rules.maxPlayers).toBe(4);
+    expect(game.players.map((player) => player.team)).toEqual([0, 1, 0, 1]);
+    expect(() =>
+      createGame(
+        [
+          { id: "a", name: "A" },
+          { id: "b", name: "B" },
+        ],
+        { teamMode: "2v2" },
+        mulberry32(9),
+        1_000,
+      ),
+    ).toThrow(GameError);
+  });
+
+  it("does not end when only one teammate is empty", () => {
+    const next = reduce(teamState(), "a", { type: "play", cardId: "a1" }, ctx);
+    expect(next.phase).toBe("playing");
+    expect(next.winner).toBeNull();
+    expect(next.players[0]?.hand).toHaveLength(0);
+  });
+
+  it("ends when both teammates are empty", () => {
+    const s = teamState();
+    s.players[2]!.hand = [];
+    const next = reduce(s, "a", { type: "play", cardId: "a1" }, ctx);
+    expect(next.phase).toBe("ended");
+    expect(next.winningTeam).toBe(0);
+    expect(next.winner).toBe("a");
   });
 });

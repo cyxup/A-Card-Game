@@ -49,7 +49,8 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
   const shortOnCoins = coins !== null && wager > coins;
   const hasBot = room.players.some((player) => player.isBot);
   const unreadyHumans = room.players.filter((player) => !player.isBot && !player.host && !player.ready);
-  const canStart = room.players.length >= 2 && (wager === 0 || !hasBot) && unreadyHumans.length === 0;
+  const teamReady = room.rules.teamMode !== "2v2" || room.players.length === 4;
+  const canStart = room.players.length >= 2 && (wager === 0 || !hasBot) && unreadyHumans.length === 0 && teamReady;
   const emptySeats = Math.max(0, room.rules.maxPlayers - room.players.length);
   const locked = !isHost;
   const myId = session?.kind === "user" ? session.user?.id ?? null : null;
@@ -219,6 +220,11 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
                       {player.id === room.you.id && (
                         <span className="text-[10px] uppercase tracking-wider text-brand">{t("you")}</span>
                       )}
+                      {player.team !== null && player.team !== undefined ? (
+                        <Badge variant="outline" className={player.team === 0 ? "border-brand/40 text-brand" : "border-info/40 text-info"}>
+                          {t(player.team === 0 ? "Team A" : "Team B")}
+                        </Badge>
+                      ) : null}
                     </div>
                     <p className="text-[11px] text-muted-foreground">
                       {t("level {n}", { n: player.level })}
@@ -431,6 +437,25 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
                 disabled={locked}
                 onChange={(value) => update({ drawUntilPlayable: value })}
               />
+              <RuleToggle
+                label={t("King of the table")}
+                description={t("The winner keeps the crown; everyone else returns to the floor.")}
+                checked={room.rules.kingOfTable}
+                disabled={locked}
+                onChange={(value) => update({ kingOfTable: value })}
+              />
+              <RuleToggle
+                label={t("2v2 teams")}
+                description={t("Four seats, alternating teams. The first team with both hands empty wins.")}
+                checked={room.rules.teamMode === "2v2"}
+                disabled={locked}
+                onChange={(value) =>
+                  update({
+                    teamMode: value ? "2v2" : "off",
+                    maxPlayers: value ? 4 : room.rules.maxPlayers,
+                  })
+                }
+              />
             </div>
           </div>
 
@@ -446,20 +471,24 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
                 >
                   <Play /> {canStart
                     ? t("Deal the first hand")
-                    : wager > 0 && hasBot
-                      ? t("Remove bots to start")
-                      : room.players.length < 2
-                        ? t("Need one more player")
-                        : t("Waiting for players to be ready")}
+                    : !teamReady
+                      ? t("2v2 needs four players")
+                      : wager > 0 && hasBot
+                        ? t("Remove bots to start")
+                        : room.players.length < 2
+                          ? t("Need one more player")
+                          : t("Waiting for players to be ready")}
                 </Button>
                 <p className="mt-2 text-center text-[11px] text-muted-foreground">
                   {canStart
                     ? t("Everyone in the lobby comes with you. Rules lock when the round starts.")
-                    : wager > 0 && (hasBot || room.players.length < 2)
-                      ? t("Wager tables need at least two registered players and no bots.")
-                      : room.players.length < 2
-                        ? t("Add a friend with the code, or fill the table with a bot.")
-                        : t("Everyone else needs to be ready before you deal.")}
+                    : !teamReady
+                      ? t("2v2 needs exactly four players. Add friends or bots until the table is full.")
+                      : wager > 0 && (hasBot || room.players.length < 2)
+                        ? t("Wager tables need at least two registered players and no bots.")
+                        : room.players.length < 2
+                          ? t("Add a friend with the code, or fill the table with a bot.")
+                          : t("Everyone else needs to be ready before you deal.")}
                 </p>
               </>
             ) : (

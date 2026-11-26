@@ -312,7 +312,8 @@ export class RoomManager {
       rules.drawUntilPlayable === wanted.drawUntilPlayable &&
       rules.startingHand === wanted.startingHand &&
       rules.wager === wanted.wager &&
-      rules.kingOfTable === wanted.kingOfTable;
+      rules.kingOfTable === wanted.kingOfTable &&
+      rules.teamMode === wanted.teamMode;
     const candidate = [...this.rooms.values()]
       .filter(
         (room) =>
@@ -549,13 +550,24 @@ export class RoomManager {
     if (room.phase !== "ended" || !room.game) {
       throw new RoomError("not_ended", "The round is still going.");
     }
-    if (room.game.winner !== seat.id) {
+    const winningTeam = room.game.winningTeam;
+    const keepIds =
+      winningTeam !== null
+        ? new Set(
+            room.seats
+              .filter(
+                (entry) =>
+                  room.game?.players.find((player) => player.id === entry.id)?.team === winningTeam,
+              )
+              .map((entry) => entry.id),
+          )
+        : new Set([room.game.winner ?? ""]);
+    if (!keepIds.has(seat.id) || keepIds.size === 0) {
       throw new RoomError("not_winner", "Only the winner can keep the table.");
     }
 
-    const winnerId = seat.id;
     for (const other of [...room.seats]) {
-      if (other.id === winnerId) continue;
+      if (keepIds.has(other.id)) continue;
       for (const otherConn of [...room.connections]) {
         if (otherConn.playerId !== other.id) continue;
         otherConn.roomCode = null;
@@ -570,7 +582,7 @@ export class RoomManager {
       room.removeSeat(other.id);
     }
 
-    room.hostId = winnerId;
+    room.hostId = seat.id;
     room.clearTimers();
     room.phase = "lobby";
     room.game = null;
@@ -652,6 +664,9 @@ export class RoomManager {
 
   private beginRound(room: Room): void {
     if (room.phase === "playing") throw new RoomError("already_playing", "A round is already in progress.");
+    if (room.rules.teamMode === "2v2" && room.seats.length !== 4) {
+      throw new RoomError("team_size", "2v2 needs exactly four players.");
+    }
     if (room.seats.length < 2) throw new RoomError("not_enough_players", "Add a player or a bot first.");
 
     room.clearTimers();

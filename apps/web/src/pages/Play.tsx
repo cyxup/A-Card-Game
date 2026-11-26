@@ -28,6 +28,7 @@ const DEFAULT_RULES: Partial<GameRules> = {
   drawUntilPlayable: false,
   wager: 0,
   kingOfTable: false,
+  teamMode: "off" as const,
 };
 
 function RuleRow({
@@ -314,6 +315,17 @@ export default function PlayPage() {
                     checked={Boolean(quickRules.kingOfTable)}
                     onChange={(value) => setQuickRules((prev) => ({ ...prev, kingOfTable: value }))}
                   />
+                  <QuickToggle
+                    label={t("2v2 teams")}
+                    checked={quickRules.teamMode === "2v2"}
+                    onChange={(value) =>
+                      setQuickRules((prev) => ({
+                        ...prev,
+                        teamMode: value ? "2v2" : "off",
+                        maxPlayers: value ? 4 : prev.maxPlayers,
+                      }))
+                    }
+                  />
                 </div>
                 <p className="mt-3 text-[10px] leading-relaxed text-muted-foreground">
                   {t("We look for a table with these rules first. If none matches, we open one for you.")}
@@ -506,6 +518,18 @@ export default function PlayPage() {
                   description={t("The winner keeps the crown, the table resets to the lobby, and everyone else heads back to the floor.")}
                   checked={Boolean(rules.kingOfTable)}
                   onChange={(value) => setRules((prev) => ({ ...prev, kingOfTable: value }))}
+                />
+                <RuleRow
+                  title={t("2v2 teams")}
+                  description={t("Four seats, alternating teams. The first team with both hands empty wins.")}
+                  checked={rules.teamMode === "2v2"}
+                  onChange={(value) =>
+                    setRules((prev) => ({
+                      ...prev,
+                      teamMode: value ? "2v2" : "off",
+                      maxPlayers: value ? 4 : prev.maxPlayers,
+                    }))
+                  }
                 />
               </div>
             </div>

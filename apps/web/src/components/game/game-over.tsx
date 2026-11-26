@@ -34,13 +34,23 @@ export function GameOverDialog({
   const me = room.players.find((player) => player.id === room.you.id);
   const rewards = room.you.rewards;
   const results = [...(game?.results ?? [])].sort((a, b) => {
+    if (game?.winningTeam !== null && game?.winningTeam !== undefined) {
+      const aTeam = room.players.find((player) => player.id === a.id)?.team;
+      const bTeam = room.players.find((player) => player.id === b.id)?.team;
+      if (aTeam === game.winningTeam && bTeam !== game.winningTeam) return -1;
+      if (bTeam === game.winningTeam && aTeam !== game.winningTeam) return 1;
+    }
     if (a.id === game?.winner) return -1;
     if (b.id === game?.winner) return 1;
     return a.cardsLeft - b.cardsLeft || a.points - b.points;
   });
   const winner = room.players.find((player) => player.id === game?.winner);
-  const kingMode = Boolean(room.rules.kingOfTable && winner && !winner.isBot);
-  const isWinner = Boolean(game?.winner && game.winner === room.you.id);
+  const winningTeam = game?.winningTeam ?? null;
+  const teamWinners = winningTeam === null ? [] : room.players.filter((player) => player.team === winningTeam);
+  const humanTeamWinner = teamWinners.some((player) => !player.isBot);
+  const kingMode = Boolean(room.rules.kingOfTable && (winningTeam !== null ? humanTeamWinner : winner && !winner.isBot));
+  const isWinner = winningTeam !== null ? me?.team === winningTeam : Boolean(game?.winner && game.winner === room.you.id);
+  const teamLabel = winningTeam === null ? null : winningTeam === 0 ? t("Team A") : t("Team B");
 
   useEffect(() => {
     playSound(rewards?.placement === 1 ? "win" : "lose");
@@ -75,17 +85,27 @@ export function GameOverDialog({
 
         <div className="flex flex-col items-center gap-3 py-2 text-center">
           <div className="relative">
-            <Avatar id={winner?.avatar ?? "rook"} size={68} />
+            <Avatar id={teamWinners[0]?.avatar ?? winner?.avatar ?? "rook"} size={68} />
             <span className="absolute -right-2 -top-2 grid size-7 place-items-center rounded-full border border-warning/30 bg-background text-warning">
               <Crown className="size-4" />
             </span>
           </div>
           <div>
             <p className="text-2xl font-semibold tracking-[-0.04em]">
-              <NameEffect effect={winner?.nameEffect}>{winner?.name ?? t("Nobody")}</NameEffect> {t("takes it.")}
+              {winningTeam !== null ? (
+                t("Team {team} wins.", { team: teamLabel ?? "" })
+              ) : (
+                <>
+                  <NameEffect effect={winner?.nameEffect}>{winner?.name ?? t("Nobody")}</NameEffect> {t("takes it.")}
+                </>
+              )}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {winner?.isBot ? t("A bot won. It will be insufferable about it.") : t("First to empty their hand.")}
+              {winningTeam !== null
+                ? teamWinners.map((player) => player.name).join(" & ")
+                : winner?.isBot
+                  ? t("A bot won. It will be insufferable about it.")
+                  : t("First to empty their hand.")}
             </p>
           </div>
         </div>
@@ -94,6 +114,8 @@ export function GameOverDialog({
           {results.map((result, index) => {
             const player = room.players.find((candidate) => candidate.id === result.id);
             const isMe = result.id === room.you.id;
+            const placement =
+              winningTeam !== null ? (player?.team === winningTeam ? 1 : 2) : index + 1;
             return (
               <div
                 key={result.id}
@@ -102,13 +124,16 @@ export function GameOverDialog({
                 }`}
               >
                 <span className="w-7 font-mono text-xs text-muted-foreground">
-                  {t(PLACE_LABEL[index + 1] ?? String(index + 1))}
+                  {t(PLACE_LABEL[placement] ?? String(placement))}
                 </span>
                 <Avatar id={player?.avatar ?? "rook"} size={28} />
                 <span className="min-w-0 flex-1 truncate text-sm font-medium">
                   <NameEffect effect={player?.nameEffect}>{player?.name ?? "Player"}</NameEffect>
                   {isMe && <span className="ml-1.5 text-[10px] uppercase tracking-wider text-brand">you</span>}
                 </span>
+                {player?.team !== null && player?.team !== undefined ? (
+                  <Badge variant="outline">{t(player.team === 0 ? "Team A" : "Team B")}</Badge>
+                ) : null}
                 <span className="font-mono text-[11px] text-muted-foreground">
                   {t(result.cardsLeft === 1 ? "{n} card left" : "{n} cards left", { n: result.cardsLeft })}
                 </span>
