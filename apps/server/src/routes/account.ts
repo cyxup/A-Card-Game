@@ -6,7 +6,7 @@ import { z } from "zod";
 import { verifyPassword } from "../auth/password.js";
 import { generateRecoveryCode, hashRecoveryCode } from "../auth/recovery.js";
 import { db } from "../db/index.js";
-import { dailyClaims, matches, matchPlayers, users } from "../db/schema.js";
+import { dailyClaims, matches, matchPlayers, reports, users } from "../db/schema.js";
 import { ApiError, badRequest, requireUser } from "../lib/http.js";
 import { rateLimit } from "../lib/rate-limit.js";
 import { refreshUserConnections } from "../realtime.js";
@@ -166,6 +166,28 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
         .where(eq(users.id, principal.user.id));
     });
     return { reward: challenge.reward, challenges: await dailyChallengeViews(principal.user.id) };
+  });
+
+  app.post("/api/reports", async (request) => {
+    const principal = requireUser(request);
+    if (!rateLimit(`report:${request.ip}`, 10, 10 * 60_000).ok) {
+      throw new ApiError(429, "rate_limited", "Too many reports. Try again later.");
+    }
+    const parsed = z
+      .object({ userId: z.string().uuid(), reason: z.string().trim().min(5).max(240) })
+      .safeParse(request.body ?? {});
+    if (!parsed.success) throw new ApiError(400, "invalid_input", "Describe the problem in a few words.");
+    if (parsed.data.userId === principal.user.id) {
+      throw new ApiError(400, "invalid_target", "You cannot report yourself.");
+    }
+    const [target] = await db.select({ id: users.id }).from(users).where(eq(users.id, parsed.data.userId)).limit(1);
+    if (!target) throw new ApiError(404, "not_found", "That player does not exist.");
+    await db.insert(reports).values({
+      reporterId: principal.user.id,
+      targetId: target.id,
+      reason: parsed.data.reason,
+    });
+    return { ok: true };
   });
 
   app.get("/api/me/matches", async (request) => {

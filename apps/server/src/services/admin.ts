@@ -73,6 +73,14 @@ async function audit(
   });
 }
 
+export async function recordAdminAudit(
+  actor: UserRow,
+  action: string,
+  detail: Record<string, unknown> | null = null,
+): Promise<void> {
+  await audit(actor, action, null, detail);
+}
+
 async function targetRow(targetId: string): Promise<UserRow> {
   const [user] = await db.select().from(users).where(eq(users.id, targetId)).limit(1);
   if (!user) throw new AdminError("not_found", "That account does not exist.", 404);

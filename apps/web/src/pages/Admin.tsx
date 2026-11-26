@@ -1,18 +1,24 @@
-import type { AdminAuditView, AdminUserView } from "@stacked/shared";
+import type { AdminAuditView, AdminReportView, AdminRoomView, AdminUserDetail, AdminUserView } from "@stacked/shared";
 import {
   Ban,
+  Check,
   Coins,
   Crown,
+  DoorOpen,
   FlaskConical,
+  Flag,
   Gavel,
   HandCoins,
   RefreshCw,
   Search,
   Shield,
   ShieldOff,
+  Snowflake,
   Sparkles,
   Trash2,
   UserRound,
+  Users,
+  X,
   Zap,
 } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
@@ -43,6 +49,10 @@ export default function AdminPage() {
   const t = useT();
   const [users, setUsers] = useState<AdminUserView[] | null>(null);
   const [audit, setAudit] = useState<AdminAuditView[]>([]);
+  const [rooms, setRooms] = useState<AdminRoomView[]>([]);
+  const [reports, setReports] = useState<AdminReportView[]>([]);
+  const [detail, setDetail] = useState<AdminUserDetail | null>(null);
+  const [broadcast, setBroadcast] = useState("");
   const [query, setQuery] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -56,12 +66,16 @@ export default function AdminPage() {
     if (!isOwner) return;
     setError(null);
     try {
-      const [list, log] = await Promise.all([
+      const [list, log, liveRooms, reportList] = await Promise.all([
         api.get<AdminUserView[]>(`/api/admin/users?q=${encodeURIComponent(q)}`),
         api.get<AdminAuditView[]>("/api/admin/audit"),
+        api.get<AdminRoomView[]>("/api/admin/rooms"),
+        api.get<AdminReportView[]>("/api/admin/reports"),
       ]);
       setUsers(list);
       setAudit(log);
+      setRooms(liveRooms);
+      setReports(reportList);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : t("Could not load the owner console."));
     }
@@ -89,6 +103,54 @@ export default function AdminPage() {
 
   function cheat(patch: { coins?: number; xp?: number; unlockAll?: boolean }, sound: Parameters<typeof playSound>[0] = "coin") {
     return act(`cheat:${JSON.stringify(patch)}`, () => api.post<AdminUserView>("/api/admin/cheat", patch), sound);
+  }
+
+  function reportAction(report: AdminReportView, status: "resolved" | "dismissed") {
+    void act(
+      `report:${status}:${report.id}`,
+      () => api.post(`/api/admin/reports/${report.id}/status`, { status }),
+      "success",
+    );
+  }
+
+  function roomAction(action: "lobby" | "close" | "freeze", room: AdminRoomView) {
+    const url =
+      action === "lobby"
+        ? `/api/admin/rooms/${room.code}/lobby`
+        : action === "close"
+          ? `/api/admin/rooms/${room.code}/close`
+          : `/api/admin/rooms/${room.code}/freeze`;
+    const body = action === "freeze" ? { frozen: !room.frozen } : {};
+    void act(`room:${action}:${room.code}`, () => api.post(url, body), action === "close" ? "success" : "click");
+  }
+
+  async function sendBroadcast(event: FormEvent) {
+    event.preventDefault();
+    if (!broadcast.trim()) return;
+    await act("broadcast", () => api.post("/api/admin/broadcast", { message: broadcast.trim() }), "success");
+    setBroadcast("");
+  }
+
+  async function openDetail(user: AdminUserView) {
+    if (busy) return;
+    setBusy(`detail:${user.id}`);
+    try {
+      setDetail(await api.get<AdminUserDetail>(`/api/admin/users/${user.id}`));
+    } catch (caught) {
+      toast.error(caught instanceof Error ? caught.message : t("Could not load that account."));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function logoutDetail() {
+    if (!detail || busy) return;
+    await act(
+      `logout:${detail.id}`,
+      () => api.post(`/api/admin/users/${detail.id}/logout`, {}),
+      "success",
+    );
+    setDetail({ ...detail, sessions: 0 });
   }
 
   function toggleBan(user: AdminUserView) {
@@ -155,6 +217,134 @@ export default function AdminPage() {
           {error}
         </div>
       )}
+
+      <section className="panel mb-4 rounded-2xl p-5">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Users className="size-4 text-brand" />
+            <h2 className="text-sm font-semibold">{t("Live tables")}</h2>
+            <Badge variant="outline">{rooms.length}</Badge>
+          </div>
+          <Button size="sm" variant="ghost" onClick={() => void load()} className="gap-1.5">
+            <RefreshCw className="size-3.5" /> {t("Refresh")}
+          </Button>
+        </div>
+        {rooms.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-white/10 px-4 py-6 text-center text-xs text-muted-foreground">
+            {t("No tables running right now.")}
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {rooms.map((room) => (
+              <li key={room.code} className="flex flex-wrap items-center gap-3 rounded-xl border border-white/7 bg-white/[0.015] px-3 py-2.5">
+                <span className="font-mono text-xs tracking-[0.16em]">{room.code}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-medium">
+                    {room.hostName ?? t("Open table")} · {room.players.length}/{room.maxPlayers}
+                    {room.wager > 0 ? ` · ${t("Wager {n}", { n: room.wager })}` : ""}
+                    {room.pot > 0 ? ` · ${t("Pot {n}", { n: room.pot })}` : ""}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {t(room.phase)} · {room.players.filter((player) => !player.isBot).length} {t("humans")} · {room.players.filter((player) => player.isBot).length} {t("bots")}
+                  </p>
+                </div>
+                {room.frozen ? <Badge variant="warning">{t("Frozen")}</Badge> : null}
+                <Button
+                  size="xs"
+                  variant="outline"
+                  className="gap-1"
+                  loading={busy === `room:freeze:${room.code}`}
+                  onClick={() => roomAction("freeze", room)}
+                >
+                  <Snowflake className="size-3" /> {room.frozen ? t("Resume") : t("Freeze")}
+                </Button>
+                <Button
+                  size="xs"
+                  variant="outline"
+                  className="gap-1"
+                  loading={busy === `room:lobby:${room.code}`}
+                  onClick={() => roomAction("lobby", room)}
+                >
+                  <DoorOpen className="size-3" /> {t("Lobby")}
+                </Button>
+                <Button
+                  size="xs"
+                  variant="destructive"
+                  className="gap-1"
+                  loading={busy === `room:close:${room.code}`}
+                  onClick={() => roomAction("close", room)}
+                >
+                  <Trash2 className="size-3" /> {t("Close")}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <form onSubmit={sendBroadcast} className="panel mb-4 flex flex-wrap items-center gap-2 rounded-2xl p-4">
+        <Zap className="size-4 text-warning" />
+        <Input
+          value={broadcast}
+          onChange={(event) => setBroadcast(event.target.value)}
+          placeholder={t("Broadcast a message to every connected player")}
+          maxLength={240}
+          className="h-9 min-w-[220px] flex-1"
+        />
+        <Button type="submit" size="sm" variant="brand" disabled={!broadcast.trim()} loading={busy === "broadcast"}>
+          {t("Broadcast")}
+        </Button>
+      </form>
+
+      <section className="panel mb-4 rounded-2xl p-5">
+        <div className="mb-3 flex items-center gap-2">
+          <Flag className="size-4 text-warning" />
+          <h2 className="text-sm font-semibold">{t("Reports")}</h2>
+          <Badge variant="outline">{reports.filter((report) => report.status === "pending").length}</Badge>
+        </div>
+        {reports.length === 0 ? (
+          <p className="text-xs text-muted-foreground">{t("No reports yet.")}</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {reports.slice(0, 12).map((report) => (
+              <li key={report.id} className="flex flex-wrap items-start gap-2 rounded-xl border border-white/7 bg-white/[0.015] px-3 py-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs">
+                    <span className="font-medium">{report.reporterName}</span> →{" "}
+                    <span className="font-medium text-brand">{report.targetName}</span>
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">{report.reason}</p>
+                  <p className="mt-0.5 text-[10px] text-muted-foreground">{formatRelative(report.createdAt)}</p>
+                </div>
+                {report.status === "pending" ? (
+                  <div className="flex gap-1.5">
+                    <Button
+                      size="xs"
+                      variant="outline"
+                      className="gap-1"
+                      loading={busy === `report:resolved:${report.id}`}
+                      onClick={() => reportAction(report, "resolved")}
+                    >
+                      <Check className="size-3" /> {t("Resolve")}
+                    </Button>
+                    <Button
+                      size="xs"
+                      variant="ghost"
+                      className="gap-1"
+                      loading={busy === `report:dismissed:${report.id}`}
+                      onClick={() => reportAction(report, "dismissed")}
+                    >
+                      <X className="size-3" /> {t("Dismiss")}
+                    </Button>
+                  </div>
+                ) : (
+                  <Badge variant={report.status === "resolved" ? "success" : "outline"}>{t(report.status)}</Badge>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <div className="grid gap-4 lg:grid-cols-[0.92fr_0.08fr]">
         <div className="flex flex-col gap-4">
@@ -281,6 +471,15 @@ export default function AdminPage() {
                     <div className="flex flex-wrap items-center gap-1.5">
                       <Button
                         size="xs"
+                        variant="outline"
+                        loading={busy === `detail:${user.id}`}
+                        onClick={() => void openDetail(user)}
+                        className="gap-1"
+                      >
+                        <UserRound /> {t("Details")}
+                      </Button>
+                      <Button
+                        size="xs"
                         variant={user.banned ? "brand" : "outline"}
                         loading={busy === `ban:${user.id}`}
                         disabled={user.id === me?.id}
@@ -377,6 +576,72 @@ export default function AdminPage() {
           )}
         </aside>
       </div>
+
+      <Dialog open={Boolean(detail)} onOpenChange={(open) => (!open ? setDetail(null) : undefined)}>
+        <DialogContent size="lg" className="max-h-[85dvh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{detail?.displayName ?? t("Account details")}</DialogTitle>
+            <DialogDescription>
+              {detail ? `@${detail.username} · ${t("level {n}", { n: detail.level })}` : null}
+            </DialogDescription>
+          </DialogHeader>
+          {detail ? (
+            <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <div className="rounded-xl border border-white/7 bg-white/[0.015] px-3 py-2">
+                  <p className="font-mono text-lg">{compactNumber(detail.coins)}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("coins")}</p>
+                </div>
+                <div className="rounded-xl border border-white/7 bg-white/[0.015] px-3 py-2">
+                  <p className="font-mono text-lg">{compactNumber(detail.xp)}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">XP</p>
+                </div>
+                <div className="rounded-xl border border-white/7 bg-white/[0.015] px-3 py-2">
+                  <p className="font-mono text-lg">{detail.games}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("games")}</p>
+                </div>
+                <div className="rounded-xl border border-white/7 bg-white/[0.015] px-3 py-2">
+                  <p className="font-mono text-lg">{detail.wins}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("wins")}</p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <Badge variant="outline">{detail.sessions} {t("sessions")}</Badge>
+                <Badge variant="outline">{detail.ownedCosmetics.length} {t("cosmetics")}</Badge>
+                <Badge variant="outline">{detail.chatPacks.length} {t("chat packs")}</Badge>
+                <Button
+                  size="xs"
+                  variant="outline"
+                  className="ml-auto gap-1"
+                  loading={busy === `logout:${detail.id}`}
+                  onClick={() => void logoutDetail()}
+                >
+                  <DoorOpen className="size-3" /> {t("Sign out everywhere")}
+                </Button>
+              </div>
+
+              <div>
+                <p className="eyebrow mb-2">{t("Recent matches")}</p>
+                {detail.recentMatches.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">{t("No matches yet.")}</p>
+                ) : (
+                  <ul className="flex flex-col gap-1">
+                    {detail.recentMatches.map((match) => (
+                      <li key={match.id} className="flex items-center gap-2 rounded-lg border border-white/6 px-2.5 py-1.5 text-xs">
+                        <span className="font-mono text-[10px]">{match.roomCode}</span>
+                        <span className="text-muted-foreground">#{match.placement}</span>
+                        <span className="min-w-0 flex-1 truncate">{match.winnerName ?? t("No winner")}</span>
+                        <span className="text-muted-foreground">{formatRelative(match.endedAt)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={Boolean(banTarget)} onOpenChange={(open) => (!open ? setBanTarget(null) : undefined)}>
         <DialogContent size="sm">

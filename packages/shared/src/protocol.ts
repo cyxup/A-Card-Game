@@ -122,6 +122,41 @@ export interface AdminGrantInput {
   unlockAll?: boolean;
 }
 
+export interface AdminRoomPlayerView {
+  id: string;
+  name: string;
+  isBot: boolean;
+  connected: boolean;
+}
+
+export interface AdminRoomView {
+  code: string;
+  phase: "lobby" | "playing" | "ended";
+  hostName: string | null;
+  maxPlayers: number;
+  wager: number;
+  pot: number;
+  frozen: boolean;
+  createdAt: number;
+  players: AdminRoomPlayerView[];
+}
+
+export interface AdminUserDetail extends AdminUserView {
+  sessions: number;
+  recentMatches: MatchHistoryItem[];
+  ownedCosmetics: string[];
+  chatPacks: string[];
+}
+
+export interface AdminReportView {
+  id: string;
+  reporterName: string;
+  targetName: string;
+  reason: string;
+  status: "pending" | "resolved" | "dismissed";
+  createdAt: number;
+}
+
 export interface AchievementView {
   id: string;
   name: string;
@@ -253,6 +288,8 @@ export interface RoomView {
   game: GameView | null;
   /** True when this connection is watching without a seat. */
   spectator?: boolean;
+  /** Owner paused the table. */
+  frozen?: boolean;
   /** Owner-only x-ray. Never sent to non-owner connections. */
   ownerHands?: Record<string, Card[]>;
 }
@@ -273,7 +310,11 @@ export interface RoomSummary {
 
 export type OwnerAction =
   | { type: "peek"; enabled: boolean }
-  | { type: "replace"; cardId: string; card: OwnerCardSpec };
+  | { type: "replace"; cardId: string; card: OwnerCardSpec }
+  | { type: "freeze"; frozen: boolean }
+  | { type: "color"; color: Color }
+  | { type: "lobby" }
+  | { type: "close" };
 
 export type ClientMessage =
   | { t: "create"; rules?: Partial<GameRules>; visibility?: "public" | "private" }

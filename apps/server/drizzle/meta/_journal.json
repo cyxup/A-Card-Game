@@ -71,6 +71,13 @@
       "when": 1795672877583,
       "tag": "0009_daily_challenges",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1795675230479,
+      "tag": "0010_reports",
+      "breakpoints": true
     }
   ]
 }

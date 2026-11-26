@@ -3,6 +3,7 @@ import {
   Ban,
   Check,
   Eye,
+  Flag,
   Globe,
   Lock,
   Play,
@@ -135,6 +136,16 @@ export default function FriendsPage() {
 
   function unblock(friend: FriendUserView) {
     void act(`unblock:${friend.id}`, () => api.post(`/api/friends/${friend.id}/unblock`, {}), t("Player unblocked."));
+  }
+
+  function report(friend: FriendUserView) {
+    const reason = window.prompt(t("Describe what happened"));
+    if (!reason || reason.trim().length < 5) return;
+    void act(
+      `report:${friend.id}`,
+      () => api.post("/api/reports", { userId: friend.id, reason: reason.trim() }),
+      t("Report sent."),
+    );
   }
 
   async function invite(friend: FriendUserView) {
@@ -486,6 +497,9 @@ export default function FriendsPage() {
                       </Button>
                       <Button size="xs" variant="ghost" onClick={() => block(friend)} aria-label={t("Block")}>
                         <Ban />
+                      </Button>
+                      <Button size="xs" variant="ghost" onClick={() => report(friend)} aria-label={t("Report")}>
+                        <Flag />
                       </Button>
                     </div>
                   </div>

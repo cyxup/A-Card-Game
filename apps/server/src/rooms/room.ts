@@ -77,6 +77,7 @@ export class Room {
   /** Coins already deducted for the running round, held until settlement. */
   wager: { ids: string[]; pot: number; stake: number } | null = null;
   starting = false;
+  frozen = false;
 
   constructor(code: string, visibility: "public" | "private", rules: GameRules) {
     this.code = code;
@@ -287,5 +288,6 @@ export function buildRoomView(room: Room, viewerId: string, ownerPeek = false): 
       : null,
     ...(ownerHands ? { ownerHands } : {}),
     ...(!viewer ? { spectator: true } : {}),
+    ...(room.frozen ? { frozen: true } : {}),
   };
 }

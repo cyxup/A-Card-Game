@@ -24,6 +24,7 @@ import {
   type RewardGrant,
   type RoomSummary,
   type ServerMessage,
+  type AdminRoomView,
 } from "@stacked/shared";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db/index.js";
@@ -734,9 +735,70 @@ export class RoomManager {
     if (room.rules.wager > 0) {
       throw new OwnerToolError("wager_no_cheats", "Cheats are disabled at wager tables.", 403);
     }
+
+    if (action.type === "close") {
+      await auditOwnerCheat(principal.user, { cheat: "close", room: room.code }).catch((error) =>
+        this.log.error({ err: error }, "owner audit failed"),
+      );
+      this.deleteRoom(room);
+      return;
+    }
+
+    if (action.type === "lobby") {
+      await this.refundRoomWager(room);
+      room.clearTimers();
+      room.phase = "lobby";
+      room.game = null;
+      room.endedAt = 0;
+      room.startedAt = 0;
+      room.frozen = false;
+      for (const roomSeat of room.seats) {
+        roomSeat.rewards = null;
+        roomSeat.stats = { cardsPlayed: 0, jumps: 0, stacks: 0 };
+        roomSeat.ready = false;
+        roomSeat.cheated = false;
+      }
+      room.touch();
+      this.broadcast(room);
+      await auditOwnerCheat(principal.user, { cheat: "lobby", room: room.code }).catch((error) =>
+        this.log.error({ err: error }, "owner audit failed"),
+      );
+      return;
+    }
+
     const game = room.game;
     if (!game || room.phase !== "playing") {
       throw new OwnerToolError("not_playing", "Start a round first.", 400);
+    }
+
+    if (action.type === "freeze") {
+      room.frozen = Boolean(action.frozen);
+      seat.cheated = true;
+      if (room.frozen) room.clearTimers();
+      else {
+        this.scheduleTurn(room);
+        this.scheduleBot(room);
+      }
+      room.touch();
+      this.broadcast(room);
+      await auditOwnerCheat(principal.user, { cheat: "freeze", frozen: room.frozen, room: room.code }).catch(
+        (error) => this.log.error({ err: error }, "owner audit failed"),
+      );
+      return;
+    }
+
+    if (action.type === "color") {
+      if (!["red", "yellow", "green", "blue"].includes(action.color)) {
+        throw new OwnerToolError("invalid_color", "That colour is not valid.", 400);
+      }
+      game.color = action.color;
+      seat.cheated = true;
+      room.touch();
+      this.broadcast(room);
+      await auditOwnerCheat(principal.user, { cheat: "color", color: action.color, room: room.code }).catch(
+        (error) => this.log.error({ err: error }, "owner audit failed"),
+      );
+      return;
     }
 
     if (action.type === "peek") {
@@ -805,6 +867,7 @@ export class RoomManager {
 
   private playAction(conn: ClientConn, action: GameAction, seq: number): void {
     const { room, seat } = this.mustSeat(conn);
+    if (room.frozen) throw new RoomError("table_frozen", "The owner paused this table.");
     if (room.phase !== "playing" || !room.game) throw new RoomError("not_playing", "The round has not started.");
     if (seq !== room.game.seq) {
       this.send(conn, { t: "action_error", code: "stale", message: "The table moved on. Try again." });
@@ -905,7 +968,7 @@ export class RoomManager {
   private scheduleTurn(room: Room): void {
     if (room.timer) clearTimeout(room.timer);
     room.timer = null;
-    if (room.phase !== "playing" || !room.game) return;
+    if (room.frozen || room.phase !== "playing" || !room.game) return;
     const delay = Math.max(120, room.game.deadline - Date.now() + 100);
     room.timer = setTimeout(() => {
       room.timer = null;
@@ -914,7 +977,7 @@ export class RoomManager {
   }
 
   private async onTurnTimeout(room: Room): Promise<void> {
-    if (!this.rooms.has(room.code) || room.phase !== "playing" || !room.game) return;
+    if (!this.rooms.has(room.code) || room.frozen || room.phase !== "playing" || !room.game) return;
     if (room.game.deadline > Date.now() + 250) {
       this.scheduleTurn(room);
       return;
@@ -937,7 +1000,7 @@ export class RoomManager {
   private scheduleBot(room: Room): void {
     if (room.botTimer) clearTimeout(room.botTimer);
     room.botTimer = null;
-    if (room.phase !== "playing" || !room.game) return;
+    if (room.frozen || room.phase !== "playing" || !room.game) return;
     const current = room.game.players[room.game.turn];
     const seat = room.seat(current?.id);
     if (!seat?.isBot) return;
@@ -948,7 +1011,7 @@ export class RoomManager {
   }
 
   private async runBot(room: Room): Promise<void> {
-    if (!this.rooms.has(room.code) || room.phase !== "playing" || !room.game) return;
+    if (!this.rooms.has(room.code) || room.frozen || room.phase !== "playing" || !room.game) return;
     const game = room.game;
     const current = game.players[game.turn];
     const seat = room.seat(current?.id);
@@ -1297,6 +1360,73 @@ export class RoomManager {
       if (!changed) continue;
       room.touch();
       this.broadcast(room);
+    }
+  }
+
+  adminRooms(): AdminRoomView[] {
+    return [...this.rooms.values()]
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .map((room) => ({
+        code: room.code,
+        phase: room.phase,
+        hostName: room.host()?.name ?? null,
+        maxPlayers: room.rules.maxPlayers,
+        wager: room.rules.wager,
+        pot: room.wager?.pot ?? 0,
+        frozen: room.frozen,
+        createdAt: room.createdAt,
+        players: room.seats.map((seat) => ({
+          id: seat.id,
+          name: seat.name,
+          isBot: seat.isBot,
+          connected: seat.connected,
+        })),
+      }));
+  }
+
+  adminReturnToLobby(code: string): void {
+    const room = this.rooms.get(code.toUpperCase());
+    if (!room) throw new RoomError("room_not_found", "That table is gone.");
+    void this.refundRoomWager(room);
+    room.clearTimers();
+    room.phase = "lobby";
+    room.game = null;
+    room.endedAt = 0;
+    room.startedAt = 0;
+    room.frozen = false;
+    for (const seat of room.seats) {
+      seat.rewards = null;
+      seat.stats = { cardsPlayed: 0, jumps: 0, stacks: 0 };
+      seat.ready = false;
+      seat.cheated = false;
+    }
+    room.touch();
+    this.broadcast(room);
+  }
+
+  adminCloseRoom(code: string): void {
+    const room = this.rooms.get(code.toUpperCase());
+    if (!room) throw new RoomError("room_not_found", "That table is gone.");
+    this.deleteRoom(room);
+  }
+
+  adminFreeze(code: string, frozen: boolean): void {
+    const room = this.rooms.get(code.toUpperCase());
+    if (!room) throw new RoomError("room_not_found", "That table is gone.");
+    room.frozen = frozen;
+    if (frozen) room.clearTimers();
+    else if (room.phase === "playing") {
+      this.scheduleTurn(room);
+      this.scheduleBot(room);
+    }
+    this.broadcast(room);
+  }
+
+  adminBroadcast(message: string): void {
+    const text = message.trim().slice(0, 240);
+    if (!text) throw new RoomError("bad_request", "Write a message first.");
+    for (const conn of this.allConns) {
+      this.send(conn, { t: "toast", tone: "info", message: `📢 ${text}` });
     }
   }
 

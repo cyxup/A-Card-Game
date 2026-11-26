@@ -855,6 +855,11 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
               <span className="live-chip">
                 <span className="live-dot" /> {t("live")}
               </span>
+              {room.frozen ? (
+                <Badge variant="warning" className="hidden items-center gap-1 sm:inline-flex">
+                  {t("Frozen")}
+                </Badge>
+              ) : null}
               {room.spectator ? (
                 <Badge variant="info" className="hidden items-center gap-1 sm:inline-flex">
                   <Eye className="size-3" /> {t("Spectator")}
@@ -1341,6 +1346,41 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
               <Button size="icon-sm" variant="ghost" onClick={closeOwnerPanel} aria-label={t("Close")}>
                 <X />
               </Button>
+            </div>
+
+            <div className="owner-panel-section">
+              <p className="eyebrow">{t("Table controls")}</p>
+              <div className="flex flex-wrap gap-1.5">
+                <Button
+                  size="xs"
+                  variant={room.frozen ? "brand" : "outline"}
+                  onClick={() => client.ownerAction({ type: "freeze", frozen: !room.frozen })}
+                >
+                  {room.frozen ? t("Resume") : t("Freeze")}
+                </Button>
+                <Button size="xs" variant="outline" onClick={() => client.ownerAction({ type: "lobby" })}>
+                  {t("Return to lobby")}
+                </Button>
+                <Button
+                  size="xs"
+                  variant="destructive"
+                  onClick={() => client.ownerAction({ type: "close" })}
+                >
+                  {t("Close table")}
+                </Button>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {COLORS.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    className={cn("owner-swatch", COLOR_META[color].className)}
+                    onClick={() => client.ownerAction({ type: "color", color })}
+                    aria-label={t(COLOR_META[color].label)}
+                    title={t(COLOR_META[color].label)}
+                  />
+                ))}
+              </div>
             </div>
 
             <div className="owner-panel-row">
