@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { Avatar } from "@/components/brand/avatar";
 import { NameEffect } from "@/components/brand/name-effect";
+import { UserTags } from "@/components/brand/user-tags";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -93,6 +94,7 @@ export default function LeaderboardPage() {
                 <p className="truncate text-sm font-semibold">
                   <NameEffect effect={entry.nameEffect}>{entry.displayName}</NameEffect>
                 </p>
+                <UserTags tags={entry.tags} max={3} className="mt-1 justify-center" />
                 <p className="font-mono text-[10px] text-muted-foreground">
                   {t("level {n}", { n: entry.level })} · {compactNumber(entry.xp)} xp
                 </p>
@@ -116,6 +118,7 @@ export default function LeaderboardPage() {
                   <p className="truncate text-sm font-medium">
                     <NameEffect effect={entry.nameEffect}>{entry.displayName}</NameEffect>
                   </p>
+                  <UserTags tags={entry.tags} max={2} className="mt-0.5" />
                   <p className="font-mono text-[10px] text-muted-foreground">
                     {t("{wins}W / {games}G · level {level}", {
                       wins: entry.wins,

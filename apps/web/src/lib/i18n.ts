@@ -437,8 +437,8 @@ const FR: Record<string, string> = {
   Tags: "Tags",
   "Add tag": "Ajouter un tag",
   "Tags for {name}": "Tags de {name}",
-  "Tags are visible in the owner console. They do not affect gameplay.":
-    "Les tags sont visibles dans la console owner. Ils n'affectent pas le jeu.",
+  "Tags are visible to everyone. They do not affect gameplay.":
+    "Les tags sont visibles par tous. Ils n'affectent pas le jeu.",
   "Applied tags": "Tags appliqués",
   "No tags applied.": "Aucun tag appliqué.",
   "Available tags": "Tags disponibles",

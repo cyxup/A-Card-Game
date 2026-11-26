@@ -309,6 +309,14 @@ export default function AdminPage() {
     }
   }
 
+  function toggleBeta(user: AdminUserView) {
+    void act(
+      `beta:${user.id}`,
+      () => api.post<AdminUserView>(`/api/admin/users/${user.id}/beta`, { beta: !user.beta }),
+      "equip",
+    );
+  }
+
   const cheatValue = Math.max(0, Math.min(1_000_000, Math.floor(Number(cheatAmount) || 0)));
   function cheatBusy(patch: { coins?: number; xp?: number; unlockAll?: boolean }) {
     return cheatTarget ? busy === `cheat:${cheatTarget.id}:${JSON.stringify(patch)}` : false;
@@ -766,6 +774,17 @@ export default function AdminPage() {
                         {user.banned ? <ShieldOff /> : <Gavel />}
                         {user.banned ? t("Unban") : t("Ban")}
                       </Button>
+                      {user.id !== me?.id && (
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          loading={busy === `beta:${user.id}`}
+                          onClick={() => toggleBeta(user)}
+                          className="gap-1"
+                        >
+                          <FlaskConical /> {user.beta ? t("Remove beta") : t("Make beta")}
+                        </Button>
+                      )}
                       <Button
                         size="xs"
                         variant="outline"
@@ -897,7 +916,7 @@ export default function AdminPage() {
           <DialogHeader>
             <DialogTitle>{t("Tags for {name}", { name: tagTarget?.displayName ?? "" })}</DialogTitle>
             <DialogDescription>
-              {t("Tags are visible in the owner console. They do not affect gameplay.")}
+              {t("Tags are visible to everyone. They do not affect gameplay.")}
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-4">

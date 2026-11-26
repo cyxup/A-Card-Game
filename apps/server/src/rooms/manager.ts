@@ -1345,6 +1345,10 @@ export class RoomManager {
    * Apply a fresh account row to any seat already held by this user. Equipping
    * a cosmetic or renaming an account updates the live table immediately.
    */
+  refreshTags(): void {
+    for (const room of this.rooms.values()) this.broadcast(room);
+  }
+
   refreshUser(user: UserRow): void {
     for (const room of this.rooms.values()) {
       let changed = false;

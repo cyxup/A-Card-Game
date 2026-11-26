@@ -10,6 +10,7 @@ import type {
 } from "@stacked/shared";
 import { cryptoRng, defaultLoadout, isWild, topCard } from "@stacked/shared";import type WebSocket from "ws";
 import type { Principal } from "../auth/session.js";
+import { tagsForUserSync } from "../services/tags.js";
 
 export interface ClientConn {
   id: number;
@@ -232,6 +233,7 @@ export function buildRoomView(room: Room, viewerId: string, ownerPeek = false): 
       placement: placements.get(seat.id) ?? null,
       owner: seat.owner,
       beta: seat.beta,
+      tags: tagsForUserSync(seat.userId),
     };
   });
 

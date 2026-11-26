@@ -19,6 +19,7 @@ import { authRoutes } from "./routes/auth.js";
 import { friendsRoutes } from "./routes/friends.js";
 import { AccountError } from "./services/account.js";
 import { AdminError } from "./services/admin.js";
+import { warmTagCache } from "./services/tags.js";
 
 const MUTATING = new Set(["POST", "PATCH", "PUT", "DELETE"]);
 
@@ -221,6 +222,7 @@ async function main(): Promise<void> {
 
   const app = await build();
   await rooms.recoverWagers();
+  await warmTagCache().catch((error) => app.log.warn({ err: error }, "tag cache warm-up failed"));
 
   const sweep = setInterval(() => rooms.sweep(), 15_000);
   sweep.unref();

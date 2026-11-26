@@ -17,6 +17,7 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Link, useLocation } from "wouter";
 import { Avatar } from "@/components/brand/avatar";
 import { NameEffect } from "@/components/brand/name-effect";
+import { UserTags } from "@/components/brand/user-tags";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -319,6 +320,7 @@ export default function FriendsPage() {
                           <p className="truncate text-xs font-medium">
                             <NameEffect effect={friend.nameEffect}>{friend.displayName}</NameEffect>
                           </p>
+                          <UserTags tags={friend.tags} max={2} className="mt-0.5" />
                           <PresenceLine friend={friend} />
                         </div>
                         <Button
@@ -382,6 +384,7 @@ export default function FriendsPage() {
                       <NameEffect effect={friend.nameEffect}>{friend.displayName}</NameEffect>{" "}
                       <span className="font-mono text-[10px] text-muted-foreground">@{friend.username}</span>
                     </p>
+                    <UserTags tags={friend.tags} max={2} className="mt-0.5" />
                     <p className="text-[10px] text-muted-foreground">{t("level {n}", { n: friend.level })}</p>
                   </div>
                   {friend.relationship === "friends" ? (
@@ -425,6 +428,7 @@ export default function FriendsPage() {
                         <NameEffect effect={friend.nameEffect}>{friend.displayName}</NameEffect>{" "}
                         <span className="font-mono text-[10px] text-muted-foreground">@{friend.username}</span>
                       </p>
+                      <UserTags tags={friend.tags} max={2} className="mt-0.5" />
                       <p className="text-[10px] text-muted-foreground">{t("level {n}", { n: friend.level })}</p>
                     </div>
                     <div className="flex gap-1.5">
@@ -467,6 +471,7 @@ export default function FriendsPage() {
                         {friend.owner ? <Badge variant="warning" className="ml-1.5">{t("owner")}</Badge> : null}
                         {friend.beta ? <Badge variant="outline" className="ml-1.5 border-info/40 text-info">{t("beta")}</Badge> : null}
                       </p>
+                      <UserTags tags={friend.tags} max={3} className="mt-0.5" />
                       <PresenceLine friend={friend} />
                     </div>
                     <div className="flex flex-wrap items-center gap-1.5">

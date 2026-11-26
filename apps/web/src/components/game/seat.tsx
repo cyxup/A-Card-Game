@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Avatar } from "@/components/brand/avatar";
 import { NameEffect } from "@/components/brand/name-effect";
+import { UserTags } from "@/components/brand/user-tags";
 import { spring } from "@/lib/motion";
 import { useCountdown } from "@/lib/use-countdown";
 import { useT } from "@/lib/i18n";
@@ -184,6 +185,7 @@ export function Seat({
           <NameEffect effect={player.nameEffect} className="seat-name">
             {player.name}
           </NameEffect>
+          <UserTags tags={player.tags} max={2} className="mt-0.5" />
           <div className="seat-meta">
             <span>{t("Lv {n}", { n: player.level })}</span>
             {player.owner ? (

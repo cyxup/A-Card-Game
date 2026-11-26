@@ -23,6 +23,8 @@ export interface PublicUser {
   owner: boolean;
   /** True when users.is_beta_tester is enabled in the database. */
   beta: boolean;
+  /** Admin-assigned labels, visible to everyone. */
+  tags: UserTagView[];
 }
 
 export interface SessionInfo {
@@ -51,6 +53,7 @@ export interface LeaderboardEntry {
   games: number;
   avatar: string;
   nameEffect: string;
+  tags: UserTagView[];
 }
 
 export interface PublicStats {
@@ -108,11 +111,13 @@ export interface AdminUserView {
   tags: AdminTagView[];
 }
 
-export interface AdminTagView {
+export interface UserTagView {
   id: string;
   name: string;
   color: string;
 }
+
+export type AdminTagView = UserTagView;
 
 export interface AdminAuditView {
   id: string;
@@ -208,6 +213,7 @@ export interface FriendUserView {
   nameEffect: string;
   owner: boolean;
   beta: boolean;
+  tags: UserTagView[];
   relationship: FriendRelationship;
   presence?: FriendPresence;
 }
@@ -242,6 +248,7 @@ export interface RoomPlayerView {
   placement: number | null;
   owner?: boolean;
   beta?: boolean;
+  tags: UserTagView[];
 }
 
 export interface RewardGrant {

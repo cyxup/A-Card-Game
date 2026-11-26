@@ -2,12 +2,14 @@ import {
   levelForXp,
   type FriendRelationship,
   type FriendUserView,
+  type UserTagView,
 } from "@stacked/shared";
 import { and, eq, ilike, inArray, or } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { friendships, userBlocks, users, type UserRow } from "../db/schema.js";
 import { ApiError } from "../lib/http.js";
 import { equippedOf } from "./account.js";
+import { tagMapForUsers } from "./tags.js";
 
 function pair(a: string, b: string): [string, string] {
   return a < b ? [a, b] : [b, a];
@@ -19,7 +21,7 @@ async function userRow(id: string): Promise<UserRow> {
   return row;
 }
 
-function toView(row: UserRow, relationship: FriendRelationship): FriendUserView {
+function toView(row: UserRow, relationship: FriendRelationship, tags: UserTagView[] = []): FriendUserView {
   const loadout = equippedOf(row);
   return {
     id: row.id,
@@ -30,6 +32,7 @@ function toView(row: UserRow, relationship: FriendRelationship): FriendUserView 
     nameEffect: loadout.nameEffect,
     owner: row.isOwner,
     beta: row.isBetaTester,
+    tags,
     relationship,
   };
 }
@@ -79,6 +82,7 @@ export async function friendsPayload(meId: string): Promise<{
     ? await db.select().from(users).where(inArray(users.id, otherIds))
     : [];
   const byId = new Map(userRows.map((row) => [row.id, row]));
+  const tagByUser = await tagMapForUsers(otherIds);
 
   const friends: FriendUserView[] = [];
   const incoming: FriendUserView[] = [];
@@ -86,9 +90,10 @@ export async function friendsPayload(meId: string): Promise<{
   for (const row of rows) {
     const other = byId.get(row.userId === meId ? row.friendId : row.userId);
     if (!other) continue;
-    if (row.status === "accepted") friends.push(toView(other, "friends"));
-    else if (row.requestedById === meId) outgoing.push(toView(other, "pending_out"));
-    else incoming.push(toView(other, "pending_in"));
+    const tags = tagByUser.get(other.id) ?? [];
+    if (row.status === "accepted") friends.push(toView(other, "friends", tags));
+    else if (row.requestedById === meId) outgoing.push(toView(other, "pending_out", tags));
+    else incoming.push(toView(other, "pending_in", tags));
   }
 
   const blockRows = await db
@@ -99,12 +104,13 @@ export async function friendsPayload(meId: string): Promise<{
   const blockedUsers = blockedIds.length
     ? await db.select().from(users).where(inArray(users.id, blockedIds))
     : [];
+  const blockedTags = await tagMapForUsers(blockedIds);
 
   return {
     friends: friends.sort((a, b) => a.displayName.localeCompare(b.displayName)),
     incoming: incoming.sort((a, b) => a.displayName.localeCompare(b.displayName)),
     outgoing: outgoing.sort((a, b) => a.displayName.localeCompare(b.displayName)),
-    blocked: blockedUsers.map((row) => toView(row, "blocked")),
+    blocked: blockedUsers.map((row) => toView(row, "blocked", blockedTags.get(row.id) ?? [])),
   };
 }
 
@@ -121,6 +127,7 @@ export async function searchUsers(meId: string, rawQuery: string): Promise<Frien
       ),
     )
     .limit(20);
+  const tagByUser = await tagMapForUsers(rows.map((row) => row.id));
 
   const result: FriendUserView[] = [];
   for (const row of rows) {
@@ -135,7 +142,7 @@ export async function searchUsers(meId: string, rawQuery: string): Promise<Frien
         .limit(1);
       if (blockedMe) continue;
     }
-    result.push(toView(row, relationship));
+    result.push(toView(row, relationship, tagByUser.get(row.id) ?? []));
   }
   return result;
 }

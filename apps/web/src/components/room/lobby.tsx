@@ -2,6 +2,7 @@ import type { GameRules, RoomView } from "@stacked/shared";
 import { Bot, Check, Clock, Coins, Copy, Crown, DoorOpen, Layers, Play, Plus, Settings2, Trash2, Users } from "lucide-react";
 import { Avatar } from "@/components/brand/avatar";
 import { NameEffect } from "@/components/brand/name-effect";
+import { UserTags } from "@/components/brand/user-tags";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -143,6 +144,7 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
                     {player.isBot ? ` · ${t("bot")}` : ""}
                     {!player.connected && !player.isBot ? ` · ${t("reconnecting")}` : ""}
                   </p>
+                  <UserTags tags={player.tags} max={3} className="mt-1" />
                 </div>
                 {player.isBot && <Badge variant="outline">{t("bot")}</Badge>}
                 {player.ready || player.isBot || player.host ? (

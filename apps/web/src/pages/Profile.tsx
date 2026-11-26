@@ -22,6 +22,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "wouter";
 import { Avatar } from "@/components/brand/avatar";
 import { NameEffect } from "@/components/brand/name-effect";
+import { UserTags } from "@/components/brand/user-tags";
 import { GenerateRecoveryDialog } from "@/components/auth/recovery";
 import { CardBack } from "@/components/cards/playing-card";
 import { EffectPreviewDialog } from "@/components/game/effect-preview";
@@ -347,6 +348,7 @@ export default function ProfilePage() {
                   <Trophy className="size-3 text-warning" /> {t(user.stats.wins === 1 ? "{n} win" : "{n} wins", { n: user.stats.wins })}
                 </Badge>
               </div>
+              <UserTags tags={user.tags} max={6} className="mt-2" />
             </div>
           </div>
 

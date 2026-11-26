@@ -16,6 +16,7 @@ import {
   type ProfilePayload,
   type PublicUser,
   type SessionInfo,
+  type UserTagView,
 } from "@stacked/shared";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "../db/index.js";
@@ -23,6 +24,7 @@ import { userCosmetics, users, type UserRow } from "../db/schema.js";
 import type { Principal } from "../auth/session.js";
 import { cleanDisplayName } from "../lib/text.js";
 import { chatPackIdsForUser, profileChatPacks } from "./chat.js";
+import { tagMapForUsers, tagsForUser } from "./tags.js";
 
 export function isOwner(user: Pick<UserRow, "isOwner">): boolean {
   return user.isOwner;
@@ -88,7 +90,7 @@ export function equippedOf(user: UserRow): Loadout {
   return loadout;
 }
 
-export function toPublicUser(user: UserRow): PublicUser {
+export function toPublicUser(user: UserRow, tags: UserTagView[] = []): PublicUser {
   return {
     id: user.id,
     username: user.username,
@@ -105,6 +107,7 @@ export function toPublicUser(user: UserRow): PublicUser {
     createdAt: user.createdAt.getTime(),
     owner: isOwner(user),
     beta: isBetaTester(user),
+    tags,
   };
 }
 
@@ -219,9 +222,10 @@ export async function sessionInfo(principal: Principal | null): Promise<SessionI
   }
 
   const sync = await syncUnlocks(principal.user);
+  const userTags = await tagsForUser(principal.user.id);
   return {
     kind: "user",
-    user: toPublicUser(principal.user),
+    user: toPublicUser(principal.user, userTags),
     guestName: null,
     unlocks: [...sync.owned],
     chatPacks: await chatPackIdsForUser(principal.user),
@@ -231,8 +235,9 @@ export async function sessionInfo(principal: Principal | null): Promise<SessionI
 
 export async function profilePayload(user: UserRow): Promise<ProfilePayload> {
   const sync = await syncUnlocks(user);
+  const userTags = await tagsForUser(user.id);
   return {
-    user: toPublicUser(user),
+    user: toPublicUser(user, userTags),
     // Owner-only and beta-only pieces are not part of the public catalogue.
     items: COSMETICS.filter((item) => unlockAllowed(user, item.unlock)),
     owned: [...sync.owned],
@@ -338,6 +343,7 @@ export async function leaderboard(limit = 50) {
       .orderBy(desc(users.xp), desc(users.wins))
       .limit(limit);
 
+  const tagMap = await tagMapForUsers(rows.map((row) => row.id));
   return rows.map((row, index) => {
     const loadout = { ...SLOT_FALLBACK, ...(row.equipped ?? {}) };
     return {
@@ -350,6 +356,7 @@ export async function leaderboard(limit = 50) {
       games: row.games,
       avatar: loadout.avatar,
       nameEffect: loadout.nameEffect,
+      tags: tagMap.get(row.id) ?? [],
     };
   });
 }

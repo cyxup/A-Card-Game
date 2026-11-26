@@ -13,6 +13,7 @@ import { matches, matchPlayers, reports, sessions, userChatPacks, userCosmetics,
 import { badRequest, requireOwner } from "../lib/http.js";
 import { disconnectUser, refreshUserConnections } from "../realtime.js";
 import { rooms } from "../rooms/manager.js";
+import { refreshUserTagCache, warmTagCache } from "../services/tags.js";
 import {
   AdminError,
   banUser,
@@ -113,6 +114,8 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
     const actor = requireOwner(request);
     const id = String((request.params as { id?: string }).id ?? "");
     await deleteTag(actor.user, id);
+    await warmTagCache();
+    rooms.refreshTags();
     return { ok: true };
   });
 
@@ -120,7 +123,11 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
     const actor = requireOwner(request);
     const parsed = setTagsSchema.safeParse(request.body ?? {});
     if (!parsed.success) badRequest("Pick the tags to apply.");
-    return setUserTags(actor.user, targetId(request), parsed.data.tagIds);
+    const id = targetId(request);
+    const updated = await setUserTags(actor.user, id, parsed.data.tagIds);
+    await refreshUserTagCache(id);
+    rooms.refreshTags();
+    return updated;
   });
 
   app.get("/api/admin/reports", async (request): Promise<AdminReportView[]> => {

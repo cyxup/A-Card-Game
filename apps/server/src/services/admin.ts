@@ -19,6 +19,7 @@ import {
 } from "../db/schema.js";
 import { syncUnlocks } from "./account.js";
 import { grantAllChatPacks } from "./chat.js";
+import { tagMapForUsers } from "./tags.js";
 
 export class AdminError extends Error {
   readonly status: number;
@@ -49,31 +50,8 @@ export function toAdminUser(user: UserRow, userTagList: AdminTagView[] = []): Ad
   };
 }
 
-async function tagsByUser(ids: string[]): Promise<Map<string, AdminTagView[]>> {
-  const unique = [...new Set(ids)];
-  const result = new Map<string, AdminTagView[]>();
-  if (unique.length === 0) return result;
-  const rows = await db
-    .select({
-      userId: userTags.userId,
-      id: tags.id,
-      name: tags.name,
-      color: tags.color,
-    })
-    .from(userTags)
-    .innerJoin(tags, eq(userTags.tagId, tags.id))
-    .where(inArray(userTags.userId, unique))
-    .orderBy(tags.name);
-  for (const row of rows) {
-    const list = result.get(row.userId) ?? [];
-    list.push({ id: row.id, name: row.name, color: row.color });
-    result.set(row.userId, list);
-  }
-  return result;
-}
-
 export async function toAdminUserWithTags(user: UserRow): Promise<AdminUserView> {
-  const byUser = await tagsByUser([user.id]);
+  const byUser = await tagMapForUsers([user.id]);
   return toAdminUser(user, byUser.get(user.id) ?? []);
 }
 
@@ -92,7 +70,7 @@ export async function listUsers(query: string, limit = 80): Promise<AdminUserVie
         .orderBy(desc(users.createdAt))
         .limit(limit)
     : await db.select().from(users).orderBy(desc(users.createdAt)).limit(limit);
-  const byUser = await tagsByUser(rows.map((row) => row.id));
+  const byUser = await tagMapForUsers(rows.map((row) => row.id));
   return rows.map((row) => toAdminUser(row, byUser.get(row.id) ?? []));
 }
 
