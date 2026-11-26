@@ -229,6 +229,26 @@ export interface FriendsPayload {
   };
 }
 
+export interface PlayerCardView {
+  id: string;
+  username: string;
+  displayName: string;
+  level: number;
+  xp: number;
+  avatar: string;
+  cardBack: string;
+  table: string;
+  nameEffect: string;
+  winEffect: string;
+  stats: PlayerStats;
+  createdAt: number;
+  owner: boolean;
+  beta: boolean;
+  tags: UserTagView[];
+  relationship: FriendRelationship | "self";
+  friendCount: number;
+}
+
 /* ────────────────────────────── Rooms ────────────────────────────── */
 
 export interface RoomPlayerView {
@@ -249,6 +269,8 @@ export interface RoomPlayerView {
   owner?: boolean;
   beta?: boolean;
   tags: UserTagView[];
+  /** False for guests and bots. */
+  registered: boolean;
 }
 
 export interface RewardGrant {

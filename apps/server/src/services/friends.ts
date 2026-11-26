@@ -2,13 +2,14 @@ import {
   levelForXp,
   type FriendRelationship,
   type FriendUserView,
+  type PlayerCardView,
   type UserTagView,
 } from "@stacked/shared";
 import { and, eq, ilike, inArray, or } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { friendships, userBlocks, users, type UserRow } from "../db/schema.js";
 import { ApiError } from "../lib/http.js";
-import { equippedOf } from "./account.js";
+import { equippedOf, statsOf } from "./account.js";
 import { tagMapForUsers } from "./tags.js";
 
 function pair(a: string, b: string): [string, string] {
@@ -145,6 +146,43 @@ export async function searchUsers(meId: string, rawQuery: string): Promise<Frien
     result.push(toView(row, relationship, tagByUser.get(row.id) ?? []));
   }
   return result;
+}
+
+export async function playerCard(targetId: string, viewerId: string | null): Promise<PlayerCardView> {
+  const target = await userRow(targetId);
+  if (target.banned) throw new ApiError(404, "not_found", "That player does not exist.");
+  const tags = (await tagMapForUsers([target.id])).get(target.id) ?? [];
+  const loadout = equippedOf(target);
+  const relationship: PlayerCardView["relationship"] =
+    viewerId === target.id ? "self" : viewerId ? await relationBetween(viewerId, target.id) : "none";
+  const friendshipsCount = await db
+    .select({ userId: friendships.userId })
+    .from(friendships)
+    .where(
+      and(
+        eq(friendships.status, "accepted"),
+        or(eq(friendships.userId, target.id), eq(friendships.friendId, target.id)),
+      ),
+    );
+  return {
+    id: target.id,
+    username: target.username,
+    displayName: target.displayName,
+    level: levelForXp(target.xp),
+    xp: target.xp,
+    avatar: loadout.avatar,
+    cardBack: loadout.cardBack,
+    table: loadout.table,
+    nameEffect: loadout.nameEffect,
+    winEffect: loadout.winEffect,
+    stats: statsOf(target),
+    createdAt: target.createdAt.getTime(),
+    owner: target.isOwner,
+    beta: target.isBetaTester,
+    tags,
+    relationship,
+    friendCount: friendshipsCount.length,
+  };
 }
 
 export async function sendRequest(me: UserRow, targetId: string): Promise<FriendRelationship> {

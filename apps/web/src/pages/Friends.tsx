@@ -18,6 +18,7 @@ import { Link, useLocation } from "wouter";
 import { Avatar } from "@/components/brand/avatar";
 import { NameEffect } from "@/components/brand/name-effect";
 import { UserTags } from "@/components/brand/user-tags";
+import { PlayerProfileDialog } from "@/components/social/player-profile";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,6 +63,7 @@ export default function FriendsPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [invited, setInvited] = useState<Set<string>>(new Set());
+  const [profileId, setProfileId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -463,17 +465,24 @@ export default function FriendsPage() {
               <div className="flex flex-col gap-2">
                 {data.friends.map((friend) => (
                   <div key={friend.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-white/7 bg-white/[0.015] px-3 py-2">
-                    <Avatar id={friend.avatar} size={34} />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">
-                        <NameEffect effect={friend.nameEffect}>{friend.displayName}</NameEffect>{" "}
-                        <span className="font-mono text-[10px] text-muted-foreground">@{friend.username}</span>
-                        {friend.owner ? <Badge variant="warning" className="ml-1.5">{t("owner")}</Badge> : null}
-                        {friend.beta ? <Badge variant="outline" className="ml-1.5 border-info/40 text-info">{t("beta")}</Badge> : null}
-                      </p>
-                      <UserTags tags={friend.tags} max={3} className="mt-0.5" />
-                      <PresenceLine friend={friend} />
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setProfileId(friend.id)}
+                      className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                      title={t("View profile")}
+                    >
+                      <Avatar id={friend.avatar} size={34} />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">
+                          <NameEffect effect={friend.nameEffect}>{friend.displayName}</NameEffect>{" "}
+                          <span className="font-mono text-[10px] text-muted-foreground">@{friend.username}</span>
+                          {friend.owner ? <Badge variant="warning" className="ml-1.5">{t("owner")}</Badge> : null}
+                          {friend.beta ? <Badge variant="outline" className="ml-1.5 border-info/40 text-info">{t("beta")}</Badge> : null}
+                        </p>
+                        <UserTags tags={friend.tags} max={3} className="mt-0.5" />
+                        <PresenceLine friend={friend} />
+                      </div>
+                    </button>
                     <div className="flex flex-wrap items-center gap-1.5">
                       {friend.presence?.status === "playing" ? (
                         <Button
@@ -554,6 +563,8 @@ export default function FriendsPage() {
           ) : null}
         </div>
       )}
+
+      <PlayerProfileDialog userId={profileId} onClose={() => setProfileId(null)} />
     </div>
   );
 }

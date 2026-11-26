@@ -11,6 +11,7 @@ import {
   declineRequest,
   friendsPayload,
   isFriends,
+  playerCard,
   removeFriend,
   searchUsers,
   sendRequest,
@@ -77,6 +78,15 @@ export async function friendsRoutes(app: FastifyInstance): Promise<void> {
     gate(`friend-search:${principal.user.id}`, 30, 60_000);
     const q = String((request.query as { q?: string })?.q ?? "");
     return searchUsers(principal.user.id, q);
+  });
+
+  app.get("/api/players/:id", async (request) => {
+    gate(`player-card:${request.ip}`, 180, 60_000);
+    const parsed = idSchema.safeParse((request.params as { id?: string }).id);
+    if (!parsed.success) badRequest("That player does not exist.");
+    const principal = request.principal;
+    const viewerId = principal?.kind === "user" ? principal.user.id : null;
+    return playerCard(parsed.data, viewerId);
   });
 
   app.post("/api/friends/request", async (request) => {

@@ -234,6 +234,7 @@ export function buildRoomView(room: Room, viewerId: string, ownerPeek = false): 
       owner: seat.owner,
       beta: seat.beta,
       tags: tagsForUserSync(seat.userId),
+      registered: Boolean(seat.userId) && !seat.isBot,
     };
   });
 

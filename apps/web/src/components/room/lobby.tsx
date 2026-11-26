@@ -1,13 +1,16 @@
-import type { GameRules, RoomView } from "@stacked/shared";
-import { Bot, Check, Clock, Coins, Copy, Crown, DoorOpen, Layers, Play, Plus, Settings2, Trash2, Users } from "lucide-react";
+import type { FriendRelationship, FriendsPayload, GameRules, RoomView } from "@stacked/shared";
+import { Bot, Check, Clock, Coins, Copy, Crown, DoorOpen, Layers, Play, Plus, Settings2, Trash2, UserPlus, Users } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Avatar } from "@/components/brand/avatar";
 import { NameEffect } from "@/components/brand/name-effect";
 import { UserTags } from "@/components/brand/user-tags";
+import { PlayerProfileDialog } from "@/components/social/player-profile";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/toast";
+import { api } from "@/lib/api";
 import { game as client } from "@/lib/game";
 import { useT } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
@@ -48,6 +51,61 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
   const canStart = room.players.length >= 2 && (wager === 0 || !hasBot);
   const emptySeats = Math.max(0, room.rules.maxPlayers - room.players.length);
   const locked = !isHost;
+  const myId = session?.kind === "user" ? session.user?.id ?? null : null;
+  const [relationships, setRelationships] = useState<Record<string, FriendRelationship>>({});
+  const [adding, setAdding] = useState<string | null>(null);
+  const [profileId, setProfileId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!myId) {
+      setRelationships({});
+      return;
+    }
+    let alive = true;
+    api
+      .get<FriendsPayload>("/api/friends")
+      .then((payload) => {
+        if (!alive) return;
+        const next: Record<string, FriendRelationship> = {};
+        for (const friend of payload.friends) next[friend.id] = "friends";
+        for (const friend of payload.outgoing) next[friend.id] = "pending_out";
+        for (const friend of payload.incoming) next[friend.id] = "pending_in";
+        for (const friend of payload.blocked) next[friend.id] = "blocked";
+        setRelationships(next);
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [myId]);
+
+  async function addFriend(playerId: string, playerName: string) {
+    if (adding) return;
+    setAdding(playerId);
+    try {
+      await api.post("/api/friends/request", { userId: playerId });
+      setRelationships((current) => ({ ...current, [playerId]: "pending_out" }));
+      toast.success(t("Friend request sent to {name}.", { name: playerName }));
+    } catch (caught) {
+      toast.error(caught instanceof Error ? caught.message : t("Could not send that friend request."));
+    } finally {
+      setAdding(null);
+    }
+  }
+
+  async function acceptFriend(playerId: string) {
+    if (adding) return;
+    setAdding(playerId);
+    try {
+      await api.post(`/api/friends/${playerId}/accept`, {});
+      setRelationships((current) => ({ ...current, [playerId]: "friends" }));
+      toast.success(t("Friend request accepted."));
+    } catch (caught) {
+      toast.error(caught instanceof Error ? caught.message : t("Could not accept that request."));
+    } finally {
+      setAdding(null);
+    }
+  }
 
   async function copyInvite() {
     try {
@@ -128,24 +186,67 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
                 key={player.id}
                 className="flex items-center gap-3 rounded-xl border border-white/7 bg-white/[0.015] px-3 py-2.5"
               >
-                <Avatar id={player.avatar} size={34} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <NameEffect effect={player.nameEffect} className="truncate text-sm font-medium">
-                      {player.name}
-                    </NameEffect>
-                    {player.host && <Crown className="size-3.5 shrink-0 text-warning" />}
-                    {player.id === room.you.id && (
-                      <span className="text-[10px] uppercase tracking-wider text-brand">{t("you")}</span>
-                    )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (player.registered && !player.isBot) setProfileId(player.id);
+                  }}
+                  className={`flex min-w-0 flex-1 items-center gap-3 text-left ${
+                    player.registered && !player.isBot ? "cursor-pointer" : "cursor-default"
+                  }`}
+                  title={player.registered && !player.isBot ? t("View profile") : undefined}
+                >
+                  <Avatar id={player.avatar} size={34} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <NameEffect effect={player.nameEffect} className="truncate text-sm font-medium">
+                        {player.name}
+                      </NameEffect>
+                      {player.host && <Crown className="size-3.5 shrink-0 text-warning" />}
+                      {player.id === room.you.id && (
+                        <span className="text-[10px] uppercase tracking-wider text-brand">{t("you")}</span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      {t("level {n}", { n: player.level })}
+                      {player.isBot ? ` · ${t("bot")}` : ""}
+                      {!player.connected && !player.isBot ? ` · ${t("reconnecting")}` : ""}
+                    </p>
+                    <UserTags tags={player.tags} max={3} className="mt-1" />
                   </div>
-                  <p className="text-[11px] text-muted-foreground">
-                    {t("level {n}", { n: player.level })}
-                    {player.isBot ? ` · ${t("bot")}` : ""}
-                    {!player.connected && !player.isBot ? ` · ${t("reconnecting")}` : ""}
-                  </p>
-                  <UserTags tags={player.tags} max={3} className="mt-1" />
-                </div>
+                </button>
+                {myId && !player.isBot && player.registered && player.id !== room.you.id ? (
+                  relationships[player.id] === "friends" ? (
+                    <Badge variant="success" className="gap-1">
+                      <Check className="size-3" /> {t("Friends")}
+                    </Badge>
+                  ) : relationships[player.id] === "pending_out" ? (
+                    <Badge variant="outline" className="gap-1">
+                      <Clock className="size-3" /> {t("Requested")}
+                    </Badge>
+                  ) : relationships[player.id] === "pending_in" ? (
+                    <Button
+                      size="xs"
+                      variant="brand"
+                      loading={adding === player.id}
+                      onClick={() => void acceptFriend(player.id)}
+                    >
+                      {t("Accept")}
+                    </Button>
+                  ) : relationships[player.id] === "blocked" ? null : (
+                    <Button
+                      size="xs"
+                      variant="outline"
+                      className="gap-1"
+                      loading={adding === player.id}
+                      onClick={() => void addFriend(player.id, player.name)}
+                      aria-label={t("Add friend")}
+                    >
+                      <UserPlus className="size-3" />
+                      <span className="hidden sm:inline">{t("Add friend")}</span>
+                    </Button>
+                  )
+                ) : null}
                 {player.isBot && <Badge variant="outline">{t("bot")}</Badge>}
                 {player.ready || player.isBot || player.host ? (
                   <Badge variant="success" className="gap-1">
@@ -370,6 +471,13 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
           </div>
         </div>
       </div>
+      <PlayerProfileDialog
+        userId={profileId}
+        onClose={() => setProfileId(null)}
+        onRelationshipChange={(userId, relationship) =>
+          setRelationships((current) => ({ ...current, [userId]: relationship }))
+        }
+      />
     </div>
   );
 }
