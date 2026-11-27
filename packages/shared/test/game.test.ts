@@ -601,3 +601,44 @@ describe("Doubly Stacked", () => {
     expect(next.turn).toBe(0);
   });
 });
+
+describe("Doubly Stacked double flip", () => {
+  it("restores the light face after a second Flip", () => {
+    const makeFlip = (id: string, color: Color) => ({
+      id,
+      color,
+      kind: "flip" as const,
+      value: null,
+      back: { color: "blue" as const, kind: "flip" as const, value: null },
+    });
+    const plus = {
+      id: "plus",
+      color: "red" as const,
+      kind: "draw2" as const,
+      value: null,
+      back: { color: "blue" as const, kind: "draw10" as const, value: null },
+    };
+    const extra = {
+      id: "extra",
+      color: "red" as const,
+      kind: "number" as const,
+      value: 7,
+      back: { color: "blue" as const, kind: "number" as const, value: 7 },
+    };
+    const s = state({
+      players: players([
+        [makeFlip("fa", "red"), plus],
+        [makeFlip("fb", "red"), extra],
+      ]),
+      rules: { ...DEFAULT_RULES, gameMode: "doubly" },
+      discard: [card("t1", "red", "number", 5)],
+      turn: 0,
+    });
+    const dark = reduce(s, "a", { type: "play", cardId: "fa" }, ctx);
+    expect(dark.side).toBe("dark");
+    expect(dark.players[0]?.hand[0]?.kind).toBe("draw10");
+    const light = reduce(dark, "b", { type: "play", cardId: "fb" }, ctx);
+    expect(light.side).toBe("light");
+    expect(light.players[0]?.hand[0]?.kind).toBe("draw2");
+  });
+});

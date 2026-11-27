@@ -163,7 +163,7 @@ export default function RulesPage() {
             </li>
             <li>
               <span className="font-medium text-foreground">{t("Doubly Stacked.")}</span>{" "}
-              {t("Two-sided deck. Play a Flip card to turn every hand over. The dark side hides +10 and Skip Everyone.")}
+              {t("Two-sided deck. Play a Flip card to turn every hand over. The flip side hides +10 and Skip Everyone.")}
             </li>
             <li>
               <span className="font-medium text-foreground">{t("2v2 teams.")}</span>{" "}

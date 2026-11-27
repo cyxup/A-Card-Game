@@ -133,6 +133,23 @@ export function invertColor(color: Color | null): Color | null {
   return null;
 }
 
+export function inverseFace(face: CardFace): CardFace {
+  return {
+    color: invertColor(face.color),
+    kind:
+      face.kind === "draw2"
+        ? "draw10"
+        : face.kind === "draw10"
+          ? "draw2"
+          : face.kind === "skip"
+            ? "skipAll"
+            : face.kind === "skipAll"
+              ? "skip"
+              : face.kind,
+    value: face.kind === "number" ? face.value : null,
+  };
+}
+
 /**
  * Doubly Stacked deck: every physical card has a light face and a darker,
  * nastier back face. Flip cards turn every card over in one go.
@@ -140,36 +157,22 @@ export function invertColor(color: Color | null): Color | null {
 export function buildDoublyDeck(): Card[] {
   const cards = buildDeck();
   for (const card of cards) {
-    card.back = {
-      color: invertColor(card.color),
-      kind:
-        card.kind === "draw2"
-          ? "draw10"
-          : card.kind === "skip"
-            ? "skipAll"
-            : card.kind,
-      value: card.kind === "number" ? card.value : null,
-    };
+    card.back = inverseFace(card);
   }
   for (let i = 0; i < 4; i++) {
     const color = COLORS[i] as Color;
-    cards.push({
-      id: `flip${i}`,
-      color,
-      kind: "flip",
-      value: null,
-      back: { color: invertColor(color), kind: "flip", value: null },
-    });
+    const face: CardFace = { color, kind: "flip", value: null };
+    cards.push({ id: `flip${i}`, ...face, back: inverseFace(face) });
   }
   return cards;
 }
 
 export function flipCard(card: Card): void {
-  if (!card.back) return;
   const current: CardFace = { color: card.color, kind: card.kind, value: card.value };
-  card.color = card.back.color;
-  card.kind = card.back.kind;
-  card.value = card.back.value;
+  const other = card.back ?? inverseFace(current);
+  card.color = other.color;
+  card.kind = other.kind;
+  card.value = other.value;
   card.back = current;
 }
 

@@ -2,19 +2,19 @@
 
 .pcard {
   --cw: 92px;
-  --card-ink: #17130f;
+  --card-ink: #f5f1ff;
   --card-accent: #d9d2c4;
   position: relative;
   width: var(--cw);
   aspect-ratio: 5 / 7;
   flex: 0 0 auto;
   border-radius: calc(var(--cw) * 0.09);
-  background: linear-gradient(160deg, #fffdf7, #f1eadb 68%, #e8dfcd);
+  background: linear-gradient(160deg, #262232, #121018 68%, #09080d);
   color: var(--card-ink);
   box-shadow:
-    0 1px 0 rgb(255 255 255 / 0.65) inset,
-    0 10px 22px -10px rgb(0 0 0 / 0.65),
-    0 2px 5px rgb(0 0 0 / 0.35);
+    0 1px 0 rgb(255 255 255 / 0.1) inset,
+    0 10px 22px -10px rgb(0 0 0 / 0.75),
+    0 2px 5px rgb(0 0 0 / 0.45);
   overflow: hidden;
   user-select: none;
   transition:
@@ -55,54 +55,33 @@ button.pcard:focus-visible {
 }
 
 .pcard[data-color="red"] {
-  --card-ink: #7f1717;
+  --card-ink: #ffd6df;
   --card-accent: #e24242;
 }
 .pcard[data-color="yellow"] {
-  --card-ink: #6b4b00;
+  --card-ink: #fff0bd;
   --card-accent: #edb70a;
 }
 .pcard[data-color="green"] {
-  --card-ink: #0f4a2a;
+  --card-ink: #c9ffdf;
   --card-accent: #2f9d58;
 }
 .pcard[data-color="blue"] {
-  --card-ink: #10386f;
+  --card-ink: #d4e2ff;
   --card-accent: #2f6ad0;
 }
 
-/* Doubly Stacked: the dark side flips the palette and mood. */
+/* Doubly Stacked: the flip side gets a colder, sharper rim. The colours
+   themselves are inverted by the card data, not by a CSS hue filter. */
 .game-stage[data-side="dark"] .pcard:not(.pcard-back) {
-  background: linear-gradient(160deg, #262232, #121018 68%, #09080d);
-  color: #f5f1ff;
-}
-
-.game-stage[data-side="dark"] .pcard[data-color="red"] {
-  --card-ink: #ffd6df;
-  --card-accent: #c71f4a;
-}
-
-.game-stage[data-side="dark"] .pcard[data-color="yellow"] {
-  --card-ink: #fff0bd;
-  --card-accent: #b38600;
-}
-
-.game-stage[data-side="dark"] .pcard[data-color="green"] {
-  --card-ink: #c9ffdf;
-  --card-accent: #166b45;
-}
-
-.game-stage[data-side="dark"] .pcard[data-color="blue"] {
-  --card-ink: #d4e2ff;
-  --card-accent: #244ec2;
-}
-
-.game-stage[data-side="dark"] .pcard:not(.pcard-back) .pcard-corner {
-  color: var(--card-ink);
+  box-shadow:
+    0 0 0 1px rgb(186 120 255 / 0.2) inset,
+    0 10px 22px -10px rgb(0 0 0 / 0.8),
+    0 2px 5px rgb(0 0 0 / 0.5);
 }
 
 .game-stage[data-side="dark"] .pcard:not(.pcard-back) .pcard-inner {
-  border-color: color-mix(in oklch, var(--card-accent) 70%, transparent);
+  border-color: color-mix(in oklch, var(--card-accent) 76%, #d9b8ff);
 }
 
 .game-stage[data-side="dark"] .pcard-back {
@@ -192,7 +171,7 @@ button.pcard:focus-visible {
 }
 
 .pcard[data-wild="true"] .pcard-corner {
-  color: #3a332b;
+  color: #f5f1ff;
 }
 
 .pcard-mini {

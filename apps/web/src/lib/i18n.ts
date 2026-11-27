@@ -135,10 +135,10 @@ const FR: Record<string, string> = {
   "Finish all.": "Tout le monde termine.",
   "Doubly Stacked": "Doubly Stacked",
   "Doubly Stacked.": "Doubly Stacked.",
-  "Two-sided deck. Play a Flip card to turn every hand over. The dark side hides +10 and Skip Everyone.":
-    "Jeu à double face. Jouez une carte Retourner pour retourner toutes les mains. La face sombre cache des +10 et des Tout le monde passe.",
-  "Dark side": "Face sombre",
-  "Light side": "Face claire",
+  "Two-sided deck. Play a Flip card to turn every hand over. The flip side hides +10 and Skip Everyone.":
+    "Jeu à double face. Jouez une carte Retourner pour retourner toutes les mains. La face retournée cache des +10 et des Tout le monde passe.",
+  "Normal side": "Face normale",
+  "Flipped side": "Face retournée",
   "Double Draw": "Double pioche",
   "Skip Everyone": "Tout le monde passe",
   Flip: "Retourner",

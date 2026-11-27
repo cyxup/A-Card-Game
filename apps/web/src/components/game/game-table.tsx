@@ -898,7 +898,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                   variant={gameView?.side === "dark" ? "brand" : "outline"}
                   className="inline-flex items-center gap-1"
                 >
-                  <Repeat2 className="size-3" /> {t(gameView?.side === "dark" ? "Dark side" : "Light side")}
+                  <Repeat2 className="size-3" /> {t(gameView?.side === "dark" ? "Flipped side" : "Normal side")}
                 </Badge>
               ) : null}
             </div>

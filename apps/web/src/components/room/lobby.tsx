@@ -1,4 +1,4 @@
-import type { FriendRelationship, FriendsPayload, GameRules, RoomView } from "@stacked/shared";
+﻿import type { FriendRelationship, FriendsPayload, GameRules, RoomView } from "@stacked/shared";
 import { Bot, Check, Clock, Coins, Copy, Crown, DoorOpen, Layers, Play, Plus, Repeat2, Settings2, Trash2, Trophy, UserPlus, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/brand/avatar";
@@ -233,8 +233,8 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
                     </div>
                     <p className="text-[11px] text-muted-foreground">
                       {t("level {n}", { n: player.level })}
-                      {player.isBot ? ` · ${t("bot")}` : ""}
-                      {!player.connected && !player.isBot ? ` · ${t("reconnecting")}` : ""}
+                      {player.isBot ? ` Â· ${t("bot")}` : ""}
+                      {!player.connected && !player.isBot ? ` Â· ${t("reconnecting")}` : ""}
                     </p>
                     <UserTags tags={player.tags} max={3} className="mt-1" />
                   </div>
@@ -470,7 +470,7 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
               />
               <RuleToggle
                 label={t("Doubly Stacked")}
-                description={t("Two-sided deck. Play a Flip card to turn every hand over. The dark side hides +10 and Skip Everyone.")}
+                description={t("Two-sided deck. Play a Flip card to turn every hand over. The flip side hides +10 and Skip Everyone.")}
                 checked={room.rules.gameMode === "doubly"}
                 disabled={locked}
                 onChange={(value) =>
@@ -555,3 +555,4 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
     </div>
   );
 }
+
