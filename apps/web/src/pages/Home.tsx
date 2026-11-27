@@ -270,7 +270,7 @@ export default function HomePage() {
             <span className="flex flex-col gap-1.5">
               <span className="text-lg font-semibold tracking-[-0.02em]">{t("Doubly Stacked")}</span>
               <span className="text-sm leading-relaxed text-muted-foreground">
-                {t("The two-sided deck: pink, teal, orange and purple. Flip the whole table and see the far side of every hand.")}
+                {t("The two-sided deck: pink, teal, orange and purple. Flip the whole table; the dark side hides +5, +9 and Wild Draw Color.")}
               </span>
             </span>
             <span className="mt-auto inline-flex items-center gap-1.5 pt-2 text-xs font-medium text-brand">

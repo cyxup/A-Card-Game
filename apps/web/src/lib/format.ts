@@ -1,4 +1,4 @@
-import { KIND_LABEL, KIND_SHORT, type Card, type Color, type LogEntry } from "@stacked/shared";
+import { KIND_LABEL, KIND_SHORT, isWildKind, type Card, type Color, type LogEntry } from "@stacked/shared";
 import { tNow } from "./i18n";
 
 const COLOR_KEY: Record<Color, string> = {
@@ -16,6 +16,16 @@ function colorName(color: Color | null): string {
   return color ? tNow(COLOR_KEY[color]) : "";
 }
 
+// Keep old match-history cards (for example the retired +10) readable instead
+// of crashing on a kind that no longer exists in the current deck.
+function kindLabel(kind: Card["kind"]): string {
+  return (KIND_LABEL as Record<string, string>)[kind] ?? kind;
+}
+
+function kindShort(kind: Card["kind"]): string {
+  return (KIND_SHORT as Record<string, string>)[kind] ?? kind;
+}
+
 export function nameOf(players: { id: string; name: string }[], id: string | undefined, fallback = "Someone"): string {
   if (!id) return fallback;
   return players.find((player) => player.id === id)?.name ?? fallback;
@@ -24,10 +34,10 @@ export function nameOf(players: { id: string; name: string }[], id: string | und
 export function localizedCardLabel(card: Card): string {
   const color = colorName(card.color);
   if (card.kind === "number") return `${card.value} ${color}`.trim();
-  if (card.kind === "wild" || card.kind === "wild4" || card.kind === "swap") {
-    return tNow(KIND_LABEL[card.kind]);
+  if (isWildKind(card.kind)) {
+    return tNow(kindLabel(card.kind));
   }
-  return `${tNow(KIND_LABEL[card.kind])} ${color}`.trim();
+  return `${tNow(kindLabel(card.kind))} ${color}`.trim();
 }
 
 export function cardShort(card: Card): string {
@@ -35,7 +45,9 @@ export function cardShort(card: Card): string {
   if (card.kind === "number") return `${color} ${card.value}`.trim();
   if (card.kind === "wild") return tNow("a colour wild");
   if (card.kind === "wild4") return tNow("a Wild Draw Four");
-  return `${color} ${KIND_SHORT[card.kind]}`.trim();
+  if (card.kind === "wild9") return tNow("a Wild Draw Nine");
+  if (card.kind === "wildColor") return tNow("a Wild Draw Color");
+  return `${color} ${kindShort(card.kind)}`.trim();
 }
 
 export function logText(entry: LogEntry, players: { id: string; name: string }[]): string {

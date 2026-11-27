@@ -64,6 +64,8 @@ export const RULE_BOUNDS = {
 } as const;
 
 export const JUMP_WINDOW_MS = 5000;
+/** Hard safety cap for Wild Draw Color so a bad deck state can never loop forever. */
+export const WILD_DRAW_COLOR_CAP = 10;
 
 /**
  * Bump when the authoritative engine changes in a way the client can observe.
@@ -158,7 +160,7 @@ export interface GameState {
   phase: "playing" | "ended";
   /** Accumulated draw cards waiting to be stacked or taken. */
   pending: number;
-  pendingKind: "draw2" | "wild4" | "draw10" | null;
+  pendingKind: "draw2" | "draw5" | "wild4" | "wild9" | null;
   /** Card drawn this turn that the player may still play. */
   drawnCard: string | null;
   winner: string | null;
@@ -245,21 +247,36 @@ export interface PlayContext {
   top: Card;
   color: Color;
   pending: number;
-  pendingKind: "draw2" | "wild4" | "draw10" | null;
+  pendingKind: "draw2" | "draw5" | "wild4" | "wild9" | null;
   rules: GameRules;
 }
 
 export function canStackCard(
-  context: { pending: number; pendingKind: "draw2" | "wild4" | "draw10" | null; rules: GameRules },
+  context: {
+    pending: number;
+    pendingKind: "draw2" | "draw5" | "wild4" | "wild9" | null;
+    rules: GameRules;
+  },
   card: Card,
 ): boolean {
   if (context.pending <= 0) return false;
   if (context.rules.stacking === "off") return false;
+  // Wild Draw Color is a one-shot effect, never a stackable draw card.
+  if (card.kind === "wildColor") return false;
   const mixed = context.rules.stacking === "mixed";
-  if (context.pendingKind === "draw2") return card.kind === "draw2" || (mixed && card.kind === "wild4");
-  if (context.pendingKind === "wild4") return card.kind === "wild4" || (mixed && card.kind === "draw2");
-  if (context.pendingKind === "draw10") return card.kind === "draw10" || (mixed && card.kind === "wild4");
-  return card.kind === "draw2" || card.kind === "wild4" || card.kind === "draw10";
+  if (context.pendingKind === "draw2") {
+    return card.kind === "draw2" || (mixed && (card.kind === "draw5" || card.kind === "wild4" || card.kind === "wild9"));
+  }
+  if (context.pendingKind === "draw5") {
+    return card.kind === "draw5" || (mixed && (card.kind === "draw2" || card.kind === "wild4" || card.kind === "wild9"));
+  }
+  if (context.pendingKind === "wild4") {
+    return card.kind === "wild4" || (mixed && (card.kind === "draw2" || card.kind === "draw5" || card.kind === "wild9"));
+  }
+  if (context.pendingKind === "wild9") {
+    return card.kind === "wild9" || (mixed && (card.kind === "draw2" || card.kind === "draw5" || card.kind === "wild4"));
+  }
+  return card.kind === "draw2" || card.kind === "draw5" || card.kind === "wild4" || card.kind === "wild9";
 }
 
 /** Can this card be played right now by the player whose turn it is? */
@@ -498,10 +515,12 @@ function applyPlay(
   // Team mode: one player can finish, but the team only wins when both
   // partners are empty. Free-for-all still ends on the first empty hand.
   // Finish-all mode: the first player out owns first place, but the round
-  // keeps going until every player has emptied their hand.
+  // keeps going for placements until only one player still has cards.
   if (state.rules.finishAll && player.hand.length === 0) {
     if (!state.finishOrder.includes(player.id)) state.finishOrder.push(player.id);
-    if (state.finishOrder.length >= state.players.length) {
+    // Do not leave the last player at a table alone. The first player out
+    // already owns the win; the remaining hand is placed last automatically.
+    if (state.finishOrder.length >= state.players.length - 1) {
       finish(state, state.finishOrder[0] ?? null, ctx.now);
       return state;
     }
@@ -584,10 +603,20 @@ function applyPlay(
       return state;
     }
 
+    case "wildColor": {
+      const victim = state.players[nextActiveIndex(state, index, 1)] as GamePlayer;
+      const drawn = drawUntilColor(state, victim, state.color, ctx);
+      pushLog(state, { at: ctx.now, kind: "draw_penalty", actor: victim.id, count: drawn });
+      advance(state, ctx.now, 2);
+      return state;
+    }
+
     case "draw2":
-    case "draw10":
-    case "wild4": {
-      const amount = card.kind === "draw2" ? 2 : card.kind === "draw10" ? 10 : 4;
+    case "draw5":
+    case "wild4":
+    case "wild9": {
+      const amount =
+        card.kind === "draw2" ? 2 : card.kind === "draw5" ? 5 : card.kind === "wild4" ? 4 : 9;
       if (state.rules.stacking === "off") {
         const victim = state.players[nextActiveIndex(state, index, 1)] as GamePlayer;
         const drawn = drawCards(state, victim, amount, ctx);
@@ -795,6 +824,19 @@ function drawCards(state: GameState, player: GamePlayer, count: number, ctx: Red
   return drawn;
 }
 
+/** Wild Draw Color: draw until the called colour appears, with a hard cap. */
+function drawUntilColor(state: GameState, player: GamePlayer, color: Color, ctx: ReduceContext): number {
+  let drawn = 0;
+  while (drawn < WILD_DRAW_COLOR_CAP) {
+    const card = drawOne(state, ctx);
+    if (!card) break;
+    player.hand.push(card);
+    drawn++;
+    if (card.color === color) break;
+  }
+  return drawn;
+}
+
 function reshuffleDiscard(state: GameState, ctx: ReduceContext): void {
   if (state.discard.length <= 1) return;
   const top = state.discard.pop() as Card;
@@ -895,14 +937,18 @@ function cardScore(card: Card, nearestWin: number, rng: Rng): number {
   const noise = rng() * 0.4;
   if (card.kind === "number") return 20 + (card.value ?? 0) + noise;
   if (card.kind === "skip" || card.kind === "reverse") return 44 + (nearestWin <= 2 ? 26 : 0) + noise;
-  if (card.kind === "draw2") return 50 + (nearestWin <= 2 ? 30 : 0) + noise;
+  if (card.kind === "draw2" || card.kind === "draw5") return 50 + (nearestWin <= 2 ? 30 : 0) + noise;
   if (card.kind === "swap") return 30 + (nearestWin <= 1 ? 18 : 0) + noise;
+  if (card.kind === "wild9") return nearestWin <= 2 ? 90 : 14 + noise;
+  if (card.kind === "wildColor") return nearestWin <= 2 ? 80 : 18 + noise;
   if (card.kind === "wild4") return nearestWin <= 2 ? 70 : 12 + noise;
   return nearestWin <= 1 ? 55 : 18 + noise;
 }
 
 function strongestDraw(cards: Card[]): Card | undefined {
-  return [...cards].sort((a, b) => (b.kind === "wild4" ? 4 : 2) - (a.kind === "wild4" ? 4 : 2))[0];
+  const value = (card: Card) =>
+    card.kind === "wild9" ? 9 : card.kind === "draw5" ? 5 : card.kind === "wild4" ? 4 : 2;
+  return [...cards].sort((a, b) => value(b) - value(a))[0];
 }
 
 function pickSwapTarget(state: GameState, player: GamePlayer, rng: Rng): string | undefined {

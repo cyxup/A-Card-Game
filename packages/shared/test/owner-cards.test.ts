@@ -8,6 +8,8 @@ describe("owner card editor", () => {
     expect(isValidOwnerCardSpec({ color: "green", kind: "draw2" })).toBe(true);
     expect(isValidOwnerCardSpec({ color: "purple", kind: "flip", value: null })).toBe(true);
     expect(isValidOwnerCardSpec({ color: null, kind: "wild4" })).toBe(true);
+    expect(isValidOwnerCardSpec({ color: null, kind: "wild9" })).toBe(true);
+    expect(isValidOwnerCardSpec({ color: null, kind: "wildColor" })).toBe(true);
     expect(isValidOwnerCardSpec({ color: null, kind: "swap" })).toBe(true);
   });
 

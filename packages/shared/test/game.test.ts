@@ -582,20 +582,19 @@ describe("finish all", () => {
     });
   }
 
-  it("keeps playing after the first player finishes", () => {
+  it("keeps playing for placements, then stops before the last player plays alone", () => {
     let s = finishAllState();
     s = reduce(s, "a", { type: "play", cardId: "a1" }, ctx);
     expect(s.phase).toBe("playing");
     expect(s.finishOrder).toEqual(["a"]);
     expect(s.turn).toBe(1);
     s = reduce(s, "b", { type: "play", cardId: "b1" }, ctx);
-    s = reduce(s, "c", { type: "play", cardId: "c1" }, ctx);
     expect(s.phase).toBe("playing");
-    expect(s.finishOrder).toEqual(["a", "b", "c"]);
-    s = reduce(s, "d", { type: "play", cardId: "d1" }, ctx);
+    s = reduce(s, "c", { type: "play", cardId: "c1" }, ctx);
     expect(s.phase).toBe("ended");
     expect(s.winner).toBe("a");
-    expect(s.finishOrder).toEqual(["a", "b", "c", "d"]);
+    expect(s.finishOrder).toEqual(["a", "b", "c"]);
+    expect(s.results?.find((result) => result.id === "d")?.cardsLeft).toBe(1);
   });
 });
 
@@ -605,8 +604,33 @@ describe("Doubly Stacked", () => {
     expect(deck).toHaveLength(116);
     expect(deck.every((entry) => Boolean(entry.back))).toBe(true);
     expect(deck.filter((entry) => entry.kind === "flip")).toHaveLength(4);
-    const darkDraws = deck.filter((entry) => entry.back?.kind === "draw10");
+    const darkDraws = deck.filter((entry) => entry.back?.kind === "draw5");
     expect(darkDraws.length).toBeGreaterThan(0);
+  });
+
+  it("maps the dark-side draw and wild cards", () => {
+    const deck = buildDoublyDeck();
+    expect(deck.find((entry) => entry.kind === "draw2")?.back?.kind).toBe("draw5");
+    expect(deck.find((entry) => entry.kind === "wild4")?.back?.kind).toBe("wild9");
+    expect(deck.find((entry) => entry.kind === "wild")?.back?.kind).toBe("wildColor");
+    expect(deck.some((entry) => entry.back?.kind === "draw5")).toBe(true);
+    expect(deck.some((entry) => entry.back?.kind === "wild9")).toBe(true);
+    expect(deck.some((entry) => entry.back?.kind === "wildColor")).toBe(true);
+    expect(inverseFace({ color: "pink", kind: "draw5", value: null }).kind).toBe("draw2");
+    expect(inverseFace({ color: "orange", kind: "wild9", value: null }).kind).toBe("wild4");
+    expect(inverseFace({ color: "teal", kind: "wildColor", value: null }).kind).toBe("wild");
+  });
+
+  it("shows a different number on the far side", () => {
+    const deck = buildDoublyDeck();
+    for (const entry of deck.filter((candidate) => candidate.kind === "number")) {
+      expect(entry.back?.value).not.toBe(entry.value);
+      const copy = { ...entry, back: entry.back ? { ...entry.back } : undefined };
+      flipCard(copy);
+      expect(copy.value).not.toBe(entry.value);
+      flipCard(copy);
+      expect(copy.value).toBe(entry.value);
+    }
   });
 
   it("pairs every light colour with a dark colour", () => {
@@ -643,7 +667,7 @@ describe("Doubly Stacked", () => {
       color: "green" as const,
       kind: "number" as const,
       value: 5,
-      back: { color: "purple" as const, kind: "number" as const, value: 5 },
+      back: { color: "purple" as const, kind: "number" as const, value: 0 },
     };
     const s = state({
       players: players([[flip, card("a2", "red", "number", 1)], [hidden, card("b2", "red", "number", 2)]]),
@@ -673,6 +697,72 @@ describe("Doubly Stacked", () => {
     expect(next.color).toBe("teal");
   });
 
+  it("turns the dark +2 into +5 and stacks it", () => {
+    const s = state({
+      players: players([
+        [card("a1", "pink", "draw5"), card("a2", "pink", "number", 1)],
+        [card("b1", "pink", "draw5"), card("b2", "pink", "number", 2)],
+      ]),
+      side: "dark",
+      color: "pink",
+      discard: [card("t1", "pink", "number", 5)],
+      turn: 0,
+    });
+    const next = reduce(s, "a", { type: "play", cardId: "a1" }, ctx);
+    expect(next.pending).toBe(5);
+    expect(next.pendingKind).toBe("draw5");
+    expect(next.turn).toBe(1);
+  });
+
+  it("turns the dark Wild Draw Four into Wild Draw Nine", () => {
+    const s = state({
+      players: players([
+        [card("a1", null, "wild9"), card("a2", "pink", "number", 1)],
+        [card("b1", null, "wild9"), card("b2", "pink", "number", 2)],
+      ]),
+      side: "dark",
+      color: "pink",
+      discard: [card("t1", "pink", "number", 5)],
+      turn: 0,
+    });
+    const next = reduce(s, "a", { type: "play", cardId: "a1", color: "pink" }, ctx);
+    expect(next.pending).toBe(9);
+    expect(next.pendingKind).toBe("wild9");
+    expect(next.turn).toBe(1);
+  });
+
+  it("Wild Draw Color draws through the deck until the called colour", () => {
+    const s = state({
+      players: players([
+        [card("a1", null, "wildColor"), card("a2", "pink", "number", 1)],
+        [card("b1", "pink", "number", 5)],
+      ]),
+      side: "dark",
+      color: "pink",
+      discard: [card("t1", "pink", "number", 5)],
+      drawPile: [card("d2", "pink", "number", 8), card("d1", "green", "number", 8)],
+      turn: 0,
+    });
+    const next = reduce(s, "a", { type: "play", cardId: "a1", color: "pink" }, ctx);
+    expect(next.color).toBe("pink");
+    expect(next.players[1]?.hand).toHaveLength(3);
+    expect(next.turn).toBe(0);
+    expect(next.pending).toBe(0);
+  });
+
+  it("does not allow Wild Draw Color on a pending draw stack", () => {
+    const s = state({
+      players: players([[card("a1", "pink", "number", 1)], [card("b1", null, "wildColor")]]),
+      side: "dark",
+      color: "pink",
+      discard: [card("t1", "pink", "number", 5)],
+      pending: 2,
+      pendingKind: "draw2",
+      turn: 1,
+    });
+    expect(isCardPlayable(s, card("b1", null, "wildColor"))).toBe(false);
+  });
+
   it("gives the player another turn after Skip Everyone", () => {
     const skip = card("s", "red", "skipAll");
     const s = state({
@@ -699,14 +789,14 @@ describe("Doubly Stacked double flip", () => {
       color: "red" as const,
       kind: "draw2" as const,
       value: null,
-      back: { color: "pink" as const, kind: "draw10" as const, value: null },
+      back: { color: "pink" as const, kind: "draw5" as const, value: null },
     };
     const extra = {
       id: "extra",
       color: "red" as const,
       kind: "number" as const,
       value: 7,
-      back: { color: "pink" as const, kind: "number" as const, value: 7 },
+      back: { color: "pink" as const, kind: "number" as const, value: 2 },
     };
     const s = state({
       players: players([
@@ -719,7 +809,7 @@ describe("Doubly Stacked double flip", () => {
     });
     const dark = reduce(s, "a", { type: "play", cardId: "fa" }, ctx);
     expect(dark.side).toBe("dark");
-    expect(dark.players[0]?.hand[0]?.kind).toBe("draw10");
+    expect(dark.players[0]?.hand[0]?.kind).toBe("draw5");
     const light = reduce(dark, "b", { type: "play", cardId: "fb" }, ctx);
     expect(light.side).toBe("light");
     expect(light.players[0]?.hand[0]?.kind).toBe("draw2");

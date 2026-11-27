@@ -447,7 +447,7 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
               />
               <RuleToggle
                 label={t("Finish all")}
-                description={t("The first player out wins, but the round continues until every hand is empty.")}
+                description={t("The first player out wins, but play continues for placements until only one player still has cards.")}
                 checked={room.rules.finishAll}
                 disabled={locked}
                 onChange={(value) =>

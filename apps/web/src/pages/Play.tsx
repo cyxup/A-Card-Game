@@ -120,7 +120,7 @@ function GameModePicker({
             {mode === "doubly" ? <Badge variant="brand">{t("selected")}</Badge> : null}
           </span>
           <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
-            {t("Two-sided deck with pink, teal, orange and purple. Flip turns every hand over, and opponents see the far side of your cards.")}
+            {t("Two-sided deck with pink, teal, orange and purple. The dark side turns +2 into +5, +4 into +9, and Wild into Wild Draw Color; Flip turns every hand over and opponents see the far side of your cards.")}
           </span>
         </span>
       </button>
@@ -585,7 +585,7 @@ export default function PlayPage() {
                 />
                 <RuleRow
                   title={t("Finish all")}
-                  description={t("The first player out wins, but the round continues until every hand is empty.")}
+                  description={t("The first player out wins, but play continues for placements until only one player still has cards.")}
                   checked={Boolean(rules.finishAll)}
                   onChange={(value) =>
                     setRules((prev) => ({

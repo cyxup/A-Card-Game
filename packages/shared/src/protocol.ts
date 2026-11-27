@@ -298,7 +298,7 @@ export interface GameView {
   dir: 1 | -1;
   side: "light" | "dark";
   pending: number;
-  pendingKind: "draw2" | "wild4" | "draw10" | null;
+  pendingKind: "draw2" | "draw5" | "wild4" | "wild9" | null;
   deadline: number;
   seq: number;
   drawnCardId: string | null;

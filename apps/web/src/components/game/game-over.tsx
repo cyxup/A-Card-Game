@@ -230,7 +230,7 @@ export function GameOverDialog({
         {room.rules.finishAll ? (
           <p className="flex items-center gap-2 rounded-xl border border-brand/25 bg-brand/[0.06] px-3 py-2.5 text-[11px] text-brand">
             <Trophy className="size-4 shrink-0" />
-            {t("Finish all: the round runs until every hand is empty.")}
+            {t("Finish all: the round runs until only one player still has cards.")}
           </p>
         ) : null}
 

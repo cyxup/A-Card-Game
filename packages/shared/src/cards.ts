@@ -13,10 +13,12 @@ export type CardKind =
   | "skip"
   | "reverse"
   | "draw2"
+  | "draw5"
   | "wild"
   | "wild4"
+  | "wild9"
+  | "wildColor"
   | "swap"
-  | "draw10"
   | "skipAll"
   | "flip";
 
@@ -52,10 +54,10 @@ export function isValidOwnerCardSpec(spec: OwnerCardSpec): boolean {
       spec.value <= 9
     );
   }
-  if (spec.kind === "wild" || spec.kind === "wild4" || spec.kind === "swap") {
+  if (isWildKind(spec.kind)) {
     return spec.color === null;
   }
-  if (spec.kind === "skip" || spec.kind === "reverse" || spec.kind === "draw2" || spec.kind === "draw10" || spec.kind === "skipAll" || spec.kind === "flip") {
+  if (spec.kind === "skip" || spec.kind === "reverse" || spec.kind === "draw2" || spec.kind === "draw5" || spec.kind === "skipAll" || spec.kind === "flip") {
     return spec.color !== null && ALL_COLORS.includes(spec.color);
   }
   return false;
@@ -75,10 +77,12 @@ export const KIND_LABEL: Record<CardKind, string> = {
   skip: "Giddy Up",
   reverse: "Wrong Way",
   draw2: "Quick Draw",
+  draw5: "Draw Five",
   wild: "Colour Wild",
   wild4: "Wild Draw Four",
+  wild9: "Wild Draw Nine",
+  wildColor: "Wild Draw Color",
   swap: "Oscar's Swap",
-  draw10: "Double Draw",
   skipAll: "Skip Everyone",
   flip: "Flip",
 };
@@ -88,15 +92,17 @@ export const KIND_SHORT: Record<CardKind, string> = {
   skip: "Skip",
   reverse: "Reverse",
   draw2: "+2",
+  draw5: "+5",
   wild: "Wild",
   wild4: "+4",
+  wild9: "+9",
+  wildColor: "Color",
   swap: "Swap",
-  draw10: "+10",
   skipAll: "Skip all",
   flip: "Flip",
 };
 
-export const DOUBLY_ONLY_KINDS: CardKind[] = ["draw10", "skipAll", "flip"];
+export const DOUBLY_ONLY_KINDS: CardKind[] = ["draw5", "wild9", "wildColor", "skipAll", "flip"];
 
 export function isDoublyOnlyKind(kind: CardKind): boolean {
   return DOUBLY_ONLY_KINDS.includes(kind);
@@ -107,8 +113,12 @@ export function isDarkColor(color: Color | null): boolean {
   return color !== null && (DARK_COLORS as readonly Color[]).includes(color);
 }
 
+export function isWildKind(kind: CardKind): boolean {
+  return kind === "wild" || kind === "wild4" || kind === "wild9" || kind === "wildColor" || kind === "swap";
+}
+
 export function isWild(card: Card): boolean {
-  return card.kind === "wild" || card.kind === "wild4" || card.kind === "swap";
+  return isWildKind(card.kind);
 }
 
 /** Standard 112-card deck with the house action cards folded in. */
@@ -150,20 +160,38 @@ export function invertColor(color: Color | null): Color | null {
   return null;
 }
 
+/**
+ * The reverse of a number card deliberately shows another number. If both
+ * sides showed the same value, opponents could read your hand through the far
+ * side in Doubly Stacked.
+ */
+export function inverseNumber(value: number | null): number | null {
+  if (value === null) return null;
+  return (value + 5) % 10;
+}
+
 export function inverseFace(face: CardFace): CardFace {
   return {
     color: invertColor(face.color),
     kind:
       face.kind === "draw2"
-        ? "draw10"
-        : face.kind === "draw10"
+        ? "draw5"
+        : face.kind === "draw5"
           ? "draw2"
-          : face.kind === "skip"
-            ? "skipAll"
-            : face.kind === "skipAll"
-              ? "skip"
-              : face.kind,
-    value: face.kind === "number" ? face.value : null,
+          : face.kind === "wild4"
+            ? "wild9"
+            : face.kind === "wild9"
+              ? "wild4"
+              : face.kind === "wild"
+                ? "wildColor"
+                : face.kind === "wildColor"
+                  ? "wild"
+                  : face.kind === "skip"
+                    ? "skipAll"
+                    : face.kind === "skipAll"
+                      ? "skip"
+                      : face.kind,
+    value: face.kind === "number" ? inverseNumber(face.value) : null,
   };
 }
 
@@ -201,16 +229,19 @@ export function cardPoints(card: Card): number {
     case "skip":
     case "reverse":
       return 20;
-    case "draw10":
-      return 50;
+    case "draw5":
+      return 35;
     case "skipAll":
       return 30;
     case "flip":
       return 25;
     case "wild":
     case "wild4":
+    case "wildColor":
     case "swap":
       return 50;
+    case "wild9":
+      return 70;
   }
 }
 

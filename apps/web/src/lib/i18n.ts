@@ -80,6 +80,9 @@ const FR: Record<string, string> = {
   "Wrong Way": "Mauvais sens",
   "Quick Draw": "Dégainage",
   "Wild Draw Four": "Joker +4",
+  "Wild Draw Nine": "Joker +9",
+  "Wild Draw Color": "Joker de couleur",
+  "Draw Five": "Pioche cinq",
   "Oscar's Swap": "Échange d'Oscar",
   "SIGN IN": "CONNEXION",
   "CREATE ACCOUNT": "CRÉER UN COMPTE",
@@ -110,19 +113,21 @@ const FR: Record<string, string> = {
   selected: "sélectionné",
   "The normal deck. Everyone keeps their cards hidden until they play them.":
     "Le jeu classique. Chacun garde ses cartes cachées jusqu'à ce qu'il les joue.",
-  "Two-sided deck with pink, teal, orange and purple. Flip turns every hand over, and opponents see the far side of your cards.":
-    "Jeu à double face avec du rose, turquoise, orange et violet. Retourner retourne toutes les mains, et les adversaires voient l'autre face de vos cartes.",
+  "Two-sided deck with pink, teal, orange and purple. The dark side turns +2 into +5, +4 into +9, and Wild into Wild Draw Color; Flip turns every hand over and opponents see the far side of your cards.":
+    "Jeu à double face avec du rose, turquoise, orange et violet. La face sombre transforme les +2 en +5, les +4 en +9 et le Joker en Joker de couleur ; Retourner retourne toutes les mains et les adversaires voient l'autre face de vos cartes.",
   "Doubly Stacked is set for this table. Recreate the table to switch back to Classic.":
     "Doubly Stacked est le mode de cette table. Recréez la table pour repasser en Classique.",
   "Game mode is chosen when the table is created.":
     "Le mode de jeu est choisi à la création de la table.",
   "Four ways in.": "Quatre façons d'entrer.",
-  "The two-sided deck: pink, teal, orange and purple. Flip the whole table and see the far side of every hand.":
-    "Le jeu à double face : rose, turquoise, orange et violet. Retournez toute la table et voyez l'autre face de chaque main.",
+  "The two-sided deck: pink, teal, orange and purple. Flip the whole table; the dark side hides +5, +9 and Wild Draw Color.":
+    "Le jeu à double face : rose, turquoise, orange et violet. Retournez toute la table ; la face sombre cache des +5, des +9 et un Joker de couleur.",
   "Open the flip deck": "Ouvrir le jeu retourné",
   "Doubly Stacked is a mode, not a rule.": "Doubly Stacked est un mode, pas une règle.",
-  "Pick Classic or Doubly Stacked before you open the table. Doubly uses its own two-sided deck with pink, teal, orange and purple; Flip turns every hand over and opponents see the far side of your cards.":
-    "Choisissez Classique ou Doubly Stacked avant d'ouvrir la table. Doubly utilise son propre jeu à double face avec du rose, turquoise, orange et violet ; Retourner retourne toutes les mains et les adversaires voient l'autre face de vos cartes.",
+  "Pick Classic or Doubly Stacked before you open the table. Doubly uses its own two-sided deck with pink, teal, orange and purple; the dark side turns +2 into +5, +4 into +9, Wild into Wild Draw Color, and opponents see the far side of your cards.":
+    "Choisissez Classique ou Doubly Stacked avant d'ouvrir la table. Doubly utilise son propre jeu à double face avec du rose, turquoise, orange et violet ; la face sombre transforme les +2 en +5, les +4 en +9, le Joker en Joker de couleur, et les adversaires voient l'autre face de vos cartes.",
+  "Number cards show a different number on each side, so the far hand never reveals the near value.":
+    "Les cartes numérotées affichent un chiffre différent sur chaque face : la main adverse ne révèle jamais la valeur visible de votre côté.",
   "Have a code?": "Vous avez un code ?",
   "Five letters, usually shouted across a voice chat.":
     "Cinq lettres, généralement hurlées dans un vocal.",
@@ -152,25 +157,24 @@ const FR: Record<string, string> = {
   "Finish all.": "Tout le monde termine.",
   "Doubly Stacked": "Doubly Stacked",
   "Doubly Stacked.": "Doubly Stacked.",
-  "Two-sided deck. Play a Flip card to turn every hand over. The flip side hides +10 and Skip Everyone.":
-    "Jeu à double face. Jouez une carte Retourner pour retourner toutes les mains. La face retournée cache des +10 et des Tout le monde passe.",
+  "Two-sided deck. Play a Flip card to turn every hand over; the dark side turns +2 into +5, +4 into +9, Skip into Skip Everyone, and Wild into Wild Draw Color.":
+    "Jeu à double face. Jouez une carte Retourner pour retourner toutes les mains ; la face sombre transforme les +2 en +5, les +4 en +9, Skip en Tout le monde passe, et le Joker en Joker de couleur.",
   "Normal side": "Face normale",
   "Flipped side": "Face retournée",
   "In Doubly Stacked, opponents see the other side of your hand.":
     "En Doubly Stacked, les adversaires voient l'autre face de votre main.",
-  "Double Draw": "Double pioche",
   "Skip Everyone": "Tout le monde passe",
   "Skip all": "Tout le monde passe",
   Flip: "Retourner",
   "{name} flipped the deck!": "{name} a retourné le paquet !",
   "{name} skipped everyone": "{name} a passé tout le monde",
   "No one has cards to swap with.": "Personne n'a de cartes avec qui échanger.",
-  "The first player out wins, but the round continues until every hand is empty.":
-    "Le premier joueur à finir gagne, mais la manche continue jusqu'à ce que toutes les mains soient vides.",
-  "The first player out wins, but the round continues until every hand is empty and placements are locked in.":
-    "Le premier joueur à finir gagne, mais la manche continue jusqu'à ce que toutes les mains soient vides et que le classement soit fixé.",
-  "Finish all: the round runs until every hand is empty.":
-    "Tout le monde termine : la manche continue jusqu'à ce que toutes les mains soient vides.",
+  "The first player out wins, but play continues for placements until only one player still has cards.":
+    "Le premier joueur à finir gagne, mais la partie continue pour le classement jusqu'à ce qu'il ne reste qu'un joueur avec des cartes.",
+  "The first player out wins, but play continues for placements until only one player still has cards and placements are locked in.":
+    "Le premier joueur à finir gagne, mais la partie continue pour le classement jusqu'à ce qu'il ne reste qu'un joueur avec des cartes et que le classement soit fixé.",
+  "Finish all: the round runs until only one player still has cards.":
+    "Tout le monde termine : la manche continue jusqu'à ce qu'il ne reste qu'un joueur avec des cartes.",
   "2v2 teams": "Équipes 2v2",
   "2v2 teams.": "Équipes 2v2.",
   "Four seats, alternating teams. The first team with both hands empty wins.":
@@ -785,6 +789,8 @@ const FR: Record<string, string> = {
   "You": "Vous",
   "Your new recovery code.": "Votre nouveau code de récupération.",
   "a Wild Draw Four": "un Joker +4",
+  "a Wild Draw Nine": "un Joker +9",
+  "a Wild Draw Color": "un Joker de couleur",
   "a colour wild": "un joker de couleur",
   "a card": "une carte",
   "a turn": "un tour",

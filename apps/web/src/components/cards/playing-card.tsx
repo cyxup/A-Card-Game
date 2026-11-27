@@ -31,8 +31,8 @@ function glyph(card: Card) {
       return SYMBOLS.reverse;
     case "draw2":
       return "+2";
-    case "draw10":
-      return "+10";
+    case "draw5":
+      return "+5";
     case "flip":
       return "↻";
     case "skipAll":
@@ -41,6 +41,10 @@ function glyph(card: Card) {
       return "";
     case "wild4":
       return "+4";
+    case "wild9":
+      return "+9";
+    case "wildColor":
+      return "C";
     case "swap":
       return SYMBOLS.swap;
   }
@@ -65,8 +69,8 @@ function corner(card: Card): ReactNode {
       );
     case "draw2":
       return "+2";
-    case "draw10":
-      return "+10";
+    case "draw5":
+      return "+5";
     case "flip":
       return "↻";
     case "skipAll":
@@ -75,6 +79,10 @@ function corner(card: Card): ReactNode {
       return "";
     case "wild4":
       return "+4";
+    case "wild9":
+      return "+9";
+    case "wildColor":
+      return "C";
     case "swap":
       return (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.3">

@@ -11,6 +11,7 @@ import {
   canJumpInView,
   canPlayCard,
   isDoublyOnlyKind,
+  isWildKind,
 } from "@stacked/shared";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import {
@@ -61,15 +62,27 @@ import { Seat } from "./seat";
 import { WinEffect } from "./win-effect";
 
 const COLOR_ORDER = { red: 0, yellow: 1, green: 2, blue: 3, pink: 4, teal: 5, orange: 6, purple: 7 } as const;
-const KIND_ORDER = { skip: 10, reverse: 11, draw2: 12, draw10: 13, skipAll: 14, flip: 15, wild: 16, wild4: 17, swap: 18 } as const;
+const KIND_ORDER = {
+  skip: 10,
+  reverse: 11,
+  draw2: 12,
+  draw5: 13,
+  skipAll: 14,
+  flip: 15,
+  wild: 16,
+  wild4: 17,
+  wild9: 18,
+  wildColor: 19,
+  swap: 20,
+} as const;
 
 function sortHand(hand: Card[]): Card[] {
   return [...hand].sort((a, b) => {
     const colorA = a.color ? COLOR_ORDER[a.color] : 8;
     const colorB = b.color ? COLOR_ORDER[b.color] : 8;
     if (colorA !== colorB) return colorA - colorB;
-    const rankA = a.kind === "number" ? (a.value ?? 0) : KIND_ORDER[a.kind];
-    const rankB = b.kind === "number" ? (b.value ?? 0) : KIND_ORDER[b.kind];
+    const rankA = a.kind === "number" ? (a.value ?? 0) : (KIND_ORDER[a.kind] ?? 99);
+    const rankB = b.kind === "number" ? (b.value ?? 0) : (KIND_ORDER[b.kind] ?? 99);
     return rankA - rankB;
   });
 }
@@ -479,7 +492,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
         nudge(card);
         return;
       }
-      if (card.kind === "wild" || card.kind === "wild4") {
+      if (isWildKind(card.kind) && card.kind !== "swap") {
         setSwapCard(null);
         setSwapTargetId(null);
         setColorCard(card);
@@ -567,7 +580,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
   }
 
   function openEditor(card: Card) {
-    const wild = card.kind === "wild" || card.kind === "wild4" || card.kind === "swap";
+    const wild = isWildKind(card.kind);
     setEditId(card.id);
     setEditKind(card.kind);
     setEditColor(wild ? null : (card.color ?? sideColors[0] ?? "red"));
@@ -575,14 +588,14 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
   }
 
   function changeEditKind(kind: CardKind) {
-    const wild = kind === "wild" || kind === "wild4" || kind === "swap";
+    const wild = isWildKind(kind);
     setEditKind(kind);
     setEditColor(wild ? null : (editColor ?? sideColors[0] ?? "red"));
   }
 
   function applyEdit() {
     if (!editId) return;
-    const wild = editKind === "wild" || editKind === "wild4" || editKind === "swap";
+    const wild = isWildKind(editKind);
     client.ownerAction({
       type: "replace",
       cardId: editId,
@@ -667,7 +680,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
             scale: 0.82,
           });
         }
-        if (entry.card.kind === "wild" || entry.card.kind === "wild4" || entry.card.kind === "swap") {
+        if (isWildKind(entry.card.kind)) {
           const hex = entry.color
             ? COLOR_META[entry.color].hex
             : entry.card.color
@@ -747,7 +760,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
     if (last.kind === "play" || last.kind === "jump") {
       if (last.kind === "jump") playSound("jump");
       else if (last.card?.kind === "swap") playSound("swap");
-      else if (last.card?.kind === "wild" || last.card?.kind === "wild4") playSound("wild");
+      else if (last.card && isWildKind(last.card.kind)) playSound("wild");
       else if (last.card?.kind === "draw2") playSound("stack");
       else playSound("play");
     } else if (last.kind === "draw" || last.kind === "no_play") playSound("draw");
@@ -1506,7 +1519,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                     </label>
                   ) : null}
 
-                  {editKind === "number" || editKind === "skip" || editKind === "reverse" || editKind === "draw2" || editKind === "draw10" || editKind === "skipAll" || editKind === "flip" ? (
+                  {editKind === "number" || editKind === "skip" || editKind === "reverse" || editKind === "draw2" || editKind === "draw5" || editKind === "skipAll" || editKind === "flip" ? (
                     <div className="owner-editor-colors">
                       {sideColors.map((color) => (
                         <button

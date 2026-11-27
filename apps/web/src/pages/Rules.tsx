@@ -159,7 +159,7 @@ export default function RulesPage() {
             </li>
             <li>
               <span className="font-medium text-foreground">{t("Finish all.")}</span>{" "}
-              {t("The first player out wins, but the round continues until every hand is empty and placements are locked in.")}
+              {t("The first player out wins, but play continues for placements until only one player still has cards and placements are locked in.")}
             </li>
             <li>
               <span className="font-medium text-foreground">{t("2v2 teams.")}</span>{" "}
@@ -172,7 +172,10 @@ export default function RulesPage() {
               <Repeat2 className="size-4 text-brand" /> {t("Doubly Stacked is a mode, not a rule.")}
             </p>
             <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-              {t("Pick Classic or Doubly Stacked before you open the table. Doubly uses its own two-sided deck with pink, teal, orange and purple; Flip turns every hand over and opponents see the far side of your cards.")}
+              {t("Pick Classic or Doubly Stacked before you open the table. Doubly uses its own two-sided deck with pink, teal, orange and purple; the dark side turns +2 into +5, +4 into +9, Wild into Wild Draw Color, and opponents see the far side of your cards.")}
+            </p>
+            <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+              {t("Number cards show a different number on each side, so the far hand never reveals the near value.")}
             </p>
             <Link href="/play?mode=doubly" className="mt-3 inline-flex">
               <Button variant="outline" size="sm">
