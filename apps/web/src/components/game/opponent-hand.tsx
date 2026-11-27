@@ -43,7 +43,7 @@ export function OpponentHand({
   return (
     <div
       className={cn("opp-hand", farSide && "opp-hand-far", className)}
-      style={{ height: Math.round(size * 1.4) + 8 }}
+      style={{ height: Math.round(size * 1.75) + 12 }}
       aria-label={t(count === 1 ? "{n} card in hand" : "{n} cards in hand", { n: count })}
     >
       <div className="opp-hand-fan" style={{ paddingInline: Math.round(size * 0.22) }}>
@@ -58,9 +58,9 @@ export function OpponentHand({
                 initial={{ opacity: 0, y: -14, scale: 0.7, rotate: -8 }}
                 animate={{
                   opacity: 1,
-                  y: Math.abs(index - middle) * 1.6,
+                  y: Math.abs(index - middle) * 1.1,
                   scale: 1,
-                  rotate: (index - middle) * 4.5,
+                  rotate: (index - middle) * 3.2,
                 }}
                 exit={{ opacity: 0, y: 14, scale: 0.7, rotate: 6, transition: { duration: 0.16 } }}
                 transition={{ ...spring.snappy, delay: index * 0.025 }}

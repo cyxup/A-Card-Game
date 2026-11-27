@@ -233,7 +233,7 @@ export function Seat({
         count={player.cardCount}
         back={player.cardBack}
         cards={revealedHand ?? player.otherHand}
-        max={revealedHand || player.otherHand ? 10 : 7}
+        max={revealedHand ? 8 : 7}
         farSide={!revealedHand && player.otherHand !== undefined}
         size={handSize}
         compact
