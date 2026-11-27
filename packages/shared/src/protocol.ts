@@ -271,6 +271,8 @@ export interface RoomPlayerView {
   tags: UserTagView[];
   /** 0 or 1 in 2v2, null otherwise. */
   team: number | null;
+  /** In Doubly Stacked, opponents see the face on the far side of each card. */
+  otherHand?: Card[];
   /** False for guests and bots. */
   registered: boolean;
 }

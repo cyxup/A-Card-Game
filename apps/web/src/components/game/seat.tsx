@@ -97,6 +97,7 @@ export function Seat({
         className,
       )}
       data-seat-id={player.id}
+      data-team={player.team ?? undefined}
       data-turn={active}
       aria-current={active ? "true" : undefined}
       role={selectable ? "button" : undefined}
@@ -223,7 +224,7 @@ export function Seat({
       <OpponentHand
         count={player.cardCount}
         back={player.cardBack}
-        cards={revealedHand}
+        cards={revealedHand ?? player.otherHand}
         max={revealedHand ? 8 : 7}
         size={handSize}
         compact

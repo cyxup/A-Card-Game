@@ -144,6 +144,7 @@ const FR: Record<string, string> = {
   Flip: "Retourner",
   "{name} flipped the deck!": "{name} a retourné le paquet !",
   "{name} skipped everyone": "{name} a passé tout le monde",
+  "No one has cards to swap with.": "Personne n'a de cartes avec qui échanger.",
   "The first player out wins, but the round continues until every hand is empty.":
     "Le premier joueur à finir gagne, mais la manche continue jusqu'à ce que toutes les mains soient vides.",
   "The first player out wins, but the round continues until every hand is empty and placements are locked in.":

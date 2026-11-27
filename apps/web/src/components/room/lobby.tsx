@@ -233,8 +233,8 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
                     </div>
                     <p className="text-[11px] text-muted-foreground">
                       {t("level {n}", { n: player.level })}
-                      {player.isBot ? ` Â· ${t("bot")}` : ""}
-                      {!player.connected && !player.isBot ? ` Â· ${t("reconnecting")}` : ""}
+                      {player.isBot ? ` · ${t("bot")}` : ""}
+                      {!player.connected && !player.isBot ? ` · ${t("reconnecting")}` : ""}
                     </p>
                     <UserTags tags={player.tags} max={3} className="mt-1" />
                   </div>

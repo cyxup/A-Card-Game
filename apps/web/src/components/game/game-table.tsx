@@ -9,6 +9,7 @@ import {
   KIND_LABEL,
   canJumpInView,
   canPlayCard,
+  isDoublyOnlyKind,
 } from "@stacked/shared";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import {
@@ -423,7 +424,8 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
     if (myIndex < 0) return [...room.players];
     return [...room.players.slice(myIndex + 1), ...room.players.slice(0, myIndex)];
   }, [room.players, meId]);
-  const onlyOpponent = opponents.length === 1 ? opponents[0] : null;
+  const swapTargets = opponents.filter((player) => player.cardCount > 0);
+  const onlySwapTarget = swapTargets.length === 1 ? swapTargets[0] : null;
   const swapTarget = swapCard ? room.players.find((player) => player.id === swapTargetId) ?? null : null;
   const targetingSwap = Boolean(swapCard && !swapTargetId);
   const pickerCard = swapCard ? (swapTargetId ? swapCard : null) : colorCard;
@@ -444,7 +446,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
     setSwapMode(mode);
     setColorCard(null);
     setSwapCard(card);
-    setSwapTargetId(onlyOpponent?.id ?? null);
+    setSwapTargetId(onlySwapTarget?.id ?? null);
     playSound("swap");
   }
 
@@ -476,6 +478,11 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
         return;
       }
       if (card.kind === "swap") {
+        if (swapTargets.length === 0) {
+          toast.info(t("No one has cards to swap with."));
+          nudge(card);
+          return;
+        }
         beginSwap(card, "play");
         return;
       }
@@ -483,6 +490,11 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
       return;
     }
     if (card.kind === "swap" && canSwapIn) {
+      if (swapTargets.length === 0) {
+        toast.info(t("No one has cards to swap with."));
+        nudge(card);
+        return;
+      }
       beginSwap(card, "jump");
       return;
     }
@@ -501,7 +513,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
 
   function pickColor(color: Color) {
     if (swapCard) {
-      const targetId = swapTargetId ?? onlyOpponent?.id;
+      const targetId = swapTargetId ?? onlySwapTarget?.id;
       if (!targetId) return;
       client.action({ type: swapMode, cardId: swapCard.id, color, targetId });
       clearTableChoice();
@@ -901,6 +913,14 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                   <Repeat2 className="size-3" /> {t(gameView?.side === "dark" ? "Flipped side" : "Normal side")}
                 </Badge>
               ) : null}
+              {room.rules.teamMode === "2v2" && me?.team !== null && me?.team !== undefined ? (
+                <Badge
+                  variant={me.team === 0 ? "brand" : "info"}
+                  className="inline-flex items-center gap-1"
+                >
+                  {t(me.team === 0 ? "Team A" : "Team B")}
+                </Badge>
+              ) : null}
             </div>
             <div className="flex items-center gap-1.5">
               <Button
@@ -936,7 +956,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                 offset={offset}
                 dense={denseRail}
                 emote={emotes.findLast((event) => event.playerId === player.id)?.emote}
-                selectable={Boolean(swapCard) && !colorCard}
+                selectable={Boolean(swapCard) && !colorCard && player.cardCount > 0}
                 selected={swapTargetId === player.id}
                 onSelect={() => pickSwapTarget(player.id)}
                 revealedHand={revealedHands?.[player.id]}
@@ -1452,11 +1472,13 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                   <label className="owner-editor-field">
                     <span>{t("Card")}</span>
                     <select value={editKind} onChange={(event) => changeEditKind(event.target.value as CardKind)}>
-                      {(Object.keys(KIND_LABEL) as CardKind[]).map((kind) => (
-                        <option key={kind} value={kind}>
-                          {t(KIND_LABEL[kind])}
-                        </option>
-                      ))}
+                      {(Object.keys(KIND_LABEL) as CardKind[])
+                        .filter((kind) => room.rules.gameMode === "doubly" || !isDoublyOnlyKind(kind))
+                        .map((kind) => (
+                          <option key={kind} value={kind}>
+                            {t(KIND_LABEL[kind])}
+                          </option>
+                        ))}
                     </select>
                   </label>
 

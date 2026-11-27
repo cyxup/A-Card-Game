@@ -10,6 +10,8 @@ import {
   countedCosmetics,
   createGame,
   defaultLoadout,
+  inverseFace,
+  isDoublyOnlyKind,
   levelForXp,
   matchRewardsForHumans,
   normaliseRules,
@@ -853,6 +855,10 @@ export class RoomManager {
       }
 
       const after = makeOwnerCard(action.card);
+      if (room.rules.gameMode !== "doubly" && isDoublyOnlyKind(after.kind)) {
+        throw new OwnerToolError("mode_card", "That card only exists in Doubly Stacked.", 400);
+      }
+      if (room.rules.gameMode === "doubly") after.back = inverseFace(after);
       player.hand[index] = after;
       seat.cheated = true;
       room.touch();

@@ -229,6 +229,14 @@
   border-radius: 14px;
 }
 
+.seat-plate[data-team="0"] {
+  border-color: color-mix(in oklch, var(--brand) 34%, transparent);
+}
+
+.seat-plate[data-team="1"] {
+  border-color: color-mix(in oklch, var(--info) 34%, transparent);
+}
+
 .seat-plate-active {
   border-color: color-mix(in oklch, var(--brand) 52%, transparent);
   background:

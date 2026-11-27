@@ -356,7 +356,7 @@ export default function PlayPage() {
                 {t("Find me a table")} <ArrowRight />
               </Button>
               <div className="grid w-full gap-2 pt-2 text-xs text-muted-foreground sm:grid-cols-3">
-                <span className="rounded-lg border border-white/7 px-3 py-2">{t("2â€“8 players")}</span>
+                <span className="rounded-lg border border-white/7 px-3 py-2">{t("2-8 players")}</span>
                 <span className="rounded-lg border border-white/7 px-3 py-2">{t("30s turn timer")}</span>
                 <span className="rounded-lg border border-white/7 px-3 py-2">{t("guests welcome")}</span>
               </div>
@@ -504,7 +504,7 @@ export default function PlayPage() {
 
               {(rules.wager ?? 0) > 0 ? (
                 <p className="mt-3 rounded-lg border border-warning/25 bg-warning/[0.06] px-3 py-2 text-[11px] leading-relaxed text-warning">
-                  {t("Wager tables need registered players only â€” no bots or guests. The winner takes the pot.")}
+                  {t("Wager tables need registered players only - no bots or guests. The winner takes the pot.")}
                 </p>
               ) : null}
 
@@ -659,7 +659,7 @@ export default function PlayPage() {
               <div className="rounded-xl border border-dashed border-white/10 px-6 py-12 text-center">
                 <p className="text-sm font-medium">{t("No open tables right now.")}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {t("We can open a fresh public table and put you at it â€” invite people or add bots once you're in.")}
+                  {t("We can open a fresh public table and put you at it - invite people or add bots once you're in.")}
                 </p>
                 <div className="mt-4 flex flex-wrap justify-center gap-2">
                   <Button variant="brand" loading={busy === "quick"} onClick={() => ensure(quick)}>
@@ -682,8 +682,8 @@ export default function PlayPage() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">{item.hostName}&apos;s table</p>
                       <p className="text-[11px] text-muted-foreground">
-                        {t("{n}/{max} players", { n: item.players, max: item.maxPlayers })} Â·{" "}
-                        {t("{n}s turns", { n: item.turnSeconds })} Â·{" "}
+                        {t("{n}/{max} players", { n: item.players, max: item.maxPlayers })} ·{" "}
+                        {t("{n}s turns", { n: item.turnSeconds })} ·{" "}
                         {item.stacking === "off"
                           ? t("no stacking")
                           : item.stacking === "mixed"

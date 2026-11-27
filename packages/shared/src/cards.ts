@@ -94,6 +94,12 @@ export const KIND_SHORT: Record<CardKind, string> = {
   flip: "Flip",
 };
 
+export const DOUBLY_ONLY_KINDS: CardKind[] = ["draw10", "skipAll", "flip"];
+
+export function isDoublyOnlyKind(kind: CardKind): boolean {
+  return DOUBLY_ONLY_KINDS.includes(kind);
+}
+
 export function isWild(card: Card): boolean {
   return card.kind === "wild" || card.kind === "wild4" || card.kind === "swap";
 }

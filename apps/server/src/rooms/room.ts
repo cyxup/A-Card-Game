@@ -8,7 +8,7 @@ import type {
   RoomView,
   Rng,
 } from "@stacked/shared";
-import { cryptoRng, defaultLoadout, isWild, topCard } from "@stacked/shared";import type WebSocket from "ws";
+import { cryptoRng, defaultLoadout, inverseFace, isWild, topCard } from "@stacked/shared";import type WebSocket from "ws";
 import type { Principal } from "../auth/session.js";
 import { tagsForUserSync } from "../services/tags.js";
 
@@ -228,7 +228,8 @@ export function placementMap(game: GameState): Map<string, number> {
 
 export function buildRoomView(room: Room, viewerId: string, ownerPeek = false): RoomView {
   const viewer = room.seat(viewerId);
-  const placements = room.game ? placementMap(room.game) : new Map<string, number>();
+  const game = room.game;
+  const placements = game ? placementMap(game) : new Map<string, number>();
   const players: RoomPlayerView[] = room.seats.map((seat) => {
     const gamePlayer = room.game?.players.find((player) => player.id === seat.id);
     return {
@@ -250,11 +251,17 @@ export function buildRoomView(room: Room, viewerId: string, ownerPeek = false): 
       beta: seat.beta,
       tags: tagsForUserSync(seat.userId),
       team: gamePlayer?.team ?? (room.rules.teamMode === "2v2" ? room.seats.indexOf(seat) % 2 : null),
+      otherHand:
+        game && room.rules.gameMode === "doubly" && seat.id !== viewerId
+          ? (gamePlayer?.hand ?? []).map((card) => ({
+              id: card.id,
+              ...(card.back ?? inverseFace(card)),
+            }))
+          : undefined,
       registered: Boolean(seat.userId) && !seat.isBot,
     };
   });
 
-  const game = room.game;
   const hand: Card[] = viewer ? (game?.players.find((player) => player.id === viewer.id)?.hand ?? []) : [];
   const currentId = game ? (game.players[game.turn]?.id ?? "") : "";
   // X-ray is only attached to the connection that passed the live owner check.
