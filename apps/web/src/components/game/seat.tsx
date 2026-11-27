@@ -194,6 +194,9 @@ export function Seat({
                 {t(player.team === 0 ? "Team A" : "Team B")}
               </span>
             ) : null}
+            <span className="seat-cards" title={t("{n} cards in hand", { n: player.cardCount })}>
+              {t(player.cardCount === 1 ? "{n} card" : "{n} cards", { n: player.cardCount })}
+            </span>
             {player.owner ? (
               <span className="seat-owner">
                 <Sparkles className="size-2.5" /> {t("owner")}

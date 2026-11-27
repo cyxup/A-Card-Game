@@ -8,7 +8,8 @@ import { cn } from "@/lib/utils";
 
 /**
  * The opponent's hand: a tiny fan of card backs (or, in Doubly Stacked, the
- * actual far-side faces) and a count. Cards animate when the hand changes.
+ * actual far-side faces). The count lives in the seat plate so it stays visible
+ * even when the fan is huge.
  */
 export function OpponentHand({
   count,
@@ -76,15 +77,6 @@ export function OpponentHand({
           })}
         </AnimatePresence>
       </div>
-      <motion.span
-        key={count}
-        initial={{ scale: 0.7, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={spring.bouncy}
-        className="opp-hand-count"
-      >
-        {count}
-      </motion.span>
     </div>
   );
 }

@@ -677,8 +677,11 @@ function applyDraw(state: GameState, index: number, ctx: ReduceContext): GameSta
 
   state.lastCard = null;
   if (!last) {
+    // An exhausted deck is not a round-ending event. Pass the turn instead;
+    // otherwise a player is handed a loss just for clicking the empty pile.
     pushLog(state, { at: ctx.now, kind: "draw", actor: player.id, count: 0 });
-    finish(state, state.rules.finishAll ? state.finishOrder[0] ?? null : null, ctx.now);
+    pushLog(state, { at: ctx.now, kind: "no_play", actor: player.id });
+    advance(state, ctx.now, 1);
     return state;
   }
 

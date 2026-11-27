@@ -347,6 +347,34 @@ describe("drawing and passing", () => {
     expect(out.pending).toBe(0);
     expect(out.turn).toBe(1);
   });
+
+  it("does not end the round when the deck is completely empty", () => {
+    const s = state({ drawPile: [], discard: [card("t1", "red", "number", 3)] });
+    const out = reduce(s, "a", { type: "draw" }, ctx);
+    expect(out.phase).toBe("playing");
+    expect(out.winner).toBeNull();
+    expect(out.turn).toBe(1);
+    expect(out.players[0]?.hand).toHaveLength(2);
+  });
+
+  it("does not make an already finished bot win because the pile is empty", () => {
+    const s = state({
+      players: players([
+        [card("a1", "red", "number", 5)],
+        [],
+        [card("c1", "red", "number", 5)],
+        [card("d1", "red", "number", 5)],
+      ]),
+      rules: { ...DEFAULT_RULES, finishAll: true },
+      drawPile: [],
+      discard: [card("t1", "red", "number", 3)],
+      finishOrder: ["b"],
+      turn: 0,
+    });
+    const out = reduce(s, "a", { type: "draw" }, ctx);
+    expect(out.phase).toBe("playing");
+    expect(out.winner).toBeNull();
+  });
 });
 
 describe("oscar's swap", () => {
@@ -729,6 +757,25 @@ describe("Doubly Stacked", () => {
     expect(next.pending).toBe(9);
     expect(next.pendingKind).toBe("wild9");
     expect(next.turn).toBe(1);
+  });
+
+  it("Wild Draw Color does not loop when the draw pile is empty", () => {
+    const s = state({
+      players: players([
+        [card("a1", null, "wildColor"), card("a2", "pink", "number", 1)],
+        [card("b1", "pink", "number", 5)],
+      ]),
+      side: "dark",
+      color: "pink",
+      discard: [card("t1", "pink", "number", 5)],
+      drawPile: [],
+      turn: 0,
+    });
+    const next = reduce(s, "a", { type: "play", cardId: "a1", color: "pink" }, ctx);
+    expect(next.phase).toBe("playing");
+    expect(next.players[0]?.hand.some((entry) => entry.kind === "wildColor")).toBe(false);
+    expect(next.discard.at(-1)?.kind).toBe("wildColor");
+    expect(next.pending).toBe(0);
   });
 
   it("Wild Draw Color draws through the deck until the called colour", () => {

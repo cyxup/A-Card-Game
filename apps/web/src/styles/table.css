@@ -383,6 +383,20 @@
   color: var(--info);
 }
 
+.seat-cards {
+  margin-left: auto;
+  padding: 1px 5px;
+  border: 1px solid rgb(255 255 255 / 0.13);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.055);
+  color: rgb(255 255 255 / 0.82);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  white-space: nowrap;
+}
+
 .seat-bot {
   border: 1px solid rgb(255 255 255 / 0.1);
   border-radius: 999px;
@@ -438,24 +452,6 @@
 
 .opp-hand .back-mark {
   display: none;
-}
-
-.opp-hand-count {
-  position: absolute;
-  right: 2px;
-  bottom: -2px;
-  display: grid;
-  place-items: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 4px;
-  border-radius: 999px;
-  border: 1px solid color-mix(in oklch, var(--brand) 25%, rgb(255 255 255 / 0.14));
-  background: rgb(8 9 10 / 0.95);
-  font-family: var(--font-mono);
-  font-size: 9px;
-  color: rgb(255 255 255 / 0.78);
-  box-shadow: 0 2px 9px rgb(0 0 0 / 0.5);
 }
 
 /* ── centre play area ──────────────────────────────────────────────────── */
