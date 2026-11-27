@@ -139,6 +139,8 @@ const FR: Record<string, string> = {
     "Jeu à double face. Jouez une carte Retourner pour retourner toutes les mains. La face retournée cache des +10 et des Tout le monde passe.",
   "Normal side": "Face normale",
   "Flipped side": "Face retournée",
+  "In Doubly Stacked, opponents see the other side of your hand.":
+    "En Doubly Stacked, les adversaires voient l'autre face de votre main.",
   "Double Draw": "Double pioche",
   "Skip Everyone": "Tout le monde passe",
   "Skip all": "Tout le monde passe",

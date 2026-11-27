@@ -228,6 +228,13 @@ function TurnStatus({
           <span className="text-white/15">·</span>
           <RefreshCw className={cn("size-4", game.dir === -1 && "rotate-180")} />
           {game.dir === 1 ? t("clockwise") : t("counter-clockwise")}
+          {room.rules.gameMode === "doubly" ? (
+            <>
+              <span className="text-white/15">·</span>
+              <Repeat2 className="size-4" />
+              {t(game.side === "dark" ? "Flipped side" : "Normal side")}
+            </>
+          ) : null}
         </span>
       </div>
     </div>
@@ -909,6 +916,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                 <Badge
                   variant={gameView?.side === "dark" ? "brand" : "outline"}
                   className="inline-flex items-center gap-1"
+                  title={t("In Doubly Stacked, opponents see the other side of your hand.")}
                 >
                   <Repeat2 className="size-3" /> {t(gameView?.side === "dark" ? "Flipped side" : "Normal side")}
                 </Badge>
