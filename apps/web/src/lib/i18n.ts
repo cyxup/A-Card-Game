@@ -49,7 +49,6 @@ const FR: Record<string, string> = {
   "OPEN TABLES": "TABLES OUVERTES",
   "ROUNDS PLAYED": "PARTIES JOUÉES",
   "PICK A TABLE": "CHOISISSEZ UNE TABLE",
-  "Three ways in.": "Trois façons d'entrer.",
   "Quick play": "Partie rapide",
   "Drop into the first open public table. Strangers, bots, chaos.":
     "Rejoignez la première table publique libre. Des inconnus, des bots, du chaos.",
@@ -106,6 +105,24 @@ const FR: Record<string, string> = {
   "2–8 players": "2–8 joueurs",
   "30s turn timer": "30s par tour",
   "guests welcome": "invités bienvenus",
+  "Game mode": "Mode de jeu",
+  Classic: "Classique",
+  selected: "sélectionné",
+  "The normal deck. Everyone keeps their cards hidden until they play them.":
+    "Le jeu classique. Chacun garde ses cartes cachées jusqu'à ce qu'il les joue.",
+  "Two-sided deck with pink, teal, orange and purple. Flip turns every hand over, and opponents see the far side of your cards.":
+    "Jeu à double face avec du rose, turquoise, orange et violet. Retourner retourne toutes les mains, et les adversaires voient l'autre face de vos cartes.",
+  "Doubly Stacked is set for this table. Recreate the table to switch back to Classic.":
+    "Doubly Stacked est le mode de cette table. Recréez la table pour repasser en Classique.",
+  "Game mode is chosen when the table is created.":
+    "Le mode de jeu est choisi à la création de la table.",
+  "Four ways in.": "Quatre façons d'entrer.",
+  "The two-sided deck: pink, teal, orange and purple. Flip the whole table and see the far side of every hand.":
+    "Le jeu à double face : rose, turquoise, orange et violet. Retournez toute la table et voyez l'autre face de chaque main.",
+  "Open the flip deck": "Ouvrir le jeu retourné",
+  "Doubly Stacked is a mode, not a rule.": "Doubly Stacked est un mode, pas une règle.",
+  "Pick Classic or Doubly Stacked before you open the table. Doubly uses its own two-sided deck with pink, teal, orange and purple; Flip turns every hand over and opponents see the far side of your cards.":
+    "Choisissez Classique ou Doubly Stacked avant d'ouvrir la table. Doubly utilise son propre jeu à double face avec du rose, turquoise, orange et violet ; Retourner retourne toutes les mains et les adversaires voient l'autre face de vos cartes.",
   "Have a code?": "Vous avez un code ?",
   "Five letters, usually shouted across a voice chat.":
     "Cinq lettres, généralement hurlées dans un vocal.",
@@ -820,6 +837,10 @@ const FR: Record<string, string> = {
   Yellow: "Jaune",
   Green: "Vert",
   Blue: "Bleu",
+  Pink: "Rose",
+  Teal: "Turquoise",
+  Orange: "Orange",
+  Purple: "Violet",
   "Good game": "Bien joué",
   "On fire": "En feu",
   Wow: "Waouh",
@@ -1371,7 +1392,9 @@ const ERROR_FR: Record<string, string> = {
   bad_request: "Action propriétaire inconnue.",
   must_play_drawn: "Vous ne pouvez jouer que la carte piochée.",
   not_playable: "Cette carte ne correspond pas.",
-  color_required: "Choisissez une couleur d'abord.",
+  color_required: "Choisissez une couleur de cette face.",
+  invalid_color: "Cette couleur n'est pas valide pour cette face.",
+  mode_card: "Cette carte n'existe qu'en Doubly Stacked.",
   target_required: "Choisissez quelqu'un avec qui échanger.",
   invalid_target: "Ce joueur n'est pas à cette table.",
   card_not_in_hand: "Cette carte n'est pas dans votre main.",

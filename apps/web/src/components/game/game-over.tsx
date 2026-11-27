@@ -52,7 +52,8 @@ export function GameOverDialog({
   const winner = room.players.find((player) => player.id === game?.winner);
   const winningTeam = game?.winningTeam ?? null;
   const teamWinners = winningTeam === null ? [] : room.players.filter((player) => player.team === winningTeam);
-  const teamLabel = winningTeam === null ? null : winningTeam === 0 ? t("Team A") : t("Team B");
+  // The sentence already says "Team", so only interpolate the letter here.
+  const teamLabel = winningTeam === null ? null : winningTeam === 0 ? "A" : "B";
 
   useEffect(() => {
     playSound(rewards?.placement === 1 ? "win" : "lose");

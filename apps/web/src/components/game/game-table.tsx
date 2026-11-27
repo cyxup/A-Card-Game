@@ -3,6 +3,7 @@ import {
   CHAT_LINES_BY_ID,
   CHAT_PACKS,
   COLORS,
+  DARK_COLORS,
   DEFAULT_CHAT_PACK_ID,
   EMOTES,
   JUMP_WINDOW_MS,
@@ -59,13 +60,13 @@ import { GameOverDialog } from "./game-over";
 import { Seat } from "./seat";
 import { WinEffect } from "./win-effect";
 
-const COLOR_ORDER = { red: 0, yellow: 1, green: 2, blue: 3 } as const;
+const COLOR_ORDER = { red: 0, yellow: 1, green: 2, blue: 3, pink: 4, teal: 5, orange: 6, purple: 7 } as const;
 const KIND_ORDER = { skip: 10, reverse: 11, draw2: 12, draw10: 13, skipAll: 14, flip: 15, wild: 16, wild4: 17, swap: 18 } as const;
 
 function sortHand(hand: Card[]): Card[] {
   return [...hand].sort((a, b) => {
-    const colorA = a.color ? COLOR_ORDER[a.color] : 4;
-    const colorB = b.color ? COLOR_ORDER[b.color] : 4;
+    const colorA = a.color ? COLOR_ORDER[a.color] : 8;
+    const colorB = b.color ? COLOR_ORDER[b.color] : 8;
     if (colorA !== colorB) return colorA - colorB;
     const rankA = a.kind === "number" ? (a.value ?? 0) : KIND_ORDER[a.kind];
     const rankB = b.kind === "number" ? (b.value ?? 0) : KIND_ORDER[b.kind];
@@ -343,6 +344,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
 
   const meId = room.you.id;
   const me = room.players.find((player) => player.id === meId);
+  const sideColors: readonly Color[] = gameView?.side === "dark" ? DARK_COLORS : COLORS;
   const ownerMode = Boolean(me?.owner && prefs.ownerCheats && room.rules.wager === 0);
   const canEditHand = Boolean(
     ownerMode &&
@@ -568,14 +570,14 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
     const wild = card.kind === "wild" || card.kind === "wild4" || card.kind === "swap";
     setEditId(card.id);
     setEditKind(card.kind);
-    setEditColor(wild ? null : (card.color ?? "red"));
+    setEditColor(wild ? null : (card.color ?? sideColors[0] ?? "red"));
     setEditValue(card.value ?? 1);
   }
 
   function changeEditKind(kind: CardKind) {
     const wild = kind === "wild" || kind === "wild4" || kind === "swap";
     setEditKind(kind);
-    setEditColor(wild ? null : (editColor ?? "red"));
+    setEditColor(wild ? null : (editColor ?? sideColors[0] ?? "red"));
   }
 
   function applyEdit() {
@@ -585,7 +587,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
       type: "replace",
       cardId: editId,
       card: {
-        color: wild ? null : (editColor ?? "red"),
+        color: wild ? null : (editColor ?? sideColors[0] ?? "red"),
         kind: editKind,
         value: editKind === "number" ? editValue : null,
       },
@@ -1169,6 +1171,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                 card={pickerCard}
                 eyebrow={swapCard ? t("Swap hands") : t("Choose a colour")}
                 subtitle={pickerSubtitle}
+                colors={sideColors}
                 onPick={pickColor}
                 onCancel={clearTableChoice}
               />
@@ -1435,7 +1438,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                 </Button>
               </div>
               <div className="mt-2 flex flex-wrap gap-1.5">
-                {COLORS.map((color) => (
+                {sideColors.map((color) => (
                   <button
                     key={color}
                     type="button"
@@ -1505,7 +1508,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
 
                   {editKind === "number" || editKind === "skip" || editKind === "reverse" || editKind === "draw2" || editKind === "draw10" || editKind === "skipAll" || editKind === "flip" ? (
                     <div className="owner-editor-colors">
-                      {COLORS.map((color) => (
+                      {sideColors.map((color) => (
                         <button
                           key={color}
                           type="button"

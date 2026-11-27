@@ -1,5 +1,5 @@
 import type { Card } from "@stacked/shared";
-import { ArrowRight, Layers, Sparkles, Swords, Timer, Users } from "lucide-react";
+import { ArrowRight, Layers, Repeat2, Sparkles, Swords, Timer, Users } from "lucide-react";
 import { Link } from "wouter";
 import { CardFace } from "@/components/cards/playing-card";
 import { Button } from "@/components/ui/button";
@@ -162,14 +162,24 @@ export default function RulesPage() {
               {t("The first player out wins, but the round continues until every hand is empty and placements are locked in.")}
             </li>
             <li>
-              <span className="font-medium text-foreground">{t("Doubly Stacked.")}</span>{" "}
-              {t("Two-sided deck. Play a Flip card to turn every hand over. The flip side hides +10 and Skip Everyone.")}
-            </li>
-            <li>
               <span className="font-medium text-foreground">{t("2v2 teams.")}</span>{" "}
               {t("Four seats, alternating teams. The first team with both hands empty wins.")}
             </li>
           </ul>
+
+          <div className="mt-4 rounded-xl border border-brand/25 bg-brand/[0.055] p-4">
+            <p className="flex items-center gap-2 text-sm font-semibold">
+              <Repeat2 className="size-4 text-brand" /> {t("Doubly Stacked is a mode, not a rule.")}
+            </p>
+            <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+              {t("Pick Classic or Doubly Stacked before you open the table. Doubly uses its own two-sided deck with pink, teal, orange and purple; Flip turns every hand over and opponents see the far side of your cards.")}
+            </p>
+            <Link href="/play?mode=doubly" className="mt-3 inline-flex">
+              <Button variant="outline" size="sm">
+                {t("Open the flip deck")} <ArrowRight className="size-3.5" />
+              </Button>
+            </Link>
+          </div>
         </div>
 
         <div className="panel rounded-2xl p-6">

@@ -69,6 +69,44 @@ await waitFor(a.messages, (message) => message.t === "room" && message.room.play
 a.socket.send(JSON.stringify({ t: "start" }));
 const playing = await waitFor(a.messages, (message) => message.t === "room" && message.room.phase === "playing");
 assert.equal(playing.room.game?.phase, "playing");
+assert.equal(playing.room.rules.gameMode, "classic");
+
+// Doubly Stacked is a separate mode: the table view must carry the far-side
+// faces for opponents, using the dark palette, without exposing the owner's
+// own back.
+a.socket.send(JSON.stringify({ t: "leave" }));
+b.socket.send(JSON.stringify({ t: "leave" }));
+a.socket.send(
+  JSON.stringify({
+    t: "create",
+    rules: { maxPlayers: 2, startingHand: 5, gameMode: "doubly" },
+    visibility: "private",
+  }),
+);
+const createdDoubly = await waitFor(
+  a.messages,
+  (message) => message.t === "room" && message.room.phase === "lobby" && message.room.rules.gameMode === "doubly",
+);
+const doublyCode = createdDoubly.room.code;
+b.socket.send(JSON.stringify({ t: "join", code: doublyCode }));
+await waitFor(b.messages, (message) => message.t === "room" && message.room.code === doublyCode && message.room.players.length === 2);
+b.socket.send(JSON.stringify({ t: "ready", ready: true }));
+await waitFor(a.messages, (message) => message.t === "room" && message.room.players.length === 2 && message.room.players.some((player) => !player.host && player.ready));
+a.socket.send(JSON.stringify({ t: "start" }));
+const doubly = await waitFor(
+  a.messages,
+  (message) => message.t === "room" && message.room.code === doublyCode && message.room.phase === "playing",
+);
+assert.equal(doubly.room.rules.gameMode, "doubly");
+assert.equal(doubly.room.game?.side, "light");
+const opponent = doubly.room.players.find((player) => player.id !== doubly.room.you.id);
+assert.ok(opponent, "opponent seat missing");
+assert.ok(Array.isArray(opponent.otherHand), "opponent other side was not sent");
+assert.equal(opponent.otherHand.length, opponent.cardCount);
+const darkColors = new Set(["pink", "teal", "orange", "purple"]);
+for (const card of opponent.otherHand) {
+  assert.ok(card.color === null || darkColors.has(card.color), `unexpected far-side colour ${card.color}`);
+}
 
 a.socket.send(JSON.stringify({ t: "leave" }));
 b.socket.send(JSON.stringify({ t: "leave" }));

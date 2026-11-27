@@ -4,7 +4,9 @@
  */
 
 export const COLORS = ["red", "yellow", "green", "blue"] as const;
-export type Color = (typeof COLORS)[number];
+export const DARK_COLORS = ["pink", "teal", "orange", "purple"] as const;
+export const ALL_COLORS = [...COLORS, ...DARK_COLORS] as const;
+export type Color = (typeof ALL_COLORS)[number];
 
 export type CardKind =
   | "number"
@@ -43,7 +45,7 @@ export function isValidOwnerCardSpec(spec: OwnerCardSpec): boolean {
   if (spec.kind === "number") {
     return (
       spec.color !== null &&
-      COLORS.includes(spec.color) &&
+      ALL_COLORS.includes(spec.color) &&
       typeof spec.value === "number" &&
       Number.isInteger(spec.value) &&
       spec.value >= 0 &&
@@ -54,7 +56,7 @@ export function isValidOwnerCardSpec(spec: OwnerCardSpec): boolean {
     return spec.color === null;
   }
   if (spec.kind === "skip" || spec.kind === "reverse" || spec.kind === "draw2" || spec.kind === "draw10" || spec.kind === "skipAll" || spec.kind === "flip") {
-    return spec.color !== null && COLORS.includes(spec.color);
+    return spec.color !== null && ALL_COLORS.includes(spec.color);
   }
   return false;
 }
@@ -100,6 +102,11 @@ export function isDoublyOnlyKind(kind: CardKind): boolean {
   return DOUBLY_ONLY_KINDS.includes(kind);
 }
 
+/** Dark-side colours only exist on Doubly Stacked cards. */
+export function isDarkColor(color: Color | null): boolean {
+  return color !== null && (DARK_COLORS as readonly Color[]).includes(color);
+}
+
 export function isWild(card: Card): boolean {
   return card.kind === "wild" || card.kind === "wild4" || card.kind === "swap";
 }
@@ -132,10 +139,14 @@ export function buildDeck(): Card[] {
 }
 
 export function invertColor(color: Color | null): Color | null {
-  if (color === "red") return "blue";
-  if (color === "blue") return "red";
-  if (color === "yellow") return "green";
-  if (color === "green") return "yellow";
+  if (color === "red") return "pink";
+  if (color === "pink") return "red";
+  if (color === "blue") return "teal";
+  if (color === "teal") return "blue";
+  if (color === "yellow") return "orange";
+  if (color === "orange") return "yellow";
+  if (color === "green") return "purple";
+  if (color === "purple") return "green";
   return null;
 }
 

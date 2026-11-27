@@ -6,6 +6,7 @@ describe("owner card editor", () => {
     expect(isValidOwnerCardSpec({ color: "red", kind: "number", value: 7 })).toBe(true);
     expect(isValidOwnerCardSpec({ color: "blue", kind: "skip", value: null })).toBe(true);
     expect(isValidOwnerCardSpec({ color: "green", kind: "draw2" })).toBe(true);
+    expect(isValidOwnerCardSpec({ color: "purple", kind: "flip", value: null })).toBe(true);
     expect(isValidOwnerCardSpec({ color: null, kind: "wild4" })).toBe(true);
     expect(isValidOwnerCardSpec({ color: null, kind: "swap" })).toBe(true);
   });
@@ -15,7 +16,7 @@ describe("owner card editor", () => {
     expect(isValidOwnerCardSpec({ color: "red", kind: "number", value: 10 })).toBe(false);
     expect(isValidOwnerCardSpec({ color: "red", kind: "number", value: 1.5 })).toBe(false);
     expect(isValidOwnerCardSpec({ color: "red", kind: "wild" })).toBe(false);
-    expect(isValidOwnerCardSpec({ color: "purple" as never, kind: "skip" })).toBe(false);
+    expect(isValidOwnerCardSpec({ color: "chartreuse" as never, kind: "skip" })).toBe(false);
     expect(isValidOwnerCardSpec({ color: "red", kind: "nope" as never })).toBe(false);
   });
 

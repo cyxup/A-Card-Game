@@ -1,5 +1,5 @@
-﻿import type { GameRules, RoomSummary } from "@stacked/shared";
-import { ArrowRight, Coins, DoorOpen, Hash, ListFilter, Loader2, Plus, RefreshCw, Settings2, Users, Zap } from "lucide-react";
+import type { GameRules, RoomSummary } from "@stacked/shared";
+import { ArrowRight, Coins, DoorOpen, Hash, Layers, ListFilter, Loader2, Plus, RefreshCw, Repeat2, Settings2, Users, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useSearch } from "wouter";
 import { askForName } from "@/components/auth/guest-prompt";
@@ -29,7 +29,6 @@ const DEFAULT_RULES: Partial<GameRules> = {
   wager: 0,
   finishAll: false,
   teamMode: "off" as const,
-  gameMode: "classic" as const,
 };
 
 function RuleRow({
@@ -71,12 +70,73 @@ function QuickToggle({
   );
 }
 
+function GameModePicker({
+  mode,
+  onChange,
+}: {
+  mode: GameRules["gameMode"];
+  onChange: (mode: GameRules["gameMode"]) => void;
+}) {
+  const t = useT();
+  return (
+    <section className="mb-5 grid gap-3 sm:grid-cols-2" aria-label={t("Game mode")}>
+      <button
+        type="button"
+        onClick={() => onChange("classic")}
+        aria-pressed={mode === "classic"}
+        className={cn(
+          "panel group flex items-start gap-3 rounded-2xl p-4 text-left transition-colors",
+          mode === "classic" ? "border-brand/45 bg-brand/[0.055]" : "hover:border-white/15",
+        )}
+      >
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white/6 text-foreground">
+          <Layers className="size-5" />
+        </span>
+        <span className="min-w-0">
+          <span className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-semibold">{t("Classic")}</span>
+            {mode === "classic" ? <Badge variant="brand">{t("selected")}</Badge> : null}
+          </span>
+          <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+            {t("The normal deck. Everyone keeps their cards hidden until they play them.")}
+          </span>
+        </span>
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange("doubly")}
+        aria-pressed={mode === "doubly"}
+        className={cn(
+          "panel group flex items-start gap-3 rounded-2xl p-4 text-left transition-colors",
+          mode === "doubly" ? "border-brand/45 bg-brand/[0.055]" : "hover:border-white/15",
+        )}
+      >
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand/12 text-brand">
+          <Repeat2 className="size-5" />
+        </span>
+        <span className="min-w-0">
+          <span className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-semibold">{t("Doubly Stacked")}</span>
+            {mode === "doubly" ? <Badge variant="brand">{t("selected")}</Badge> : null}
+          </span>
+          <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+            {t("Two-sided deck with pink, teal, orange and purple. Flip turns every hand over, and opponents see the far side of your cards.")}
+          </span>
+        </span>
+      </button>
+    </section>
+  );
+}
+
 export default function PlayPage() {
   const { session } = useSession();
   const t = useT();
   const search = useSearch();
   const initialTab = new URLSearchParams(search).get("tab") ?? "quick";
+  const initialMode: GameRules["gameMode"] =
+    new URLSearchParams(search).get("mode") === "doubly" ? "doubly" : "classic";
   const [tab, setTab] = useState(initialTab);
+  const [mode, setMode] = useState<GameRules["gameMode"]>(initialMode);
   const [, navigate] = useLocation();
   const { room } = useGame();
 
@@ -119,7 +179,7 @@ export default function PlayPage() {
     if (busy) return;
     setBusy("quick");
     try {
-      const joined = await game.quickPlay(quickRules);
+      const joined = await game.quickPlay({ ...quickRules, gameMode: mode });
       navigate(`/room/${joined.code}`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t("Could not find a table."));
@@ -150,7 +210,7 @@ export default function PlayPage() {
     if (busy) return;
     setBusy("create");
     try {
-      const created = await game.createRoom(rules, visibility);
+      const created = await game.createRoom({ ...rules, gameMode: mode }, visibility);
       navigate(`/room/${created.code}`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t("Could not create the table."));
@@ -189,6 +249,8 @@ export default function PlayPage() {
           </Link>
         )}
       </div>
+
+      <GameModePicker mode={mode} onChange={setMode} />
 
       {session?.kind === "guest" && (
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-warning/25 bg-warning/[0.06] px-4 py-3 text-xs text-warning">
@@ -331,16 +393,6 @@ export default function PlayPage() {
                         teamMode: value ? "2v2" : "off",
                         maxPlayers: value ? 4 : prev.maxPlayers,
                         finishAll: value ? false : prev.finishAll,
-                      }))
-                    }
-                  />
-                  <QuickToggle
-                    label={t("Doubly Stacked")}
-                    checked={quickRules.gameMode === "doubly"}
-                    onChange={(value) =>
-                      setQuickRules((prev) => ({
-                        ...prev,
-                        gameMode: value ? "doubly" : "classic",
                       }))
                     }
                   />
@@ -556,17 +608,6 @@ export default function PlayPage() {
                     }))
                   }
                 />
-                <RuleRow
-                  title={t("Doubly Stacked")}
-                  description={t("Two-sided deck. Play a Flip card to turn every hand over. The flip side hides +10 and Skip Everyone.")}
-                  checked={rules.gameMode === "doubly"}
-                  onChange={(value) =>
-                    setRules((prev) => ({
-                      ...prev,
-                      gameMode: value ? "doubly" : "classic",
-                    }))
-                  }
-                />
               </div>
             </div>
 
@@ -687,6 +728,14 @@ export default function PlayPage() {
                             : t("same-card stacks")}
                       </p>
                     </div>
+                    {item.gameMode === "doubly" ? (
+                      <Badge variant="brand" className="gap-1">
+                        <Repeat2 className="size-3" /> {t("Doubly Stacked")}
+                      </Badge>
+                    ) : null}
+                    {item.teamMode === "2v2" ? (
+                      <Badge variant="outline">{t("2v2 teams")}</Badge>
+                    ) : null}
                     <Badge variant={item.players >= item.maxPlayers - 1 ? "warning" : "brand"}>
                       {t(
                         item.maxPlayers - item.players === 1 ? "{n} seat left" : "{n} seats left",

@@ -1,8 +1,10 @@
 import { randomInt } from "node:crypto";
 import {
+  COLORS,
   COSMETICS,
   CHAT_PACKS_BY_ID,
   CHAT_LINES_BY_ID,
+  DARK_COLORS,
   EMOTES,
   GameError,
   botAction,
@@ -11,6 +13,7 @@ import {
   createGame,
   defaultLoadout,
   inverseFace,
+  isDarkColor,
   isDoublyOnlyKind,
   levelForXp,
   matchRewardsForHumans,
@@ -19,6 +22,7 @@ import {
   roundIsRanked,
   timeout,
   type ClientMessage,
+  type Color,
   type GameAction,
   type GameRules,
   type Loadout,
@@ -442,6 +446,9 @@ export class RoomManager {
     if (room.hostId !== seat.id) throw new RoomError("not_host", "Only the host can change the rules.");
     if (room.phase !== "lobby") throw new RoomError("locked", "Rules are locked once the round starts.");
     if (room.starting) throw new RoomError("starting", "The host is dealing the next hand.");
+    if (input?.gameMode !== undefined && input.gameMode !== room.rules.gameMode) {
+      throw new RoomError("locked", "The game mode is chosen when the table is created.");
+    }
     const merged = normaliseRules({ ...room.rules, ...(input ?? {}) });
     if (merged.maxPlayers < room.seats.length) {
       throw new RoomError("too_many_seats", "Remove players before lowering the seat count.");
@@ -811,8 +818,10 @@ export class RoomManager {
     }
 
     if (action.type === "color") {
-      if (!["red", "yellow", "green", "blue"].includes(action.color)) {
-        throw new OwnerToolError("invalid_color", "That colour is not valid.", 400);
+      const palette: readonly Color[] =
+        room.rules.gameMode === "doubly" && game.side === "dark" ? DARK_COLORS : COLORS;
+      if (!palette.includes(action.color)) {
+        throw new OwnerToolError("invalid_color", "That colour is not valid for this side.", 400);
       }
       game.color = action.color;
       seat.cheated = true;
@@ -855,7 +864,10 @@ export class RoomManager {
       }
 
       const after = makeOwnerCard(action.card);
-      if (room.rules.gameMode !== "doubly" && isDoublyOnlyKind(after.kind)) {
+      if (
+        room.rules.gameMode !== "doubly" &&
+        (isDoublyOnlyKind(after.kind) || isDarkColor(after.color))
+      ) {
         throw new OwnerToolError("mode_card", "That card only exists in Doubly Stacked.", 400);
       }
       if (room.rules.gameMode === "doubly") after.back = inverseFace(after);
@@ -1480,6 +1492,8 @@ export class RoomManager {
         phase: room.phase,
         turnSeconds: room.rules.turnSeconds,
         stacking: room.rules.stacking,
+        gameMode: room.rules.gameMode,
+        teamMode: room.rules.teamMode,
         wager: room.rules.wager,
         createdAt: room.createdAt,
       }));

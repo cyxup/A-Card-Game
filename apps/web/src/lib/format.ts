@@ -1,12 +1,20 @@
-import { KIND_LABEL, KIND_SHORT, type Card, type LogEntry } from "@stacked/shared";
+import { KIND_LABEL, KIND_SHORT, type Card, type Color, type LogEntry } from "@stacked/shared";
 import { tNow } from "./i18n";
 
-const COLOR_NAME: Record<string, string> = {
-  red: "rouge",
-  yellow: "jaune",
-  green: "vert",
-  blue: "bleu",
+const COLOR_KEY: Record<Color, string> = {
+  red: "Red",
+  yellow: "Yellow",
+  green: "Green",
+  blue: "Blue",
+  pink: "Pink",
+  teal: "Teal",
+  orange: "Orange",
+  purple: "Purple",
 };
+
+function colorName(color: Color | null): string {
+  return color ? tNow(COLOR_KEY[color]) : "";
+}
 
 export function nameOf(players: { id: string; name: string }[], id: string | undefined, fallback = "Someone"): string {
   if (!id) return fallback;
@@ -14,7 +22,7 @@ export function nameOf(players: { id: string; name: string }[], id: string | und
 }
 
 export function localizedCardLabel(card: Card): string {
-  const color = card.color ? (COLOR_NAME[card.color] ?? card.color) : "";
+  const color = colorName(card.color);
   if (card.kind === "number") return `${card.value} ${color}`.trim();
   if (card.kind === "wild" || card.kind === "wild4" || card.kind === "swap") {
     return tNow(KIND_LABEL[card.kind]);
@@ -23,10 +31,11 @@ export function localizedCardLabel(card: Card): string {
 }
 
 export function cardShort(card: Card): string {
-  if (card.kind === "number") return `${COLOR_NAME[card.color ?? ""] ?? card.color ?? ""} ${card.value}`.trim();
+  const color = colorName(card.color);
+  if (card.kind === "number") return `${color} ${card.value}`.trim();
   if (card.kind === "wild") return tNow("a colour wild");
   if (card.kind === "wild4") return tNow("a Wild Draw Four");
-  return `${COLOR_NAME[card.color ?? ""] ?? card.color ?? ""} ${KIND_SHORT[card.kind]}`.trim();
+  return `${color} ${KIND_SHORT[card.kind]}`.trim();
 }
 
 export function logText(entry: LogEntry, players: { id: string; name: string }[]): string {

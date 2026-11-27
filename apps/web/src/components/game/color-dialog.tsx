@@ -11,6 +11,10 @@ export const COLOR_META: Record<Color, { label: string; className: string; hex: 
   yellow: { label: "Yellow", className: "bg-[#edb70a]", hex: "#edb70a" },
   green: { label: "Green", className: "bg-[#2f9d58]", hex: "#2f9d58" },
   blue: { label: "Blue", className: "bg-[#2f6ad0]", hex: "#2f6ad0" },
+  pink: { label: "Pink", className: "bg-[#e83e8c]", hex: "#e83e8c" },
+  teal: { label: "Teal", className: "bg-[#1fb8b8]", hex: "#1fb8b8" },
+  orange: { label: "Orange", className: "bg-[#f47b20]", hex: "#f47b20" },
+  purple: { label: "Purple", className: "bg-[#7a3cff]", hex: "#7a3cff" },
 };
 
 /**
@@ -21,12 +25,14 @@ export function TableColorPicker({
   card,
   eyebrow,
   subtitle,
+  colors = COLORS,
   onPick,
   onCancel,
 }: {
   card: Card | null;
   eyebrow?: string;
   subtitle?: string | null;
+  colors?: readonly Color[];
   onPick: (color: Color) => void;
   onCancel: () => void;
 }) {
@@ -45,7 +51,7 @@ export function TableColorPicker({
           <div className="table-picker-card">
             <CardFace card={card} style={{ "--cw": "74px" } as React.CSSProperties} />
           </div>
-          {COLORS.map((color, index) => (
+          {colors.map((color, index) => (
             <button
               key={color}
               type="button"

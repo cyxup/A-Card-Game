@@ -1,9 +1,11 @@
 import {
   COLORS,
+  DARK_COLORS,
   buildDeck,
   buildDoublyDeck,
   flipCard,
   handPoints,
+  invertColor,
   isWild,
   sameCard,
   type Card,
@@ -452,8 +454,9 @@ function applyPlay(
   }
 
   if (isWild(card) || card.kind === "swap") {
-    if (!action.color || !COLORS.includes(action.color)) {
-      throw new GameError("color_required", "Pick a color first.");
+    const palette: readonly Color[] = state.side === "dark" ? DARK_COLORS : COLORS;
+    if (!action.color || !palette.includes(action.color)) {
+      throw new GameError("color_required", "Pick a color from this side first.");
     }
   }
 
@@ -553,8 +556,14 @@ function applyPlay(
     case "reverse": {
       state.dir = state.dir === 1 ? -1 : 1;
       pushLog(state, { at: ctx.now, kind: "reverse", actor: player.id });
-      // With two players a reverse acts as a skip, so the player goes again.
-      advance(state, ctx.now, state.players.length === 2 ? 2 : 1);
+      // With two *active* players a reverse acts as a skip, so the player goes
+      // again. In 2v2/finish-all, empty hands are already skipped and must not
+      // count as opponents for this rule.
+      const active = state.players.reduce(
+        (count, candidate) => count + (candidate.hand.length > 0 ? 1 : 0),
+        0,
+      );
+      advance(state, ctx.now, active === 2 ? 2 : 1);
       return state;
     }
 
@@ -718,7 +727,9 @@ function flipAllCards(state: GameState): void {
   const top = state.discard[state.discard.length - 1];
   if (top) {
     state.lastCard = top;
-    if (top.color) state.color = top.color;
+    // A normal top card carries the new colour itself. A wild keeps the chosen
+    // colour, so invert that choice along with the rest of the table.
+    state.color = top.color ?? invertColor(state.color) ?? state.color;
   }
   state.side = state.side === "light" ? "dark" : "light";
 }
@@ -819,7 +830,11 @@ export function botAction(state: GameState, playerId: string, rng: Rng): GameAct
       (state.rules.teamMode !== "2v2" || candidate.team !== player.team),
   );
   const nearestWin = Math.min(...opponents.map((candidate) => candidate.hand.length));
-  const color = favouriteColor(player.hand, rng);
+  const color = favouriteColor(
+    player.hand,
+    rng,
+    state.side === "dark" ? DARK_COLORS : COLORS,
+  );
 
   if (state.pending > 0) {
     const stackable = player.hand.filter((card) => canStack(state, card));
@@ -828,7 +843,9 @@ export function botAction(state: GameState, playerId: string, rng: Rng): GameAct
       return {
         type: "play",
         cardId: pick.id,
-        color: isWild(pick) ? favouriteColor(player.hand, rng) : undefined,
+        color: isWild(pick)
+          ? favouriteColor(player.hand, rng, state.side === "dark" ? DARK_COLORS : COLORS)
+          : undefined,
       };
     }
     return { type: "draw" };
@@ -901,21 +918,21 @@ function pickSwapTarget(state: GameState, player: GamePlayer, rng: Rng): string 
   return (rng() < 0.8 ? sorted[0] : sorted[Math.floor(rng() * sorted.length)])?.id;
 }
 
-function favouriteColor(hand: Card[], rng: Rng): Color {
+function favouriteColor(hand: Card[], rng: Rng, palette: readonly Color[] = COLORS): Color {
   const counts = new Map<Color, number>();
-  for (const color of COLORS) counts.set(color, 0);
+  for (const color of palette) counts.set(color, 0);
   for (const card of hand) {
     if (card.color) counts.set(card.color, (counts.get(card.color) ?? 0) + 1);
   }
-  let best = COLORS[0] as Color;
+  let best = palette[0] as Color;
   let bestCount = -1;
-  for (const color of COLORS) {
+  for (const color of palette) {
     const count = counts.get(color) ?? 0;
     if (count > bestCount) {
       best = color;
       bestCount = count;
     }
   }
-  if (bestCount === 0) return COLORS[Math.floor(rng() * COLORS.length)] as Color;
+  if (bestCount === 0) return palette[Math.floor(rng() * palette.length)] as Color;
   return best;
 }

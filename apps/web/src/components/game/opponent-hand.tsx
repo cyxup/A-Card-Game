@@ -7,8 +7,8 @@ import { spring } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 /**
- * The opponent's hand: a tiny fan of card backs and a count.
- * Cards animate in/out when the server says their hand changed.
+ * The opponent's hand: a tiny fan of card backs (or, in Doubly Stacked, the
+ * actual far-side faces) and a count. Cards animate when the hand changes.
  */
 export function OpponentHand({
   count,
@@ -17,15 +17,18 @@ export function OpponentHand({
   size = 28,
   max = 7,
   compact = false,
+  farSide = false,
   className,
 }: {
   count: number;
   back: string;
-  /** Owner x-ray only: the server sends these. */
+  /** Owner x-ray faces or the far side of a Doubly Stacked hand. */
   cards?: Card[];
   size?: number;
   max?: number;
   compact?: boolean;
+  /** True when these faces are the far side of the table (Doubly Stacked). */
+  farSide?: boolean;
   className?: string;
 }) {
   const revealed = cards && cards.length > 0 ? cards : null;
@@ -38,7 +41,7 @@ export function OpponentHand({
 
   return (
     <div
-      className={cn("opp-hand", className)}
+      className={cn("opp-hand", farSide && "opp-hand-far", className)}
       style={{ height: Math.round(size * 1.4) + 8 }}
       aria-label={t(count === 1 ? "{n} card in hand" : "{n} cards in hand", { n: count })}
     >

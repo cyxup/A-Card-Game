@@ -71,6 +71,25 @@ button.pcard:focus-visible {
   --card-accent: #2f6ad0;
 }
 
+/* The far side of a Doubly Stacked card. These are real colour values, not a
+   CSS hue filter, so the table, logs, colour picker and card faces agree. */
+.pcard[data-color="pink"] {
+  --card-ink: #ffe0ef;
+  --card-accent: #ef4a92;
+}
+.pcard[data-color="teal"] {
+  --card-ink: #d2fffb;
+  --card-accent: #12b5ad;
+}
+.pcard[data-color="orange"] {
+  --card-ink: #ffe6c7;
+  --card-accent: #f47b20;
+}
+.pcard[data-color="purple"] {
+  --card-ink: #e7dcff;
+  --card-accent: #7a3cff;
+}
+
 /* Doubly Stacked: the flip side gets a colder, sharper rim. The colours
    themselves are inverted by the card data, not by a CSS hue filter. */
 .game-stage[data-side="dark"] .pcard:not(.pcard-back) {
@@ -103,6 +122,38 @@ button.pcard:focus-visible {
 }
 
 .pcard[data-wild="true"] .pcard-oval {
+  background: conic-gradient(
+    from 40deg,
+    #e24242 0 25%,
+    #edb70a 0 50%,
+    #2f9d58 0 75%,
+    #2f6ad0 0 100%
+  );
+}
+
+.game-stage[data-side="dark"] .pcard[data-wild="true"] .pcard-oval {
+  background: conic-gradient(
+    from 40deg,
+    #ef4a92 0 25%,
+    #f47b20 0 50%,
+    #7a3cff 0 75%,
+    #12b5ad 0 100%
+  );
+}
+
+/* Opponent hands in Doubly Stacked show the far side, so their wild cards use
+   the opposite palette from the current table side. */
+.opp-hand-far .pcard[data-wild="true"] .pcard-oval {
+  background: conic-gradient(
+    from 40deg,
+    #ef4a92 0 25%,
+    #f47b20 0 50%,
+    #7a3cff 0 75%,
+    #12b5ad 0 100%
+  );
+}
+
+.game-stage[data-side="dark"] .opp-hand-far .pcard[data-wild="true"] .pcard-oval {
   background: conic-gradient(
     from 40deg,
     #e24242 0 25%,

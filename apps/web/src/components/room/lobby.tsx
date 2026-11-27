@@ -1,4 +1,4 @@
-﻿import type { FriendRelationship, FriendsPayload, GameRules, RoomView } from "@stacked/shared";
+import type { FriendRelationship, FriendsPayload, GameRules, RoomView } from "@stacked/shared";
 import { Bot, Check, Clock, Coins, Copy, Crown, DoorOpen, Layers, Play, Plus, Repeat2, Settings2, Trash2, Trophy, UserPlus, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/brand/avatar";
@@ -163,11 +163,14 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
                 <Trophy className="size-3.5" /> {t("Finish all")}
               </span>
             ) : null}
-            {room.rules.gameMode === "doubly" ? (
-              <span className="inline-flex items-center gap-1 text-brand">
-                <Repeat2 className="size-3.5" /> {t("Doubly Stacked")}
-              </span>
-            ) : null}
+            <span
+              className={`inline-flex items-center gap-1 ${
+                room.rules.gameMode === "doubly" ? "text-brand" : "text-muted-foreground"
+              }`}
+            >
+              <Repeat2 className="size-3.5" />
+              {t(room.rules.gameMode === "doubly" ? "Doubly Stacked" : "Classic")}
+            </span>
             {coins !== null && (
               <span className={`inline-flex items-center gap-1 ${shortOnCoins ? "text-destructive" : "text-brand"}`}>
                 <Coins className="size-3.5" /> {t("{n} coins", { n: coins })}
@@ -467,18 +470,12 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
                   })
                 }
               />
-              <RuleToggle
-                label={t("Doubly Stacked")}
-                description={t("Two-sided deck. Play a Flip card to turn every hand over. The flip side hides +10 and Skip Everyone.")}
-                checked={room.rules.gameMode === "doubly"}
-                disabled={locked}
-                onChange={(value) =>
-                  update({
-                    gameMode: value ? "doubly" : "classic",
-                  })
-                }
-              />
             </div>
+            <p className="mt-3 text-[10px] leading-snug text-muted-foreground">
+              {room.rules.gameMode === "doubly"
+                ? t("Doubly Stacked is set for this table. Recreate the table to switch back to Classic.")
+                : t("Game mode is chosen when the table is created.")}
+            </p>
           </div>
 
           <div className="panel rounded-2xl p-4 sm:p-5">

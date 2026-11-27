@@ -1,5 +1,5 @@
 import type { Card, PublicStats } from "@stacked/shared";
-import { ArrowRight, BookOpen, Bot, Layers, Palette, Sparkles, Swords, Users, Zap } from "lucide-react";
+import { ArrowRight, BookOpen, Bot, Layers, Palette, Repeat2, Sparkles, Swords, Users, Zap } from "lucide-react";
 import { useEffect, useState, type CSSProperties } from "react";
 import { Link, useLocation } from "wouter";
 import { askForName } from "@/components/auth/guest-prompt";
@@ -218,14 +218,14 @@ export default function HomePage() {
         <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="eyebrow mb-2">{t("PICK A TABLE")}</p>
-            <h2 className="text-2xl font-semibold tracking-[-0.04em] sm:text-3xl">{t("Three ways in.")}</h2>
+            <h2 className="text-2xl font-semibold tracking-[-0.04em] sm:text-3xl">{t("Four ways in.")}</h2>
           </div>
           <Link href="/play" className="text-xs text-muted-foreground underline decoration-border underline-offset-4 hover:text-foreground">
             {t("See all tables")}
           </Link>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <button
             type="button"
             onClick={() => ensure(quickPlay)}
@@ -257,6 +257,24 @@ export default function HomePage() {
             </span>
             <span className="mt-auto inline-flex items-center gap-1.5 pt-2 text-xs font-medium text-foreground/80">
               {t("Set the rules")} <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+            </span>
+          </Link>
+
+          <Link
+            href="/play?mode=doubly&tab=create"
+            className="panel panel-hover group flex flex-col items-start gap-4 rounded-2xl p-6"
+          >
+            <span className="grid size-10 place-items-center rounded-xl bg-brand/12 text-brand">
+              <Repeat2 className="size-5" />
+            </span>
+            <span className="flex flex-col gap-1.5">
+              <span className="text-lg font-semibold tracking-[-0.02em]">{t("Doubly Stacked")}</span>
+              <span className="text-sm leading-relaxed text-muted-foreground">
+                {t("The two-sided deck: pink, teal, orange and purple. Flip the whole table and see the far side of every hand.")}
+              </span>
+            </span>
+            <span className="mt-auto inline-flex items-center gap-1.5 pt-2 text-xs font-medium text-brand">
+              {t("Open the flip deck")} <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
             </span>
           </Link>
 
