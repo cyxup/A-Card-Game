@@ -1,6 +1,6 @@
 import { EMOTES, type Card, type RoomPlayerView } from "@stacked/shared";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRightLeft, Check, Crown, FlaskConical, Sparkles, WifiOff } from "lucide-react";
+import { ArrowRightLeft, Check, Crown, FlaskConical, Layers, Sparkles, WifiOff } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Avatar } from "@/components/brand/avatar";
@@ -194,8 +194,13 @@ export function Seat({
                 {t(player.team === 0 ? "Team A" : "Team B")}
               </span>
             ) : null}
-            <span className="seat-cards" title={t("{n} cards in hand", { n: player.cardCount })}>
-              {t(player.cardCount === 1 ? "{n} card" : "{n} cards", { n: player.cardCount })}
+            <span
+              className="seat-cards"
+              aria-label={t("{n} cards in hand", { n: player.cardCount })}
+              title={t("{n} cards in hand", { n: player.cardCount })}
+            >
+              <Layers className="size-2.5" aria-hidden />
+              <span>{player.cardCount}</span>
             </span>
             {player.owner ? (
               <span className="seat-owner">

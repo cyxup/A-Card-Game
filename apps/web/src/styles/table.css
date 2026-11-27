@@ -364,6 +364,11 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: rgb(255 255 255 / 0.38);
+  white-space: nowrap;
+}
+
+.seat-meta > span {
+  white-space: nowrap;
 }
 
 .seat-team {
@@ -384,17 +389,27 @@
 }
 
 .seat-cards {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex: 0 0 auto;
   margin-left: auto;
-  padding: 1px 5px;
+  padding: 1px 6px 1px 5px;
   border: 1px solid rgb(255 255 255 / 0.13);
   border-radius: 999px;
   background: rgb(255 255 255 / 0.055);
   color: rgb(255 255 255 / 0.82);
   font-size: 9px;
   font-weight: 600;
+  line-height: 1.4;
   letter-spacing: 0.04em;
   text-transform: none;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.seat-cards svg {
+  opacity: 0.65;
 }
 
 .seat-bot {
