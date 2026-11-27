@@ -72,7 +72,7 @@ export const ENGINE_VERSION = 3;
 export function normaliseRules(input: Partial<GameRules> | undefined): GameRules {
   const rules = { ...DEFAULT_RULES, ...input };
   const gameMode: GameMode = rules.gameMode === "doubly" ? "doubly" : "classic";
-  const teamMode: TeamMode = gameMode === "doubly" ? "off" : rules.teamMode === "2v2" ? "2v2" : "off";
+  const teamMode: TeamMode = rules.teamMode === "2v2" ? "2v2" : "off";
   return {
     maxPlayers:
       teamMode === "2v2"

@@ -464,7 +464,6 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
                     teamMode: value ? "2v2" : "off",
                     maxPlayers: value ? 4 : room.rules.maxPlayers,
                     finishAll: value ? false : room.rules.finishAll,
-                    gameMode: value ? "classic" : room.rules.gameMode,
                   })
                 }
               />
@@ -476,7 +475,6 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
                 onChange={(value) =>
                   update({
                     gameMode: value ? "doubly" : "classic",
-                    teamMode: value ? "off" : room.rules.teamMode,
                   })
                 }
               />

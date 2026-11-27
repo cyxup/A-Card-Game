@@ -141,6 +141,7 @@ const FR: Record<string, string> = {
   "Flipped side": "Face retournée",
   "Double Draw": "Double pioche",
   "Skip Everyone": "Tout le monde passe",
+  "Skip all": "Tout le monde passe",
   Flip: "Retourner",
   "{name} flipped the deck!": "{name} a retourné le paquet !",
   "{name} skipped everyone": "{name} a passé tout le monde",

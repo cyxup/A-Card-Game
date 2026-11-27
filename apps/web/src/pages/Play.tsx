@@ -331,7 +331,6 @@ export default function PlayPage() {
                         teamMode: value ? "2v2" : "off",
                         maxPlayers: value ? 4 : prev.maxPlayers,
                         finishAll: value ? false : prev.finishAll,
-                        gameMode: value ? "classic" : prev.gameMode,
                       }))
                     }
                   />
@@ -342,7 +341,6 @@ export default function PlayPage() {
                       setQuickRules((prev) => ({
                         ...prev,
                         gameMode: value ? "doubly" : "classic",
-                        teamMode: value ? "off" : prev.teamMode,
                       }))
                     }
                   />
@@ -555,7 +553,6 @@ export default function PlayPage() {
                       teamMode: value ? "2v2" : "off",
                       maxPlayers: value ? 4 : prev.maxPlayers,
                       finishAll: value ? false : prev.finishAll,
-                      gameMode: value ? "classic" : prev.gameMode,
                     }))
                   }
                 />
@@ -567,7 +564,6 @@ export default function PlayPage() {
                     setRules((prev) => ({
                       ...prev,
                       gameMode: value ? "doubly" : "classic",
-                      teamMode: value ? "off" : prev.teamMode,
                     }))
                   }
                 />
