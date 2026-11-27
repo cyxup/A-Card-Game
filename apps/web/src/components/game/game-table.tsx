@@ -927,15 +927,6 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                   <Coins className="size-3" /> {t("{n} coin wager", { n: room.rules.wager })}
                 </Badge>
               ) : null}
-              {room.rules.gameMode === "doubly" ? (
-                <Badge
-                  variant={gameView?.side === "dark" ? "brand" : "outline"}
-                  className="inline-flex items-center gap-1"
-                  title={t("In Doubly Stacked, opponents see the other side of your hand.")}
-                >
-                  <Repeat2 className="size-3" /> {t(gameView?.side === "dark" ? "Flipped side" : "Normal side")}
-                </Badge>
-              ) : null}
               {room.rules.teamMode === "2v2" && me?.team !== null && me?.team !== undefined ? (
                 <Badge
                   variant={me.team === 0 ? "brand" : "info"}

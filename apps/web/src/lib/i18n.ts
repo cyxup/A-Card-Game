@@ -1473,6 +1473,7 @@ const MESSAGE_FR: Record<string, string> = {
   "Could not reach the table.": "Impossible de joindre la table.",
   "The table did not answer.": "La table n'a pas répondu.",
   "The table moved on. Try again.": "La table a avancé. Réessayez.",
+  "Round in progress — you are spectating.": "Manche en cours — vous regardez en spectateur.",
   "New friend request.": "Nouvelle demande d'ami.",
   "Friend request accepted.": "Demande d'ami acceptée.",
   "That quick-chat pack isn't yours.": "Ce pack de chat rapide n'est pas à vous.",

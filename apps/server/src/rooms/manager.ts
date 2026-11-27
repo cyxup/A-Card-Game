@@ -269,6 +269,21 @@ export class RoomManager {
 
     let seat = room.seat(conn.playerId);
     if (!seat) {
+      // Joining a table mid-round puts you in the live spectator view instead
+      // of rejecting the code. You can leave and rejoin the lobby when the
+      // round is over.
+      if (room.phase === "playing") {
+        if (conn.roomCode && conn.roomCode !== code) this.leaveRoom(conn, false);
+        this.enter(conn, room);
+        room.touch();
+        this.broadcast(room);
+        this.send(conn, {
+          t: "toast",
+          tone: "info",
+          message: "Round in progress — you are spectating.",
+        });
+        return;
+      }
       if (room.phase !== "lobby") throw new RoomError("in_progress", "That round is already in progress.");
       if (room.isFull()) throw new RoomError("room_full", "That table is full.");
       if (conn.roomCode && conn.roomCode !== code) this.leaveRoom(conn, false);
