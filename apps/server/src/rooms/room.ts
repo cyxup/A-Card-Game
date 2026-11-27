@@ -290,6 +290,7 @@ export function buildRoomView(room: Room, viewerId: string, ownerPeek = false): 
             color: viewColor,
             turnId: currentId,
             dir: game.dir,
+            side: game.side,
             pending: game.pending,
             pendingKind: game.pendingKind,
             deadline: game.deadline,

@@ -133,6 +133,17 @@ const FR: Record<string, string> = {
   "Draw until playable": "Piocher jusqu'à une carte jouable",
   "Finish all": "Tout le monde termine",
   "Finish all.": "Tout le monde termine.",
+  "Doubly Stacked": "Doubly Stacked",
+  "Doubly Stacked.": "Doubly Stacked.",
+  "Two-sided deck. Play a Flip card to turn every hand over. The dark side hides +10 and Skip Everyone.":
+    "Jeu à double face. Jouez une carte Retourner pour retourner toutes les mains. La face sombre cache des +10 et des Tout le monde passe.",
+  "Dark side": "Face sombre",
+  "Light side": "Face claire",
+  "Double Draw": "Double pioche",
+  "Skip Everyone": "Tout le monde passe",
+  Flip: "Retourner",
+  "{name} flipped the deck!": "{name} a retourné le paquet !",
+  "{name} skipped everyone": "{name} a passé tout le monde",
   "The first player out wins, but the round continues until every hand is empty.":
     "Le premier joueur à finir gagne, mais la manche continue jusqu'à ce que toutes les mains soient vides.",
   "The first player out wins, but the round continues until every hand is empty and placements are locked in.":

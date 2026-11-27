@@ -64,8 +64,12 @@ export function logText(entry: LogEntry, players: { id: string; name: string }[]
       return tNow("{name} jumped in!", { name: actor });
     case "skip":
       return tNow("{name} skipped {target}", { name: actor, target });
+    case "skip_all":
+      return tNow("{name} skipped everyone", { name: actor });
     case "reverse":
       return tNow("Direction reversed");
+    case "flip":
+      return tNow("{name} flipped the deck!", { name: actor });
     case "win":
       return tNow("{name} wins the round", { name: actor });
     default:

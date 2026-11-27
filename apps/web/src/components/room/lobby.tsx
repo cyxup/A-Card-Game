@@ -1,5 +1,5 @@
 import type { FriendRelationship, FriendsPayload, GameRules, RoomView } from "@stacked/shared";
-import { Bot, Check, Clock, Coins, Copy, Crown, DoorOpen, Layers, Play, Plus, Settings2, Trash2, Trophy, UserPlus, Users } from "lucide-react";
+import { Bot, Check, Clock, Coins, Copy, Crown, DoorOpen, Layers, Play, Plus, Repeat2, Settings2, Trash2, Trophy, UserPlus, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/brand/avatar";
 import { NameEffect } from "@/components/brand/name-effect";
@@ -161,6 +161,11 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
             {room.rules.finishAll ? (
               <span className="inline-flex items-center gap-1 text-warning">
                 <Trophy className="size-3.5" /> {t("Finish all")}
+              </span>
+            ) : null}
+            {room.rules.gameMode === "doubly" ? (
+              <span className="inline-flex items-center gap-1 text-brand">
+                <Repeat2 className="size-3.5" /> {t("Doubly Stacked")}
               </span>
             ) : null}
             {coins !== null && (
@@ -459,6 +464,19 @@ export function Lobby({ room, onLeave }: { room: RoomView; onLeave: () => void }
                     teamMode: value ? "2v2" : "off",
                     maxPlayers: value ? 4 : room.rules.maxPlayers,
                     finishAll: value ? false : room.rules.finishAll,
+                    gameMode: value ? "classic" : room.rules.gameMode,
+                  })
+                }
+              />
+              <RuleToggle
+                label={t("Doubly Stacked")}
+                description={t("Two-sided deck. Play a Flip card to turn every hand over. The dark side hides +10 and Skip Everyone.")}
+                checked={room.rules.gameMode === "doubly"}
+                disabled={locked}
+                onChange={(value) =>
+                  update({
+                    gameMode: value ? "doubly" : "classic",
+                    teamMode: value ? "off" : room.rules.teamMode,
                   })
                 }
               />

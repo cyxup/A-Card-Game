@@ -13,16 +13,22 @@ export type CardKind =
   | "draw2"
   | "wild"
   | "wild4"
-  | "swap";
+  | "swap"
+  | "draw10"
+  | "skipAll"
+  | "flip";
 
-export interface Card {
-  /** Unique within a deck. */
-  id: string;
-  /** null for wild cards. */
+export interface CardFace {
   color: Color | null;
   kind: CardKind;
-  /** 0-9 for number cards, null otherwise. */
   value: number | null;
+}
+
+export interface Card extends CardFace {
+  /** Unique within a deck. */
+  id: string;
+  /** Present on doubly-sided cards; the face on the other side. */
+  back?: CardFace;
 }
 
 /** Owner-only hand editor. The server turns this into a real Card. */
@@ -47,7 +53,7 @@ export function isValidOwnerCardSpec(spec: OwnerCardSpec): boolean {
   if (spec.kind === "wild" || spec.kind === "wild4" || spec.kind === "swap") {
     return spec.color === null;
   }
-  if (spec.kind === "skip" || spec.kind === "reverse" || spec.kind === "draw2") {
+  if (spec.kind === "skip" || spec.kind === "reverse" || spec.kind === "draw2" || spec.kind === "draw10" || spec.kind === "skipAll" || spec.kind === "flip") {
     return spec.color !== null && COLORS.includes(spec.color);
   }
   return false;
@@ -70,6 +76,9 @@ export const KIND_LABEL: Record<CardKind, string> = {
   wild: "Colour Wild",
   wild4: "Wild Draw Four",
   swap: "Oscar's Swap",
+  draw10: "Double Draw",
+  skipAll: "Skip Everyone",
+  flip: "Flip",
 };
 
 export const KIND_SHORT: Record<CardKind, string> = {
@@ -80,6 +89,9 @@ export const KIND_SHORT: Record<CardKind, string> = {
   wild: "Wild",
   wild4: "+4",
   swap: "Swap",
+  draw10: "+10",
+  skipAll: "Skip all",
+  flip: "Flip",
 };
 
 export function isWild(card: Card): boolean {
@@ -113,6 +125,54 @@ export function buildDeck(): Card[] {
   return cards;
 }
 
+export function invertColor(color: Color | null): Color | null {
+  if (color === "red") return "blue";
+  if (color === "blue") return "red";
+  if (color === "yellow") return "green";
+  if (color === "green") return "yellow";
+  return null;
+}
+
+/**
+ * Doubly Stacked deck: every physical card has a light face and a darker,
+ * nastier back face. Flip cards turn every card over in one go.
+ */
+export function buildDoublyDeck(): Card[] {
+  const cards = buildDeck();
+  for (const card of cards) {
+    card.back = {
+      color: invertColor(card.color),
+      kind:
+        card.kind === "draw2"
+          ? "draw10"
+          : card.kind === "skip"
+            ? "skipAll"
+            : card.kind,
+      value: card.kind === "number" ? card.value : null,
+    };
+  }
+  for (let i = 0; i < 4; i++) {
+    const color = COLORS[i] as Color;
+    cards.push({
+      id: `flip${i}`,
+      color,
+      kind: "flip",
+      value: null,
+      back: { color: invertColor(color), kind: "flip", value: null },
+    });
+  }
+  return cards;
+}
+
+export function flipCard(card: Card): void {
+  if (!card.back) return;
+  const current: CardFace = { color: card.color, kind: card.kind, value: card.value };
+  card.color = card.back.color;
+  card.kind = card.back.kind;
+  card.value = card.back.value;
+  card.back = current;
+}
+
 export function cardPoints(card: Card): number {
   switch (card.kind) {
     case "number":
@@ -121,6 +181,12 @@ export function cardPoints(card: Card): number {
     case "skip":
     case "reverse":
       return 20;
+    case "draw10":
+      return 50;
+    case "skipAll":
+      return 30;
+    case "flip":
+      return 25;
     case "wild":
     case "wild4":
     case "swap":

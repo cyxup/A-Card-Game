@@ -294,8 +294,9 @@ export interface GameView {
   color: Color;
   turnId: string;
   dir: 1 | -1;
+  side: "light" | "dark";
   pending: number;
-  pendingKind: "draw2" | "wild4" | null;
+  pendingKind: "draw2" | "wild4" | "draw10" | null;
   deadline: number;
   seq: number;
   drawnCardId: string | null;

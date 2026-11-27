@@ -29,6 +29,7 @@ const DEFAULT_RULES: Partial<GameRules> = {
   wager: 0,
   finishAll: false,
   teamMode: "off" as const,
+  gameMode: "classic" as const,
 };
 
 function RuleRow({
@@ -330,6 +331,18 @@ export default function PlayPage() {
                         teamMode: value ? "2v2" : "off",
                         maxPlayers: value ? 4 : prev.maxPlayers,
                         finishAll: value ? false : prev.finishAll,
+                        gameMode: value ? "classic" : prev.gameMode,
+                      }))
+                    }
+                  />
+                  <QuickToggle
+                    label={t("Doubly Stacked")}
+                    checked={quickRules.gameMode === "doubly"}
+                    onChange={(value) =>
+                      setQuickRules((prev) => ({
+                        ...prev,
+                        gameMode: value ? "doubly" : "classic",
+                        teamMode: value ? "off" : prev.teamMode,
                       }))
                     }
                   />
@@ -542,6 +555,19 @@ export default function PlayPage() {
                       teamMode: value ? "2v2" : "off",
                       maxPlayers: value ? 4 : prev.maxPlayers,
                       finishAll: value ? false : prev.finishAll,
+                      gameMode: value ? "classic" : prev.gameMode,
+                    }))
+                  }
+                />
+                <RuleRow
+                  title={t("Doubly Stacked")}
+                  description={t("Two-sided deck. Play a Flip card to turn every hand over. The dark side hides +10 and Skip Everyone.")}
+                  checked={rules.gameMode === "doubly"}
+                  onChange={(value) =>
+                    setRules((prev) => ({
+                      ...prev,
+                      gameMode: value ? "doubly" : "classic",
+                      teamMode: value ? "off" : prev.teamMode,
                     }))
                   }
                 />

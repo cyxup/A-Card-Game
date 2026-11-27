@@ -1,6 +1,8 @@
 import {
   COLORS,
   buildDeck,
+  buildDoublyDeck,
+  flipCard,
   handPoints,
   isWild,
   sameCard,
@@ -13,6 +15,7 @@ import { shuffle, type Rng } from "./rng.js";
 
 export type Stacking = "off" | "same" | "mixed";
 export type TeamMode = "off" | "2v2";
+export type GameMode = "classic" | "doubly";
 
 export interface GameRules {
   maxPlayers: number;
@@ -32,6 +35,8 @@ export interface GameRules {
   finishAll: boolean;
   /** Off is free-for-all. 2v2 forces four seats and alternating teams. */
   teamMode: TeamMode;
+  /** Classic deck or the doubly-sided Doubly Stacked deck. */
+  gameMode: GameMode;
 }
 
 export const DEFAULT_RULES: GameRules = {
@@ -46,6 +51,7 @@ export const DEFAULT_RULES: GameRules = {
   wager: 0,
   finishAll: false,
   teamMode: "off",
+  gameMode: "classic",
 };
 
 export const RULE_BOUNDS = {
@@ -65,9 +71,11 @@ export const ENGINE_VERSION = 3;
 
 export function normaliseRules(input: Partial<GameRules> | undefined): GameRules {
   const rules = { ...DEFAULT_RULES, ...input };
+  const gameMode: GameMode = rules.gameMode === "doubly" ? "doubly" : "classic";
+  const teamMode: TeamMode = gameMode === "doubly" ? "off" : rules.teamMode === "2v2" ? "2v2" : "off";
   return {
     maxPlayers:
-      rules.teamMode === "2v2"
+      teamMode === "2v2"
         ? 4
         : clampInt(rules.maxPlayers, RULE_BOUNDS.maxPlayers.min, RULE_BOUNDS.maxPlayers.max, DEFAULT_RULES.maxPlayers),
     turnSeconds: clampInt(rules.turnSeconds, RULE_BOUNDS.turnSeconds.min, RULE_BOUNDS.turnSeconds.max, DEFAULT_RULES.turnSeconds),
@@ -78,8 +86,9 @@ export function normaliseRules(input: Partial<GameRules> | undefined): GameRules
     sevenZero: Boolean(rules.sevenZero),
     drawUntilPlayable: Boolean(rules.drawUntilPlayable),
     wager: clampInt(rules.wager, RULE_BOUNDS.wager.min, RULE_BOUNDS.wager.max, DEFAULT_RULES.wager),
-    finishAll: rules.teamMode === "2v2" ? false : Boolean(rules.finishAll),
-    teamMode: rules.teamMode === "2v2" ? "2v2" : "off",
+    finishAll: teamMode === "2v2" ? false : Boolean(rules.finishAll),
+    teamMode,
+    gameMode,
   };
 }
 
@@ -113,7 +122,9 @@ export type LogKind =
   | "rotate"
   | "jump"
   | "skip"
+  | "skip_all"
   | "reverse"
+  | "flip"
   | "win";
 
 export interface LogEntry {
@@ -140,10 +151,12 @@ export interface GameState {
   color: Color;
   turn: number;
   dir: 1 | -1;
+  /** Which face of the doubly-sided deck is currently in play. */
+  side: "light" | "dark";
   phase: "playing" | "ended";
   /** Accumulated draw cards waiting to be stacked or taken. */
   pending: number;
-  pendingKind: "draw2" | "wild4" | null;
+  pendingKind: "draw2" | "wild4" | "draw10" | null;
   /** Card drawn this turn that the player may still play. */
   drawnCard: string | null;
   winner: string | null;
@@ -230,12 +243,12 @@ export interface PlayContext {
   top: Card;
   color: Color;
   pending: number;
-  pendingKind: "draw2" | "wild4" | null;
+  pendingKind: "draw2" | "wild4" | "draw10" | null;
   rules: GameRules;
 }
 
 export function canStackCard(
-  context: { pending: number; pendingKind: "draw2" | "wild4" | null; rules: GameRules },
+  context: { pending: number; pendingKind: "draw2" | "wild4" | "draw10" | null; rules: GameRules },
   card: Card,
 ): boolean {
   if (context.pending <= 0) return false;
@@ -243,7 +256,8 @@ export function canStackCard(
   const mixed = context.rules.stacking === "mixed";
   if (context.pendingKind === "draw2") return card.kind === "draw2" || (mixed && card.kind === "wild4");
   if (context.pendingKind === "wild4") return card.kind === "wild4" || (mixed && card.kind === "draw2");
-  return card.kind === "draw2" || card.kind === "wild4";
+  if (context.pendingKind === "draw10") return card.kind === "draw10" || (mixed && card.kind === "wild4");
+  return card.kind === "draw2" || card.kind === "wild4" || card.kind === "draw10";
 }
 
 /** Can this card be played right now by the player whose turn it is? */
@@ -312,7 +326,7 @@ export function createGame(
     throw new GameError("team_size", "2v2 needs exactly four players.");
   }
 
-  const deck = shuffle(buildDeck(), rng);
+  const deck = shuffle(rules.gameMode === "doubly" ? buildDoublyDeck() : buildDeck(), rng);
   const players: GamePlayer[] = seated.map((seat, index) => ({
     id: seat.id,
     name: seat.name,
@@ -352,6 +366,7 @@ export function createGame(
     color: starter.color as Color,
     turn: first,
     dir: 1,
+    side: "light",
     phase: "playing",
     pending: 0,
     pendingKind: null,
@@ -543,9 +558,27 @@ function applyPlay(
       return state;
     }
 
+    case "skipAll": {
+      pushLog(state, { at: ctx.now, kind: "skip_all", actor: player.id });
+      state.turn = index;
+      state.drawnCard = null;
+      state.turnStartedAt = ctx.now;
+      state.deadline = ctx.now + state.rules.turnSeconds * 1000;
+      state.seq++;
+      return state;
+    }
+
+    case "flip": {
+      flipAllCards(state);
+      pushLog(state, { at: ctx.now, kind: "flip", actor: player.id });
+      advance(state, ctx.now, 1);
+      return state;
+    }
+
     case "draw2":
+    case "draw10":
     case "wild4": {
-      const amount = card.kind === "draw2" ? 2 : 4;
+      const amount = card.kind === "draw2" ? 2 : card.kind === "draw10" ? 10 : 4;
       if (state.rules.stacking === "off") {
         const victim = state.players[nextActiveIndex(state, index, 1)] as GamePlayer;
         const drawn = drawCards(state, victim, amount, ctx);
@@ -676,6 +709,18 @@ function repairTableColor(state: GameState): void {
   if (top && !isWild(top) && top.color && state.color !== top.color) {
     state.color = top.color;
   }
+}
+
+function flipAllCards(state: GameState): void {
+  for (const player of state.players) for (const card of player.hand) flipCard(card);
+  for (const card of state.drawPile) flipCard(card);
+  for (const card of state.discard) flipCard(card);
+  const top = state.discard[state.discard.length - 1];
+  if (top) {
+    state.lastCard = top;
+    if (top.color) state.color = top.color;
+  }
+  state.side = state.side === "light" ? "dark" : "light";
 }
 
 function ensureJumpWindow(state: GameState, now: number): void {

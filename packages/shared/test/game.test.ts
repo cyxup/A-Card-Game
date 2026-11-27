@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildDeck, isWild, type Card, type Color } from "../src/cards.js";
+import { buildDeck, buildDoublyDeck, isWild, type Card, type Color } from "../src/cards.js";
 import {
   DEFAULT_RULES,
   GameError,
@@ -42,6 +42,7 @@ function state(overrides: Partial<GameState> = {}): GameState {
     color: "red",
     turn: 0,
     dir: 1,
+    side: "light",
     phase: "playing",
     pending: 0,
     pendingKind: null,
@@ -549,5 +550,54 @@ describe("finish all", () => {
     expect(s.phase).toBe("ended");
     expect(s.winner).toBe("a");
     expect(s.finishOrder).toEqual(["a", "b", "c", "d"]);
+  });
+});
+
+describe("Doubly Stacked", () => {
+  it("builds a double-sided deck with flip cards", () => {
+    const deck = buildDoublyDeck();
+    expect(deck).toHaveLength(116);
+    expect(deck.every((entry) => Boolean(entry.back))).toBe(true);
+    expect(deck.filter((entry) => entry.kind === "flip")).toHaveLength(4);
+    const darkDraws = deck.filter((entry) => entry.back?.kind === "draw10");
+    expect(darkDraws.length).toBeGreaterThan(0);
+  });
+
+  it("flips every card and the table side", () => {
+    const flip = {
+      id: "flip",
+      color: "red" as const,
+      kind: "flip" as const,
+      value: null,
+      back: { color: "blue" as const, kind: "flip" as const, value: null },
+    };
+    const hidden = {
+      id: "hidden",
+      color: "green" as const,
+      kind: "number" as const,
+      value: 5,
+      back: { color: "yellow" as const, kind: "number" as const, value: 5 },
+    };
+    const s = state({
+      players: players([[flip, card("a2", "red", "number", 1)], [hidden, card("b2", "red", "number", 2)]]),
+      rules: { ...DEFAULT_RULES, gameMode: "doubly" },
+      discard: [card("t1", "red", "number", 5)],
+      turn: 0,
+    });
+    const next = reduce(s, "a", { type: "play", cardId: "flip", color: undefined }, ctx);
+    expect(next.side).toBe("dark");
+    expect(next.discard.at(-1)?.color).toBe("blue");
+    expect(next.players[1]?.hand[0]?.color).toBe("yellow");
+  });
+
+  it("gives the player another turn after Skip Everyone", () => {
+    const skip = card("s", "red", "skipAll");
+    const s = state({
+      players: players([[skip, card("a2", "red", "number", 1)], [card("b1", "red", "number", 2)]]),
+      discard: [card("t1", "red", "number", 5)],
+      turn: 0,
+    });
+    const next = reduce(s, "a", { type: "play", cardId: "s" }, ctx);
+    expect(next.turn).toBe(0);
   });
 });

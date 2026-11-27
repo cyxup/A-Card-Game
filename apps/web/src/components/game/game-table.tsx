@@ -59,7 +59,7 @@ import { Seat } from "./seat";
 import { WinEffect } from "./win-effect";
 
 const COLOR_ORDER = { red: 0, yellow: 1, green: 2, blue: 3 } as const;
-const KIND_ORDER = { skip: 10, reverse: 11, draw2: 12, wild: 13, wild4: 14, swap: 15 } as const;
+const KIND_ORDER = { skip: 10, reverse: 11, draw2: 12, draw10: 13, skipAll: 14, flip: 15, wild: 16, wild4: 17, swap: 18 } as const;
 
 function sortHand(hand: Card[]): Card[] {
   return [...hand].sort((a, b) => {
@@ -118,7 +118,11 @@ function BannerIcon({ entry }: { entry: LogEntry }) {
       return <Flame className={className} />;
     case "skip":
       return <SkipForward className={className} />;
+    case "skip_all":
+      return <SkipForward className={className} />;
     case "reverse":
+      return <Repeat2 className={className} />;
+    case "flip":
       return <Repeat2 className={className} />;
     case "swap":
     case "rotate":
@@ -831,6 +835,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
       <motion.div
         ref={stageRef}
         className={cn("game-stage", room.spectator && "is-spectator")}
+        data-side={gameView?.side ?? "light"}
         initial={{ opacity: 0, scale: 0.985 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.7, ease: easeOutExpo }}
@@ -886,6 +891,14 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
               {room.rules.wager > 0 ? (
                 <Badge variant="warning" className="hidden items-center gap-1 sm:inline-flex">
                   <Coins className="size-3" /> {t("{n} coin wager", { n: room.rules.wager })}
+                </Badge>
+              ) : null}
+              {room.rules.gameMode === "doubly" ? (
+                <Badge
+                  variant={gameView?.side === "dark" ? "brand" : "outline"}
+                  className="inline-flex items-center gap-1"
+                >
+                  <Repeat2 className="size-3" /> {t(gameView?.side === "dark" ? "Dark side" : "Light side")}
                 </Badge>
               ) : null}
             </div>
@@ -1460,7 +1473,7 @@ export function GameTable({ room, onLeave }: { room: RoomView; onLeave: () => vo
                     </label>
                   ) : null}
 
-                  {editKind === "number" || editKind === "skip" || editKind === "reverse" || editKind === "draw2" ? (
+                  {editKind === "number" || editKind === "skip" || editKind === "reverse" || editKind === "draw2" || editKind === "draw10" || editKind === "skipAll" || editKind === "flip" ? (
                     <div className="owner-editor-colors">
                       {COLORS.map((color) => (
                         <button

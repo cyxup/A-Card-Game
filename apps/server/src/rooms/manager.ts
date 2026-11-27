@@ -310,7 +310,8 @@ export class RoomManager {
       rules.startingHand === wanted.startingHand &&
       rules.wager === wanted.wager &&
       rules.finishAll === wanted.finishAll &&
-      rules.teamMode === wanted.teamMode;
+      rules.teamMode === wanted.teamMode &&
+      rules.gameMode === wanted.gameMode;
     const candidate = [...this.rooms.values()]
       .filter(
         (room) =>

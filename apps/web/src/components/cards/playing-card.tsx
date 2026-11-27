@@ -31,6 +31,12 @@ function glyph(card: Card) {
       return SYMBOLS.reverse;
     case "draw2":
       return "+2";
+    case "draw10":
+      return "+10";
+    case "flip":
+      return "↻";
+    case "skipAll":
+      return SYMBOLS.skip;
     case "wild":
       return "";
     case "wild4":
@@ -59,6 +65,12 @@ function corner(card: Card): ReactNode {
       );
     case "draw2":
       return "+2";
+    case "draw10":
+      return "+10";
+    case "flip":
+      return "↻";
+    case "skipAll":
+      return "ALL";
     case "wild":
       return "";
     case "wild4":

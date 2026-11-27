@@ -71,6 +71,44 @@ button.pcard:focus-visible {
   --card-accent: #2f6ad0;
 }
 
+/* Doubly Stacked: the dark side flips the palette and mood. */
+.game-stage[data-side="dark"] .pcard:not(.pcard-back) {
+  background: linear-gradient(160deg, #262232, #121018 68%, #09080d);
+  color: #f5f1ff;
+}
+
+.game-stage[data-side="dark"] .pcard[data-color="red"] {
+  --card-ink: #ffd6df;
+  --card-accent: #c71f4a;
+}
+
+.game-stage[data-side="dark"] .pcard[data-color="yellow"] {
+  --card-ink: #fff0bd;
+  --card-accent: #b38600;
+}
+
+.game-stage[data-side="dark"] .pcard[data-color="green"] {
+  --card-ink: #c9ffdf;
+  --card-accent: #166b45;
+}
+
+.game-stage[data-side="dark"] .pcard[data-color="blue"] {
+  --card-ink: #d4e2ff;
+  --card-accent: #244ec2;
+}
+
+.game-stage[data-side="dark"] .pcard:not(.pcard-back) .pcard-corner {
+  color: var(--card-ink);
+}
+
+.game-stage[data-side="dark"] .pcard:not(.pcard-back) .pcard-inner {
+  border-color: color-mix(in oklch, var(--card-accent) 70%, transparent);
+}
+
+.game-stage[data-side="dark"] .pcard-back {
+  filter: hue-rotate(180deg) saturate(0.8) brightness(0.82);
+}
+
 .pcard-oval {
   position: absolute;
   left: 50%;
