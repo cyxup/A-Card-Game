@@ -357,14 +357,15 @@
 .seat-meta {
   display: flex;
   align-items: center;
-  gap: 5px;
+  flex-wrap: wrap;
+  gap: 2px 4px;
+  max-width: 100%;
   margin-top: 1px;
   font-family: var(--font-mono);
   font-size: 8px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: rgb(255 255 255 / 0.38);
-  white-space: nowrap;
 }
 
 .seat-meta > span {
